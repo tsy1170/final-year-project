@@ -41,7 +41,7 @@ def search_products(q: str = Query(...)):
 
 
 @app.get("/products/{item_code}/prices")
-def get_product_prices(item_code: int):
+def get_product_prices(item_code: int, user_lng: float = Query(...), user_lat: float = Query(...), radius_km: float = Query(10.0)): 
     with engine.connect() as conn:
         result = conn.execute(text("""
             SELECT
@@ -51,20 +51,33 @@ def get_product_prices(item_code: int):
                 p.premise_code,
                 p.premise_name,
                 p.address,
-                p.state,
                 p.district,
+                p.state,
+                p.latitude,
+                p.longitude,
                 pr.price,
-                pr.price_date
+                pr.price_date,
+                ST_Distance(
+                    p.location,
+                    ST_SetSRID(ST_MakePoint(:user_lng, :user_lat), 4326)::geography
+                ) / 1000 AS distance_km
             FROM price_records pr
             JOIN items i
                 ON pr.item_code = i.item_code
             JOIN premises p
                 ON pr.premise_code = p.premise_code
             WHERE pr.item_code = :item_code
-            ORDER BY pr.price ASC
-            LIMIT 50;
-        """), {
-            "item_code": item_code
-        })
-
+            AND ST_DWithin(
+                    p.location,
+                    ST_SetSRID(ST_MakePoint(:user_lng, :user_lat), 4326)::geography,
+                    :radius_km * 1000
+            )
+            ORDER BY pr.price ASC, distance_km ASC
+            LIMIT 50; """), {
+                "item_code": item_code,
+                "user_lng": user_lng,
+                "user_lat": user_lat,
+                "radius_km": radius_km
+            })
+        
         return [dict(row._mapping) for row in result]

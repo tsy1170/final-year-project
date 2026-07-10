@@ -13,7 +13,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 
 
-def build_full_address(premise_name, address, district, state):
+def build_full_address(address, district, state):
     # Build a clean search address.
     # Empty values will be skipped automatically.
     parts = [
