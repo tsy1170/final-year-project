@@ -29,3 +29,6 @@ dist/
 # IDE and OS files
 .idea/
 .DS_Store
+
+# Uploaded/generated images
+product_images/
