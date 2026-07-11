@@ -25,6 +25,7 @@ def root():
     }
 
 
+# Search products by name
 @app.get("/products/search")
 def search_products(q: str = Query(...)):
     with engine.connect() as conn:
@@ -46,6 +47,7 @@ def search_products(q: str = Query(...)):
         return [dict(row._mapping) for row in result]
 
 
+# Get product prices within a radius of the user's location
 @app.get("/products/{item_code}/prices")
 def get_product_prices(item_code: int, user_lng: float = Query(...), user_lat: float = Query(...), radius_km: float = Query(10.0)): 
     with engine.connect() as conn:
@@ -89,6 +91,7 @@ def get_product_prices(item_code: int, user_lng: float = Query(...), user_lat: f
         return [dict(row._mapping) for row in result]
     
 
+# Get product details
 @app.get("/products/{item_code}")
 def get_product(item_code: int, request: Request):
     with engine.connect() as conn:
