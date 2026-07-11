@@ -130,7 +130,7 @@ def load_premises():
     print("Premises loaded successfully.")
 
 
-def load_price_records_sample():
+def load_price_records():
     print("Reading PriceCatcher price records...")
 
     df = pd.read_parquet(PRICE_URL)
@@ -194,13 +194,13 @@ def load_price_records_sample():
     if skipped_count:
         print(f"Skipped {skipped_count} price rows with missing item/premise references.")
 
-    print("Sample price records loaded successfully.")
+    print("Price records loaded successfully.")
 
 
 def main():
     load_items()
     load_premises()
-    load_price_records_sample()
+    load_price_records()
     print("Ingestion completed.")
 
 
