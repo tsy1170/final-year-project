@@ -134,3 +134,53 @@ def get_product(item_code: int, request: Request):
         "item_category": product["item_category"],
         "image_url": image_url,
     }
+
+
+#  Get products with optional filters and pagination
+@app.get("/products")
+def get_products(item_group: str = Query(default = None, description = "Major products group"),
+                 item_category: str = Query(default = None, description = "Sub-category under selected item group"),
+                 limit: int = Query(default = 20, ge = 1, le = 100, description = "Number of products to return"),
+                 offset: int = Query(default = 0, ge = 0, description = "Offset for pagination")):
+    
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT 
+                    item_code,
+                    item_name,
+                    unit,
+                    item_group,
+                    item_category
+                FROM items
+                WHERE (:item_group IS NULL OR LOWER(item_group) = LOWER(:item_group))
+                AND (
+                    :item_group IS NULL 
+                    OR :item_category IS NULL 
+                    OR LOWER(item_category) = LOWER(:item_category)
+                )
+                ORDER BY item_name
+                LIMIT :limit 
+                OFFSET :offset
+            """), {
+                "item_group": item_group,
+                "item_category": item_category,
+                "limit": limit,
+                "offset": offset
+            })
+
+            products = [dict(row._mapping) for row in result]
+
+            return {
+                "item_group": item_group,
+                "item_category": item_category,
+                "limit": limit,
+                "offset": offset,
+                "products": products
+            }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code = 500,
+            detail = f"Failed to retrieve products: {str(e)}"
+        )

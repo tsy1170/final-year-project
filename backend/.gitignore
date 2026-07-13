@@ -32,3 +32,6 @@ dist/
 
 # Uploaded/generated images
 product_images/
+
+# testing files
+test.py
