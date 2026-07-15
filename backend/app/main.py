@@ -1,29 +1,15 @@
 from fastapi import FastAPI, Query, Request, HTTPException, status
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, EmailStr, Field
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
-from dotenv import load_dotenv
 from pathlib import Path
 from pwdlib import PasswordHash
-import os
-
-#  ------------------------Pydantic model for user registration----------------------------
-class UserRegister(BaseModel):
-    user_name: str = Field(min_length=2, max_length=100, description="User's name")
-    email: EmailStr = Field(description="User's email address")
-    password: str = Field(min_length=8, max_length=128, description="User's password")
-# -----------------------------------------------------------------------------------------
-
-# load environment variables from .env file
-load_dotenv()
+from .schemas import UserRegister, BasketItemInput, BasketOptimizationInput
+from .database import engine
+from .basket_helpers import load_basket_data
 
 # Initialize FastAPI app and database connection
 app = FastAPI()
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-# Create SQLAlchemy engine for database connection
-engine = create_engine(DATABASE_URL)
 
 # Initialize password hasher
 password_hasher = PasswordHash.recommended()
@@ -383,6 +369,11 @@ def check_favourite_status(item_code: int, user_id: int = Query(...)):
             detail = f"Failed to check favourite status: {str(e)}"
         )
 
-            
+
+# Single-store basket optimization endpoint
+@app.post("/favourites/optimize/single-store")
+def optimize_single_store(request_data: BasketOptimizationInput):
+    (basket_item_codes, item_information, stores) = load_basket_data(request_data)
+    
 
             
