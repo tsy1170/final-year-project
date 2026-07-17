@@ -6,7 +6,7 @@ from pathlib import Path
 from pwdlib import PasswordHash
 from .schemas import UserRegister, BasketItemInput, BasketOptimizationInput
 from .database import engine
-from .basket_helpers import load_basket_data
+from .basket_helpers import load_basket_data, calculate_single_store_recommendation
 
 # Initialize FastAPI app and database connection
 app = FastAPI()
@@ -369,11 +369,27 @@ def check_favourite_status(item_code: int, user_id: int = Query(...)):
             detail = f"Failed to check favourite status: {str(e)}"
         )
 
-
+# ---------------------------------------------------
 # Single-store basket optimization endpoint
+# ---------------------------------------------------
 @app.post("/favourites/optimize/single-store")
 def optimize_single_store(request_data: BasketOptimizationInput):
     (basket_item_codes, item_information, stores) = load_basket_data(request_data)
+    
+    recommendation = calculate_single_store_recommendation(request_data, basket_item_codes, item_information, stores)
+
+    return {
+        "basket_summary": {
+            "item_count": len(basket_item_codes),
+            "radius_km": request_data.radius_km,
+            "travel_cost_per_km": request_data.travel_cost_per_km,
+            "candidate_store_count": len(stores)
+        },
+
+        "single-store-recommendation": recommendation
+    }
+
+
     
 
             
