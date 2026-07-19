@@ -4,6 +4,8 @@ from .schemas import BasketOptimizationInput, BasketItemInput
 from sqlalchemy import text, bindparam
 from sqlalchemy.exc import SQLAlchemyError
 import traceback
+from itertools import combinations
+from math import radians, sin, cos, sqrt, atan2
 from .database import engine
 
 
@@ -12,6 +14,7 @@ def get_unique_item_codes(basket_items: list[BasketItemInput]) -> list[int]:
     return list(dict.fromkeys(item.item_code for item in basket_items))
 
 
+# load the all the item code in user's basket, item information, and store from database
 def load_basket_data(request_data: BasketOptimizationInput) -> tuple[list[int], dict[int, dict], list[dict]]:
     # Prepare basket input for the optimization workflow.
     basket_item_codes = get_unique_item_codes(request_data.basket_items)  # the list of codes that user sent
@@ -219,6 +222,7 @@ def load_basket_data(request_data: BasketOptimizationInput) -> tuple[list[int], 
     )
 
 
+# build the information of missing item in user's basket
 def build_missing_items(basket_item_codes: list[int],
                         item_information: dict[int, dict],
                         available_item_codes: set[int]) -> list[dict]:
@@ -236,6 +240,7 @@ def build_missing_items(basket_item_codes: list[int],
     return missing_items
 
 
+# build the selected store information 
 def build_store_information(store: dict,
                             selected_items: list[dict]) -> dict:
     # Create the store response 
@@ -252,11 +257,11 @@ def build_store_information(store: dict,
     }
     
 
-
+# calculate the optimized result for the selected items in single-store
 def calculate_single_store_recommendation(request_data: BasketOptimizationInput,  # entire passed data from user side
                                           basket_item_codes: list[int],  # items passed from user side
                                           item_information: dict[int, dict],   # informations of items that passed from user side
-                                          stores: list[dict]) -> dict:   # Each store holds the available item prices
+                                          stores: list[dict]) -> dict:   # Each nearby store holds the available item prices
     total_item_count = len(basket_item_codes)
 
     single_store_results = []
@@ -333,7 +338,10 @@ def calculate_single_store_recommendation(request_data: BasketOptimizationInput,
             "message": "No nearby premise contains any selected items"
         }
     
-    # Ranking
+    # Ranking (minimum)
+    # 1. first compare available items in the store
+    # 2. if tie, then compare the total cost among these store
+    # 3. if tie, then compare the route distance 
     best_single_store = min(
         single_store_results,
         key = lambda result: (
@@ -347,7 +355,231 @@ def calculate_single_store_recommendation(request_data: BasketOptimizationInput,
     return best_single_store
         
 
-         
-            
-    
+def assign_items_to_store_pair(basket_items_codes: list[int],
+                               store_1: dict,
+                               store_2: dict) -> dict[int, int] | None:
+    # Assign each available item to one of the two stores.
+    # When both stores contain the item, the cheaper store is selected.
+    # The method also ensures that both stores provide at least one basket item.
+    store_1_code = store_1["premise_code"]
+    store_2_code = store_2["premise_code"]
 
+    store_1_prices = store_1["prices"]
+    store_2_prices = store_2["prices"]
+
+    assignments = {}
+
+    for item_code in basket_items_codes:
+        store_1_price_data = store_1_prices.get(item_code)
+        store_2_price_data = store_2_prices.get(item_code)
+
+        # Item is not available in either store
+        if store_1_price_data is None and store_2_price_data is None:
+            continue
+
+        # Item is only available in store 1
+        if store_1_price_data is not None and store_2_price_data is None:
+            assignments[item_code] = store_1_code
+        
+        # Item is only available in store 2
+        elif store_2_price_data is not None and store_1_price_data is None:
+            assignments[item_code] = store_2_code
+
+        # Item available in both stores
+        elif store_1_price_data["price"] <= store_2_price_data["price"]:
+            assignments[item_code] = store_1_code
+
+        else:
+            assignments[item_code] = store_2_code
+
+    # Neither store provides any selected item.
+    if not assignments:
+        return None
+
+    # Every item was assigned to only one store.
+    # Therefore, this is not a genuine multi-store result.
+    if len(set(assignments.values())) < 2:
+        return None
+    
+    return assignments
+
+
+# calculate the distance between 2 points on earth by using haversine formula
+def haversine_distance(latitude_1: float,
+                       longitude_1: float,
+                       latitude_2: float,
+                       longitude_2: float) -> float:
+    # Calculate the straight-line distance between two coordinates in km
+    earth_radius = 6371.0088
+
+    latitude_1_radians = radians(latitude_1)
+    longitude_1_radians = radians(longitude_1)
+
+    latitude_2_radians = radians(latitude_2)
+    longitude_2_radians = radians(longitude_2)
+
+    latitude_difference = latitude_2_radians - latitude_1_radians
+    longitude_difference = longitude_2_radians - longitude_1_radians
+
+    haversine_value = (
+        sin(latitude_difference / 2) ** 2
+        + cos(latitude_1_radians)
+        * cos(latitude_2_radians)
+        * sin(longitude_difference / 2) ** 2
+    )
+
+    central_angle = 2 * atan2(sqrt(haversine_value), sqrt(1 - haversine_value))
+
+    return earth_radius * central_angle
+
+
+# calculate the optimized result for the selected items in multi-store
+def calculate_multi_store_recommendation(request_data: BasketOptimizationInput,
+                                         basket_item_codes: list[int],
+                                         item_information: dict[int, dict],
+                                         stores: list[dict]) -> dict:
+    total_item_count = len(basket_item_codes)
+
+    if len(stores) < 2:
+        return {
+            "status": "unavailable",
+            "recommendation_type": "multi_store",
+            "message": "At least 2 nearby stores are required for multi-store basket optimization"
+        }
+    
+    if total_item_count < 2:
+        return {
+            "status": "unavailable",
+            "recommendation_type": "multi_store",
+            "message": "At least 2 different items are required for multi-store basket optimization"
+        }
+    
+    multi_store_results = []
+
+    for store_1, store_2 in combinations(stores, 2):
+        assignments = assign_items_to_store_pair(basket_item_codes, store_1, store_2)
+
+        if assignments is None:
+            continue
+
+        store_1_code = store_1["premise_code"]
+        store_2_code = store_2["premise_code"]
+
+        items_by_store = {
+            store_1_code: [],
+            store_2_code: []
+        }
+
+        store_subtotals = {
+            store_1_code: 0.0,
+            store_2_code: 0.0
+        }
+
+        product_cost = 0.0
+
+        for item_code, selected_store_code in assignments.items():
+            if selected_store_code == store_1_code:
+                selected_store = store_1
+            else:
+                selected_store = store_2
+
+            price_data = selected_store["prices"][item_code]   # {}
+
+            item_price = price_data["price"]
+
+            # sub-total for each store
+            store_subtotals[selected_store_code] += item_price
+
+            # total items price
+            product_cost += item_price
+
+            items_by_store[selected_store_code].append({
+                "item_code": item_code,
+                "item_name": item_information[item_code]["item_name"],
+                "unit": item_information[item_code]["unit"],
+                "price": round(item_price, 2),
+                "price_date": price_data["price_date"]
+            })
+
+        available_item_codes = set(assignments.keys())
+
+        available_item_count = len(available_item_codes)
+
+        missing_items = build_missing_items(basket_item_codes, item_information, available_item_codes)
+
+        store_to_store_distance_km = haversine_distance(store_1["latitude"],
+                                                        store_1["longitude"],
+                                                        store_2["latitude"],
+                                                        store_2["longitude"])
+        
+        # Multi-store route:
+        #
+        # User -> Store 1 -> Store 2 -> User
+        #
+        # With straight-line distance, reversing the order
+        # gives the same total distance.
+        route_distance_km = store_1["distance_from_user_km"] + store_to_store_distance_km + store_2["distance_from_user_km"]
+
+        # Show the nearer premise first in the route
+        if store_1["distance_from_user_km"] <= store_2["distance_from_user_km"]:
+            route_order = [store_1_code, store_2_code]
+        else:
+            route_order = [store_2_code, store_1_code]
+
+        stores_by_code = {
+            store_1_code: store_1,
+            store_2_code: store_2
+        }
+
+        recommended_stores = []
+
+        for premise_code in route_order:
+            store = stores_by_code[premise_code]
+
+            # get the store information
+            store_information = build_store_information(store, items_by_store[premise_code])
+
+            # append a new entry for subtotal (multi-store only)
+            store_information["subtotal"] = round(store_subtotals[premise_code], 2)
+
+            recommended_stores.append(store_information)
+
+        travel_cost = route_distance_km * request_data.travel_cost_per_km
+
+        total_cost = product_cost + travel_cost
+
+        result_status = "complete" if available_item_count == total_item_count else "partial"
+
+        multi_store_results.append({
+            "status": result_status,
+            "recommendation_type": "multi_store",
+            "available_item_count": available_item_count,
+            "total_item_count": total_item_count,
+            "coverage_percentage": round((available_item_count / total_item_count) * 100, 2),
+            "missing_items": missing_items,
+            "route_order": route_order,
+            "stores": recommended_stores,
+            "product_cost": round(product_cost, 2),
+            # "store_to_store_distance_km": round(store_to_store_distance_km, 3),
+            "estimated_route_distance_km": round(route_distance_km, 3),
+            "travel_cost": travel_cost,
+            "total_cost": total_cost
+        })
+
+    if not multi_store_results:
+        return {
+            "status": "unavailable",
+            "recommendation_type": "multi-store",
+            "message": "No valid two_premise combination could be created for the selected items"
+        }
+    
+    best_multi_store = min(
+        multi_store_results,
+        key = lambda result: (
+            -result["available_item_count"],
+            result["total_cost"],
+            result["estimated_route_distance_km"]
+        )
+    )
+
+    return best_multi_store

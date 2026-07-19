@@ -4,9 +4,9 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from pathlib import Path
 from pwdlib import PasswordHash
-from .schemas import UserRegister, BasketItemInput, BasketOptimizationInput
+from .schemas import UserRegister, BasketOptimizationInput
 from .database import engine
-from .basket_helpers import load_basket_data, calculate_single_store_recommendation
+from .basket_helpers import load_basket_data, calculate_single_store_recommendation, calculate_multi_store_recommendation
 
 # Initialize FastAPI app and database connection
 app = FastAPI()
@@ -390,6 +390,25 @@ def optimize_single_store(request_data: BasketOptimizationInput):
     }
 
 
+# ---------------------------------------------------
+# Multi-store basket optimization endpoint
+# ---------------------------------------------------
+@app.post("/favourites/optimize/multi-store")
+def optimize_multi_store(request_data: BasketOptimizationInput):
+    (basket_item_codes, item_information, stores) = load_basket_data(request_data)
+    
+    recommendation = calculate_multi_store_recommendation(request_data, basket_item_codes, item_information, stores)
+
+    return {
+        "basket_summary": {
+            "item_count": len(basket_item_codes),
+            "radius_km": request_data.radius_km,
+            "travel_cost_per_km": request_data.travel_cost_per_km,
+            "candidate_store_count": len(stores),
+            "evaluated_pair_count": (len(stores) * (len(stores) - 1)) // 2
+        },
+        "multi_store_recommendation": recommendation
+    }
     
 
             
