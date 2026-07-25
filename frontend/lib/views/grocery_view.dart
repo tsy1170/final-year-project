@@ -40,11 +40,12 @@ class GroceryView extends StatelessWidget {
 
               return Container(
                 decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xFFFFC83A), Color(0xFFFFFDFD)],
-                  ),
+                  // gradient: LinearGradient(
+                  //   begin: Alignment.topCenter,
+                  //   end: Alignment.bottomCenter,
+                  //   colors: [Color(0xFFFBF1D6), Color(0xFFFAD4AF)],
+                  // ),
+                  color: const Color(0xFFFFFDFD)
                 ),
                 child: Stack(
                   children: [
@@ -88,9 +89,9 @@ class GroceryView extends StatelessWidget {
                           // The Grid of Products
                           SliverPadding(
                             padding: EdgeInsets.fromLTRB(
-                              10 * scale,
+                              8 * scale,
                               0,
-                              10 * scale,
+                              8 * scale,
                               (80 + 25) * scale + navBarHeight,
                             ),
                             sliver: SliverGrid(
@@ -125,9 +126,9 @@ class GroceryView extends StatelessWidget {
                       child: GroceryHeader(scale: scale, viewModel: viewModel),
                     ),
                     Positioned(
-                      bottom: 10 + navBarHeight,
-                      left: 15,
-                      right: 15,
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
                       child: GroceryBottomNavigation(
                         scale: scale,
                         selectedIndex: viewModel.selectedIndex,

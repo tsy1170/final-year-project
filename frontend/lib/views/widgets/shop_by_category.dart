@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../viewmodels/grocery_view_model.dart';
+import '../item_groups_view.dart';
 
 class ShopByCategory extends StatelessWidget {
   final double scale;
@@ -30,109 +31,148 @@ class ShopByCategory extends StatelessWidget {
             ),
         ),
 
-        Container(
-          height: 80 * scale,
-          width: double.infinity,
-          alignment: Alignment.centerLeft,
-          padding: EdgeInsets.symmetric(horizontal: 20 * scale, vertical: 10 * scale),
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            border: Border(
-              top: BorderSide(
-                color: Colors.black.withValues(alpha: 0.3),
-                width: 0.5 * scale,
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ItemGroupsView(
+                  scale: scale,
+                  initialExpandedGroup: "BARANGAN SEGAR",
+                ),
               ),
-              bottom: BorderSide(
-                color: Colors.black.withValues(alpha: 0.3),
-                width: 0.5 * scale
+            );
+          },
+          child: Container(
+            height: 80 * scale,
+            width: double.infinity,
+            alignment: Alignment.centerLeft,
+            padding: EdgeInsets.symmetric(horizontal: 20 * scale, vertical: 10 * scale),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              border: Border(
+                top: BorderSide(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  width: 0.5 * scale,
+                ),
+                bottom: BorderSide(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  width: 0.5 * scale
+                )
               )
-            )
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "BARANGAN SEGAR",
-                style: TextStyle(
-                  fontSize: 13 * scale,
-                  fontWeight: FontWeight.w500,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "BARANGAN SEGAR",
+                  style: TextStyle(
+                    fontSize: 13 * scale,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF1A1D1F)
+                  ),
+                ),
+                Icon(
+                  Icons.keyboard_arrow_right,
+                  size: 24 * scale,
                   color: const Color(0xFF1A1D1F)
+                )
+              ]
+            ),
+          ),
+        ),
+
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ItemGroupsView(
+                  scale: scale,
+                  initialExpandedGroup: "BARANGAN KERING",
                 ),
               ),
-              Icon(
-                Icons.keyboard_arrow_right,
-                size: 24 * scale,
-                color: const Color(0xFF1A1D1F)
-              )
-            ]
+            );
+          },
+          child: Container(
+            height: 80 * scale,
+            width: double.infinity,
+            alignment: Alignment.centerLeft,
+            padding: EdgeInsets.symmetric(horizontal: 20 * scale, vertical: 10 * scale),
+            decoration: BoxDecoration(
+                color: Colors.transparent,
+                border: Border(
+                    bottom: BorderSide(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        width: 0.5 * scale
+                    )
+                )
+            ),
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "BARANGAN KERING",
+                    style: TextStyle(
+                        fontSize: 13 * scale,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF1A1D1F)
+                    ),
+                  ),
+                  Icon(
+                      Icons.keyboard_arrow_right,
+                      size: 24 * scale,
+                      color: const Color(0xFF1A1D1F)
+                  )
+                ]
+            ),
           ),
         ),
 
-        Container(
-          height: 80 * scale,
-          width: double.infinity,
-          alignment: Alignment.centerLeft,
-          padding: EdgeInsets.symmetric(horizontal: 20 * scale, vertical: 10 * scale),
-          decoration: BoxDecoration(
-              color: Colors.transparent,
-              border: Border(
-                  bottom: BorderSide(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      width: 0.5 * scale
-                  )
-              )
-          ),
-          child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "BARANGAN KERING",
-                  style: TextStyle(
-                      fontSize: 13 * scale,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF1A1D1F)
-                  ),
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ItemGroupsView(
+                  scale: scale,
+                  initialExpandedGroup: "BARANGAN BERBUNGKUS",
                 ),
-                Icon(
-                    Icons.keyboard_arrow_right,
-                    size: 24 * scale,
-                    color: const Color(0xFF1A1D1F)
+              ),
+            );
+          },
+          child: Container(
+            height: 80 * scale,
+            width: double.infinity,
+            alignment: Alignment.centerLeft,
+            padding: EdgeInsets.symmetric(horizontal: 20 * scale, vertical: 10 * scale),
+            decoration: BoxDecoration(
+                color: Colors.transparent,
+                border: Border(
+                    bottom: BorderSide(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        width: 0.5 * scale
+                    )
                 )
-              ]
-          ),
-        ),
-
-        Container(
-          height: 80 * scale,
-          width: double.infinity,
-          alignment: Alignment.centerLeft,
-          padding: EdgeInsets.symmetric(horizontal: 20 * scale, vertical: 10 * scale),
-          decoration: BoxDecoration(
-              color: Colors.transparent,
-              border: Border(
-                  bottom: BorderSide(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      width: 0.5 * scale
-                  )
-              )
-          ),
-          child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "BARANGAN BERBUNGKUS",
-                  style: TextStyle(
-                      fontSize: 13 * scale,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF1A1D1F)
+            ),
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "BARANGAN BERBUNGKUS",
+                    style: TextStyle(
+                        fontSize: 13 * scale,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF1A1D1F)
+                    ),
                   ),
-                ),
-                Icon(
-                    Icons.keyboard_arrow_right,
-                    size: 24 * scale,
-                    color: const Color(0xFF1A1D1F)
-                )
-              ]
+                  Icon(
+                      Icons.keyboard_arrow_right,
+                      size: 24 * scale,
+                      color: const Color(0xFF1A1D1F)
+                  )
+                ]
+            ),
           ),
         ),
       ]

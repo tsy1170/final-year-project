@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/grocery_product.dart';
+import '../models/item_group.dart';
 import '../services/grocery_service.dart';
 
 class GroceryViewModel extends ChangeNotifier {
@@ -12,6 +13,9 @@ class GroceryViewModel extends ChangeNotifier {
       return query.isEmpty || product.name.toLowerCase().contains(query);
     }).toList();
   }
+
+  List<ItemGroup> _itemGroups = [];
+  List<ItemGroup> get itemGroups => _itemGroups;
 
   final TextEditingController _searchController = TextEditingController();
   TextEditingController get searchController => _searchController;
@@ -31,9 +35,13 @@ class GroceryViewModel extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
+  bool _isCategoriesLoading = false;
+  bool get isCategoriesLoading => _isCategoriesLoading;
+
   GroceryViewModel() {
     _searchController.addListener(_onSearchChanged);
     loadProducts();
+    loadCategories();
   }
 
   void _onSearchChanged() {
@@ -45,6 +53,14 @@ class GroceryViewModel extends ChangeNotifier {
     notifyListeners();
     _allProducts = await _groceryService.fetchProducts();
     _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> loadCategories() async {
+    _isCategoriesLoading = true;
+    notifyListeners();
+    _itemGroups = await _groceryService.fetchCategories();
+    _isCategoriesLoading = false;
     notifyListeners();
   }
 

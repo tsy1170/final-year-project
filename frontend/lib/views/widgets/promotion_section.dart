@@ -15,14 +15,17 @@ class PromotionSection extends StatefulWidget {
 class _PromotionSectionState extends State<PromotionSection> {
   late PageController _pageController;
   static const int _infiniteFactor = 1000;
+  int _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
+    // Start in the middle of a very large count to allow "infinite" swiping in both directions
     _pageController = PageController(
       viewportFraction: 0.9,
       initialPage: 10 * (_infiniteFactor ~/ 2),
     );
+    _currentPage = 0;
   }
 
   @override
@@ -33,6 +36,7 @@ class _PromotionSectionState extends State<PromotionSection> {
 
   @override
   Widget build(BuildContext context) {
+    // Take max 10 items for promotions as requested
     final promoProducts = widget.viewModel.visibleProducts.take(10).toList();
     if (promoProducts.isEmpty) return const SizedBox.shrink();
 
@@ -40,7 +44,7 @@ class _PromotionSectionState extends State<PromotionSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(20 * widget.scale, 10 * widget.scale, 20 * widget.scale, 20 * widget.scale),
+          padding: EdgeInsets.fromLTRB(20 * widget.scale, 20 * widget.scale, 20 * widget.scale, 20 * widget.scale),
           child: Text(
             'Promotions',
             style: TextStyle(
@@ -55,6 +59,11 @@ class _PromotionSectionState extends State<PromotionSection> {
           height: 180 * widget.scale,
           child: PageView.builder(
             controller: _pageController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentPage = index % promoProducts.length;
+              });
+            },
             itemBuilder: (context, index) {
               final product = promoProducts[index % promoProducts.length];
               return _PromotionCard(
@@ -64,6 +73,25 @@ class _PromotionSectionState extends State<PromotionSection> {
                 onFavourite: () => widget.viewModel.toggleFavourite(product.name),
               );
             },
+          ),
+        ),
+        SizedBox(height: 10 * widget.scale),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            promoProducts.length,
+            (index) => AnimatedContainer(
+              duration: const Duration(milliseconds: 130),
+              margin: EdgeInsets.symmetric(horizontal: 2 * widget.scale),
+              height: 3 * widget.scale,
+              width: _currentPage == index ? 16 * widget.scale : 8 * widget.scale,
+              decoration: BoxDecoration(
+                color: _currentPage == index 
+                    ? const Color(0xFF1A1D1F) 
+                    : const Color(0xFF1A1D1F).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(0 * widget.scale),
+              ),
+            ),
           ),
         ),
       ],
@@ -95,7 +123,11 @@ class _PromotionCard extends StatelessWidget {
           14 * scale,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6E4C1),
+        color: Colors.white,
+        border: Border.all(
+          color: Colors.black.withValues(alpha: 0.3),
+          width: 0.5 * scale,
+        ),
         borderRadius: BorderRadius.circular(1 * scale),
         boxShadow: [
           BoxShadow(
@@ -109,6 +141,7 @@ class _PromotionCard extends StatelessWidget {
         children: [
           Row(
             children: [
+              // Image placeholder
               Container(
                 width: 130 * scale,
                 height: double.infinity,
@@ -125,6 +158,7 @@ class _PromotionCard extends StatelessWidget {
                   fit: BoxFit.contain,
                 ),
               ),
+              // Info Section
               Expanded(
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 18 * scale, vertical: 12 * scale),
@@ -219,7 +253,7 @@ class _PromotionCard extends StatelessWidget {
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 9 * scale,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),

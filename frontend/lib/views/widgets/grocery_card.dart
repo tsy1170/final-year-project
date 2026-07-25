@@ -21,6 +21,10 @@ class GroceryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(1 * scale),
+        border: Border.all(
+          color: Colors.black.withValues(alpha: 0.3),
+          width: 0.5 * scale,
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x1A000000),

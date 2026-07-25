@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../viewmodels/grocery_view_model.dart';
+import '../search_page_view.dart';
+import '../item_groups_view.dart';
 
 class GroceryHeader extends StatelessWidget {
   const GroceryHeader({super.key, required this.scale, required this.viewModel});
@@ -11,21 +13,18 @@ class GroceryHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.vertical(
-        bottom: Radius.circular(25 * scale),
-      ),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           width: double.infinity,
           height: 160 * scale,
-          color: Colors.white.withValues(alpha: 0.0),
+          color: Colors.white.withValues(alpha: 0.5),
           child: Stack(
             children: [
               Positioned(
                 left: 20 * scale,
                 right: 20 * scale,
-                top: 50 * scale,
+                top: 45 * scale,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -49,7 +48,14 @@ class GroceryHeader extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ItemGroupsView(scale: scale),
+                              ),
+                            );
+                          },
                           constraints: const BoxConstraints(),
                           icon: Icon(
                             Icons.menu_rounded,
@@ -67,35 +73,48 @@ class GroceryHeader extends StatelessWidget {
                 right: 20 * scale,
                 top: 95 * scale,
                 height: 46 * scale,
-                child: TextField(
-                  controller: viewModel.searchController,
-                  style: TextStyle(
-                    fontSize: 12 * scale,
-                    color: const Color(0xFF354349),
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Search Items',
-                    hintStyle: TextStyle(
-                      fontSize: 12 * scale,
-                      color: const Color(0xFF354349),
-                    ),
-                    prefixIcon: Padding(
-                      padding: EdgeInsets.all(10 * scale),
-                      child: Icon(
-                        Icons.search,
-                        size: 20 * scale,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SearchPageView(scale: scale),
+                      ),
+                    );
+                  },
+                  child: AbsorbPointer(
+                    child: TextField(
+                      readOnly: true,
+                      style: TextStyle(
+                        fontSize: 12 * scale,
                         color: const Color(0xFF354349),
                       ),
+                      decoration: InputDecoration(
+                        hintText: 'Search Items',
+                        hintStyle: TextStyle(
+                          fontSize: 12 * scale,
+                          color: const Color(0xFF354349),
+                          letterSpacing: -0.5
+                        ),
+                        prefixIcon: Padding(
+                          padding: EdgeInsets.all(10 * scale),
+                          child: Icon(
+                            Icons.search,
+                            size: 20 * scale,
+                            color: const Color(0xFF354349),
+                          ),
+                        ),
+                        prefixIconConstraints: BoxConstraints(
+                          minWidth: 52 * scale,
+                          minHeight: 37 * scale,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(vertical: 9 * scale),
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha: 0.8),
+                        enabledBorder: searchBorder(scale),
+                        focusedBorder: searchBorder(scale, width: 1.5),
+                      ),
                     ),
-                    prefixIconConstraints: BoxConstraints(
-                      minWidth: 52 * scale,
-                      minHeight: 37 * scale,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(vertical: 9 * scale),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.8),
-                    enabledBorder: searchBorder(scale),
-                    focusedBorder: searchBorder(scale, width: 1.5),
                   ),
                 ),
               ),

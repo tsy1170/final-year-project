@@ -14,18 +14,21 @@ class GroceryBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double bottomPadding = MediaQuery.of(context).padding.bottom;
     return Container(
       width: double.infinity,
-      height: 70 * scale,
-      padding: EdgeInsets.symmetric(horizontal: 24 * scale),
+      // The height is the standard height plus the safe area padding
+      height: 70 * scale + bottomPadding,
+      // Padding bottom ensures the icons don't overlap with the system gesture bar
+      padding: EdgeInsets.fromLTRB(24 * scale, 0, 24 * scale, bottomPadding),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(45 * scale),
-        color: Colors.white,
+        color: const Color(0xFFFFFDFD),
         boxShadow: [
           BoxShadow(
-            color: const Color(0x26000000),
-            offset: Offset(0, 4 * scale),
-            blurRadius: 10 * scale,
+            color: const Color(0x1A000000),
+            // Shadow appears ABOVE the bar
+            offset: Offset(0, -4 * scale),
+            blurRadius: 15 * scale,
           ),
         ],
       ),
@@ -105,13 +108,17 @@ class _NavItem extends StatelessWidget {
           vertical: 8 * scale,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFFC83A) : Colors.transparent,
+          color: isSelected ? const Color(0xFF1A1D1F) : Colors.transparent,
           borderRadius: BorderRadius.circular(25 * scale),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 24 * scale, color: const Color(0xFF1A1D1F)),
+            Icon(
+              icon,
+              size: 24 * scale,
+              color: isSelected ? const Color(0xFFFFFDFD) : const Color(0xFF1A1D1F),
+            ),
             ClipRect(
               child: AnimatedSize(
                 duration: const Duration(milliseconds: 300),
@@ -120,17 +127,17 @@ class _NavItem extends StatelessWidget {
                   width: isSelected ? null : 0,
                   child: isSelected
                       ? Padding(
-                    padding: EdgeInsets.only(left: 8 * scale),
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      style: TextStyle(
-                        color: const Color(0xFF1A1D1F),
-                        fontSize: 13 * scale,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  )
+                          padding: EdgeInsets.only(left: 8 * scale),
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            style: TextStyle(
+                              color: const Color(0xFFFFFDFD),
+                              fontSize: 13 * scale,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        )
                       : const SizedBox.shrink(),
                 ),
               ),
