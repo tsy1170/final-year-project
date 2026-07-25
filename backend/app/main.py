@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query, Request, HTTPException, status
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from pathlib import Path
 from pwdlib import PasswordHash
 from .schemas import UserRegister, BasketOptimizationInput
@@ -26,6 +26,57 @@ app.mount("/product_images", StaticFiles(directory=IMAGE_DIRECTORY), name="produ
 def root():
     return {
         "message": "PriceCatcher backend is running"
+    }
+
+
+# get items group and item category
+@app.get("/products/categories")
+def get_product_categories():
+    sql = text("""
+        SELECT DISTINCT
+            item_group,
+            item_category
+        FROM items
+        WHERE item_group IS NOT NULL
+          AND item_group <> ''
+          AND item_category IS NOT NULL
+          AND item_category <> ''
+        ORDER BY
+            item_group,
+            item_category
+    """)
+
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(sql).mappings().all()
+
+    except SQLAlchemyError as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to retrieve product categories"
+        ) from error
+
+    grouped_categories: dict[str, list[str]] = {}
+
+    for row in rows:
+        item_group = row["item_group"]
+        item_category = row["item_category"]
+
+        if item_group not in grouped_categories:
+            grouped_categories[item_group] = []
+
+        grouped_categories[item_group].append(item_category)
+
+    return {
+        "count": len(grouped_categories),
+        "item_groups": [
+            {
+                "item_group": item_group,
+                "item_categories": item_categories
+            }
+            for item_group, item_categories
+            in grouped_categories.items()
+        ]
     }
 
 
@@ -410,5 +461,3 @@ def optimize_multi_store(request_data: BasketOptimizationInput):
         "multi_store_recommendation": recommendation
     }
     
-
-            
