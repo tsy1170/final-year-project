@@ -1,0 +1,15 @@
+# Color codes used in the project
+
+Black: 0xFF1A1D1F
+White: 0xFFFFFDFD
+Background: 0xFFFFFDFD
+Primary/Gold: 0xFFFFC83A
+Secondary/Red: 0xFFED1A4B
+Grey Text: 0xFF9A9FA5
+Light Grey: 0xFFF4F4F4
+Medium Grey: 0xFF354349
+Divider/Border: 0x1A000000 (with alpha)
+Section Indent: 0xFFF9F9F9
+Low Price: Colors.green (0xFF4CAF50)
+Medium Price: Colors.orange (0xFFFF9800)
+High Price: Colors.red (0xFFF44336)

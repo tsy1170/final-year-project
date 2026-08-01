@@ -7,6 +7,7 @@ import 'widgets/shop_by_category.dart';
 import 'widgets/grocery_card.dart';
 import 'widgets/grocery_bottom_navigation.dart';
 import 'widgets/grocery_header.dart';
+import 'product_details_view.dart';
 
 class GroceryView extends StatelessWidget {
   const GroceryView({super.key});
@@ -40,12 +41,7 @@ class GroceryView extends StatelessWidget {
 
               return Container(
                 decoration: const BoxDecoration(
-                  // gradient: LinearGradient(
-                  //   begin: Alignment.topCenter,
-                  //   end: Alignment.bottomCenter,
-                  //   colors: [Color(0xFFFBF1D6), Color(0xFFFAD4AF)],
-                  // ),
-                  color: const Color(0xFFFFFDFD)
+                  color: Color(0xFFFFFDFD)
                 ),
                 child: Stack(
                   children: [
@@ -74,7 +70,7 @@ class GroceryView extends StatelessWidget {
                           // Section Title for "All Items"
                           SliverToBoxAdapter(
                             child: Padding(
-                              padding: EdgeInsets.fromLTRB(20 * scale, 40 * scale, 20 * scale, 20 * scale),
+                              padding: EdgeInsets.fromLTRB(20 * scale, 40 * scale, 20 * scale, 10 * scale),
                               child: Text(
                                 'All Products',
                                 style: TextStyle(
@@ -89,9 +85,9 @@ class GroceryView extends StatelessWidget {
                           // The Grid of Products
                           SliverPadding(
                             padding: EdgeInsets.fromLTRB(
-                              8 * scale,
+                              6 * scale,
                               0,
-                              8 * scale,
+                              6 * scale,
                               (80 + 25) * scale + navBarHeight,
                             ),
                             sliver: SliverGrid(
@@ -109,6 +105,17 @@ class GroceryView extends StatelessWidget {
                                     scale: scale,
                                     isFavourite: viewModel.favourites.contains(product.name),
                                     onFavourite: () => viewModel.toggleFavourite(product.name),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ProductDetailsView(
+                                            itemCode: product.itemCode,
+                                            scale: scale,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   );
                                 },
                                 childCount: viewModel.visibleProducts.length,

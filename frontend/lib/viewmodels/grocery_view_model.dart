@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/grocery_product.dart';
 import '../models/item_group.dart';
+import '../models/store_price.dart';
 import '../services/grocery_service.dart';
 
 class GroceryViewModel extends ChangeNotifier {
@@ -38,6 +39,13 @@ class GroceryViewModel extends ChangeNotifier {
   bool _isCategoriesLoading = false;
   bool get isCategoriesLoading => _isCategoriesLoading;
 
+  // Product Details State
+  Map<String, dynamic>? _selectedProductDetails;
+  Map<String, dynamic>? get selectedProductDetails => _selectedProductDetails;
+  
+  bool _isDetailsLoading = false;
+  bool get isDetailsLoading => _isDetailsLoading;
+
   GroceryViewModel() {
     _searchController.addListener(_onSearchChanged);
     loadProducts();
@@ -62,6 +70,26 @@ class GroceryViewModel extends ChangeNotifier {
     _itemGroups = await _groceryService.fetchCategories();
     _isCategoriesLoading = false;
     notifyListeners();
+  }
+
+  Future<void> loadProductDetails(int itemCode) async {
+    _isDetailsLoading = true;
+    _selectedProductDetails = null;
+    notifyListeners();
+    
+    try {
+      // Default coordinates for Penang as example
+      _selectedProductDetails = await _groceryService.fetchProductDetails(
+        itemCode: itemCode, 
+        lat: 5.356, 
+        lng: 100.301
+      );
+    } catch (e) {
+      print("Error loading product details: $e");
+    } finally {
+      _isDetailsLoading = false;
+      notifyListeners();
+    }
   }
 
   void setCategory(String value) {

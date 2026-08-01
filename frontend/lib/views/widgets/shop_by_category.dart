@@ -6,7 +6,11 @@ class ShopByCategory extends StatelessWidget {
   final double scale;
   final GroceryViewModel viewModel;
 
-  const ShopByCategory({super.key, required this.scale, required this.viewModel});
+  const ShopByCategory({
+    super.key,
+    required this.scale,
+    required this.viewModel,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,9 +20,9 @@ class ShopByCategory extends StatelessWidget {
         Padding(
           padding: EdgeInsets.fromLTRB(
             20 * scale,
-            40 * scale,
+            50 * scale,
             20 * scale,
-            20 * scale
+            15 * scale,
           ),
             child: Text(
               "Shop By Category",
@@ -27,7 +31,7 @@ class ShopByCategory extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF1A1D1F),
                 letterSpacing: -0.5,
-              )
+              ),
             ),
         ),
 
@@ -44,22 +48,25 @@ class ShopByCategory extends StatelessWidget {
             );
           },
           child: Container(
-            height: 80 * scale,
+            height: 90 * scale,
             width: double.infinity,
             alignment: Alignment.centerLeft,
-            padding: EdgeInsets.symmetric(horizontal: 20 * scale, vertical: 10 * scale),
+            padding: EdgeInsets.symmetric(
+              horizontal: 20 * scale,
+              vertical: 10 * scale,
+            ),
             decoration: BoxDecoration(
               color: Colors.transparent,
               border: Border(
                 top: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  width: 0.5 * scale,
+                  color: Colors.black.withValues(alpha: 0.1),
+                  width: 1 * scale,
                 ),
                 bottom: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  width: 0.5 * scale
-                )
-              )
+                  color: Colors.black.withValues(alpha: 0.1),
+                  width: 1 * scale,
+                ),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -69,15 +76,15 @@ class ShopByCategory extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13 * scale,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF1A1D1F)
+                    color: const Color(0xFF1A1D1F),
                   ),
                 ),
                 Icon(
                   Icons.keyboard_arrow_right,
                   size: 24 * scale,
-                  color: const Color(0xFF1A1D1F)
-                )
-              ]
+                  color: const Color(0xFF1A1D1F),
+                ),
+              ],
             ),
           ),
         ),
@@ -95,36 +102,39 @@ class ShopByCategory extends StatelessWidget {
             );
           },
           child: Container(
-            height: 80 * scale,
+            height: 90 * scale,
             width: double.infinity,
             alignment: Alignment.centerLeft,
-            padding: EdgeInsets.symmetric(horizontal: 20 * scale, vertical: 10 * scale),
+            padding: EdgeInsets.symmetric(
+              horizontal: 20 * scale,
+              vertical: 15 * scale,
+            ),
             decoration: BoxDecoration(
-                color: Colors.transparent,
-                border: Border(
-                    bottom: BorderSide(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        width: 0.5 * scale
-                    )
-                )
+              color: Colors.transparent,
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  width: 1 * scale,
+                ),
+              ),
             ),
             child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "BARANGAN KERING",
-                    style: TextStyle(
-                        fontSize: 13 * scale,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF1A1D1F)
-                    ),
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "BARANGAN KERING",
+                  style: TextStyle(
+                    fontSize: 13 * scale,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF1A1D1F),
                   ),
-                  Icon(
-                      Icons.keyboard_arrow_right,
-                      size: 24 * scale,
-                      color: const Color(0xFF1A1D1F)
-                  )
-                ]
+                ),
+                Icon(
+                  Icons.keyboard_arrow_right,
+                  size: 24 * scale,
+                  color: const Color(0xFF1A1D1F),
+                ),
+              ],
             ),
           ),
         ),
@@ -142,40 +152,43 @@ class ShopByCategory extends StatelessWidget {
             );
           },
           child: Container(
-            height: 80 * scale,
+            height: 90 * scale,
             width: double.infinity,
             alignment: Alignment.centerLeft,
-            padding: EdgeInsets.symmetric(horizontal: 20 * scale, vertical: 10 * scale),
+            padding: EdgeInsets.symmetric(
+              horizontal: 20 * scale,
+              vertical: 15 * scale,
+            ),
             decoration: BoxDecoration(
-                color: Colors.transparent,
-                border: Border(
-                    bottom: BorderSide(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        width: 0.5 * scale
-                    )
-                )
+              color: Colors.transparent,
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  width: 1 * scale,
+                ),
+              ),
             ),
             child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "BARANGAN BERBUNGKUS",
-                    style: TextStyle(
-                        fontSize: 13 * scale,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF1A1D1F)
-                    ),
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "BARANGAN BERBUNGKUS",
+                  style: TextStyle(
+                    fontSize: 13 * scale,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF1A1D1F),
                   ),
-                  Icon(
-                      Icons.keyboard_arrow_right,
-                      size: 24 * scale,
-                      color: const Color(0xFF1A1D1F)
-                  )
-                ]
+                ),
+                Icon(
+                  Icons.keyboard_arrow_right,
+                  size: 24 * scale,
+                  color: const Color(0xFF1A1D1F),
+                ),
+              ],
             ),
           ),
         ),
-      ]
+      ],
     );
   }
 }

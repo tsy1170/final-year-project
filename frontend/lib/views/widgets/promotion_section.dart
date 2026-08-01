@@ -6,7 +6,11 @@ class PromotionSection extends StatefulWidget {
   final double scale;
   final GroceryViewModel viewModel;
 
-  const PromotionSection({super.key, required this.scale, required this.viewModel});
+  const PromotionSection({
+    super.key,
+    required this.scale,
+    required this.viewModel,
+  });
 
   @override
   State<PromotionSection> createState() => _PromotionSectionState();
@@ -44,9 +48,15 @@ class _PromotionSectionState extends State<PromotionSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(20 * widget.scale, 20 * widget.scale, 20 * widget.scale, 20 * widget.scale),
+          padding: EdgeInsets.fromLTRB(
+            20 * widget.scale,
+            20 * widget.scale,
+            20 * widget.scale,
+            15 * widget.scale,
+          ),
           child: Text(
-            'Promotions',
+            textAlign: TextAlign.center,
+            'Worth Buying',
             style: TextStyle(
               fontSize: 18 * widget.scale,
               fontWeight: FontWeight.w700,
@@ -70,7 +80,8 @@ class _PromotionSectionState extends State<PromotionSection> {
                 product: product,
                 scale: widget.scale,
                 isFavourite: widget.viewModel.favourites.contains(product.name),
-                onFavourite: () => widget.viewModel.toggleFavourite(product.name),
+                onFavourite: () =>
+                    widget.viewModel.toggleFavourite(product.name),
               );
             },
           ),
@@ -84,10 +95,12 @@ class _PromotionSectionState extends State<PromotionSection> {
               duration: const Duration(milliseconds: 130),
               margin: EdgeInsets.symmetric(horizontal: 2 * widget.scale),
               height: 3 * widget.scale,
-              width: _currentPage == index ? 16 * widget.scale : 8 * widget.scale,
+              width: _currentPage == index
+                  ? 16 * widget.scale
+                  : 8 * widget.scale,
               decoration: BoxDecoration(
-                color: _currentPage == index 
-                    ? const Color(0xFF1A1D1F) 
+                color: _currentPage == index
+                    ? const Color(0xFF1A1D1F)
                     : const Color(0xFF1A1D1F).withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(0 * widget.scale),
               ),
@@ -116,12 +129,7 @@ class _PromotionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       clipBehavior: Clip.antiAlias,
-      margin: EdgeInsets.fromLTRB(
-          5 * scale,
-          0,
-          5 * scale,
-          14 * scale,
-      ),
+      margin: EdgeInsets.fromLTRB(5 * scale, 0, 5 * scale, 14 * scale),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(
@@ -134,8 +142,8 @@ class _PromotionCard extends StatelessWidget {
             color: const Color(0x1A000000),
             offset: Offset(2, 4 * scale),
             blurRadius: 8 * scale,
-          )
-        ]
+          ),
+        ],
       ),
       child: Stack(
         children: [
@@ -161,7 +169,10 @@ class _PromotionCard extends StatelessWidget {
               // Info Section
               Expanded(
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 18 * scale, vertical: 12 * scale),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 18 * scale,
+                    vertical: 12 * scale,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -216,9 +227,9 @@ class _PromotionCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                )
+                ),
               ),
-              Container (
+              Container(
                 padding: EdgeInsets.fromLTRB(
                   0,
                   110 * scale,
@@ -235,7 +246,7 @@ class _PromotionCard extends StatelessWidget {
                         : const Color(0xFF1A1D1F),
                   ),
                 ),
-              )
+              ),
             ],
           ),
           Positioned(
@@ -248,7 +259,7 @@ class _PromotionCard extends StatelessWidget {
                 color: const Color(0xFFED1A4B),
                 padding: EdgeInsets.symmetric(vertical: 2 * scale),
                 child: Text(
-                  'Promo',
+                  'Deals',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
