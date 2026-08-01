@@ -7,6 +7,9 @@ from pwdlib import PasswordHash
 from .schemas import UserRegister, BasketOptimizationInput
 from .database import engine
 from .basket_helpers import load_basket_data, calculate_single_store_recommendation, calculate_multi_store_recommendation
+from .osrm_services import get_road_distance
+from .price_level_helpers import calculate_percentile
+import traceback
 
 # Initialize FastAPI app and database connection
 app = FastAPI()
@@ -77,6 +80,259 @@ def get_product_categories():
             for item_group, item_categories
             in grouped_categories.items()
         ]
+    }
+
+
+# get all the prices with level (low, medium, and high) across nearby shops
+@app.get("/products/{item_code}/nearby-price-levels")
+def get_nearby_price_levels(item_code: int,
+                            latitude: float = Query(..., ge=-90, le=90),
+                            longitude: float = Query(..., ge=-180, le=180),
+                            radius_km: float = Query(default=10, gt=0, le=50),
+                            request: Request = None):
+
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text("""
+                WITH user_location AS (
+                    SELECT ST_SetSRID(
+                        ST_MakePoint(
+                            :user_longitude,
+                            :user_latitude
+                        ),
+                        4326
+                    )::geography AS location
+                ),
+
+                nearby_premises AS (
+                    SELECT
+                        p.premise_code,
+                        p.premise_name,
+                        p.address,
+                        p.district,
+                        p.state,
+                        p.latitude,
+                        p.longitude,
+
+                        ST_Distance(
+                            p.location,
+                            ul.location
+                        ) / 1000.0
+                            AS straight_line_distance_km
+
+                    FROM premises p
+
+                    CROSS JOIN user_location ul
+
+                    WHERE p.location IS NOT NULL
+                    AND p.latitude IS NOT NULL
+                    AND p.longitude IS NOT NULL
+
+                    AND ST_DWithin(
+                            p.location,
+                            ul.location,
+                            :radius_metres
+                    )
+                ),
+
+                latest_prices AS (
+                    SELECT DISTINCT ON (
+                        pr.premise_code
+                    )
+                        pr.premise_code,
+                        pr.item_code,
+                        pr.price,
+                        pr.price_date
+
+                    FROM price_records pr
+
+                    JOIN nearby_premises np
+                        ON np.premise_code =
+                        pr.premise_code
+
+                    WHERE pr.item_code = :item_code
+
+                    ORDER BY
+                        pr.premise_code,
+                        pr.price_date DESC
+                )
+
+                SELECT
+                    i.item_code,
+                    i.item_name,
+                    i.unit,
+                    i.image_path,
+
+                    np.premise_code,
+                    np.premise_name,
+                    np.address,
+                    np.district,
+                    np.state,
+                    np.latitude,
+                    np.longitude,
+                    np.straight_line_distance_km,
+
+                    lp.price,
+                    lp.price_date
+
+                FROM latest_prices lp
+
+                JOIN nearby_premises np
+                    ON np.premise_code =
+                    lp.premise_code
+
+                JOIN items i
+                    ON i.item_code =
+                    lp.item_code
+
+                ORDER BY
+                    np.straight_line_distance_km,
+                    lp.price
+            """),{
+                "item_code": item_code,
+                "user_latitude": latitude,
+                "user_longitude": longitude,
+                "radius_metres": radius_km * 1000
+            }
+        ).mappings().all()
+
+    except SQLAlchemyError as error:
+        traceback.print_exc()
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = f"Unable to retrieve nearby item prices: {str(error)}"
+        )
+
+    if not rows:
+        raise HTTPException(
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "No price records for this item were found within the selected radius"
+        )
+
+    # get the shared values like item code, store count, price statistics 
+    first_row = rows[0]
+
+    item_image_path = first_row["image_path"]
+    item_image_url = None
+
+    if item_image_path:
+        base_url = str(request.base_url).rstrip("/")
+        item_image_url = base_url + item_image_path
+
+    candidate_stores = []
+
+    for row in rows:
+        candidate_stores.append({
+            "premise_code": row["premise_code"],
+            "premise_name": row["premise_name"],
+            "address": row["address"],
+            "district": row["district"],
+            "state": row["state"],
+            "latitude": float(row["latitude"]),
+            "longitude": float(row["longitude"]),
+            "straight_line_distance_km": round(float(row["straight_line_distance_km"]), 3),
+            "price": round(float(row["price"]), 2),
+            "price_date": row["price_date"]
+        })
+
+    # Calculate actual road distances using OSRM
+    stores_with_road_distance = get_road_distance(
+        user_latitude = latitude,
+        user_longitude = longitude,
+        stores = candidate_stores
+    )
+
+    # Remove stores whose driving distance exceeds the requested radius
+    road_filtered_stores = [
+        store for store in stores_with_road_distance
+        if store["road_distance_km"] <= radius_km
+    ]
+
+    if not road_filtered_stores:
+        raise HTTPException(
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Stores were found within the straight-line radius, but none are within the selected radius after considering actual road distances"
+        )
+
+    # Only road-filtered stores affect the the low, medium, and high price categories
+    prices = [
+        store["price"] for store in road_filtered_stores
+    ]
+
+    # price statistics
+    lowest_price = min(prices)
+    average_price = sum(prices) / len(prices)
+    highest_price = max(prices)
+
+    low_cutoff = calculate_percentile(prices, 1/3)
+    high_cutoff = calculate_percentile(prices, 2/3)
+
+    # add the price level to each store based on the cutoffs
+    stores_response = []
+
+    for store in road_filtered_stores:
+        price = store["price"]
+
+        if len(prices) == 1 or (lowest_price == highest_price):
+            price_level = "medium"
+
+        elif price <= low_cutoff:
+            price_level = "low"
+
+        elif price <= high_cutoff:
+            price_level = "medium"
+
+        else:
+            price_level = "high"
+
+        stores_response.append({
+            "premise_code": store["premise_code"],
+            "premise_name": store["premise_name"],
+            "address": store["address"],
+            "district": store["district"],
+            "state": store["state"],
+            "latitude": float(store["latitude"]),
+            "longitude": float(store["longitude"]),
+            "road_distance_km": round(float(store["road_distance_km"]), 3),
+            "price": round(float(price), 2),
+            "price_date": store["price_date"],
+            "price_level": price_level
+        })
+
+    # sort the stores by price, the by road distance
+    stores_response.sort(
+        key = lambda store: (
+            store["price"],
+            store["road_distance_km"]
+        )
+    )
+
+    # return results
+    return {
+        "item": {
+            "item_code": first_row["item_code"],
+            "item_name": first_row["item_name"],
+            "unit": first_row["unit"],
+            "image_url": item_image_url
+        },
+
+        "search": {
+            "latitude": latitude,
+            "longitude": longitude,
+            "radius_km": radius_km,
+            "road_filtered_store_count": len(stores_response)
+        },
+
+        "price_summary": {
+            "lowest_price": round(lowest_price, 2),
+            "average_price": round(average_price, 2),
+            "highest_price": round(highest_price, 2),
+            "low_cutoff": round(low_cutoff, 2),
+            "high_cutoff": round(high_cutoff, 2)
+        },
+
+        # list[dict] of stores with price and distance information
+        "stores": stores_response   
     }
 
 
@@ -196,7 +452,8 @@ def get_product(item_code: int, request: Request):
 def get_products(item_group: str = Query(default = None, description = "Major products group"),
                  item_category: str = Query(default = None, description = "Sub-category under selected item group"),
                  limit: int = Query(default = 20, ge = 1, le = 100, description = "Number of products to return"),
-                 offset: int = Query(default = 0, ge = 0, description = "Offset for pagination")):
+                 offset: int = Query(default = 0, ge = 0, description = "Offset for pagination"),
+                 request: Request = None):
     
     try:
         with engine.connect() as conn:
@@ -206,7 +463,8 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
                     item_name,
                     unit,
                     item_group,
-                    item_category
+                    item_category,
+                    image_path
                 FROM items
                 WHERE (:item_group IS NULL OR LOWER(item_group) = LOWER(:item_group))
                 AND (
@@ -224,7 +482,19 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
                 "offset": offset
             })
 
-            products = [dict(row._mapping) for row in result]
+            products = []
+
+            for row in result:
+                product = dict(row._mapping)
+                image_path = product.pop("image_path", None)
+
+                if image_path:
+                    base_url = str(request.base_url).rstrip("/")
+                    product["image_url"] = base_url + image_path
+                else:
+                    product["image_url"] = None
+
+                products.append(product)
 
             return {
                 "item_group": item_group,

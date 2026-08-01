@@ -1,0 +1,81 @@
+PriceCatcher Backend API Endpoints
+=================================
+
+GET /
+- Root endpoint
+- Returns server status message
+
+GET /products/categories
+- Get all product groups and categories
+
+GET /products/{item_code}/nearby-price-levels
+- Get nearby store prices for a product with price levels
+- Parameters:
+  - item_code: int
+  - latitude: float
+  - longitude: float
+  - radius_km: float
+
+GET /products/search
+- Search products by name
+- Parameters:
+  - q: str
+
+GET /products/{item_code}/prices
+- Get product prices within a radius of the user location
+- Parameters:
+  - item_code: int
+  - user_lng: float
+  - user_lat: float
+  - radius_km: float
+
+GET /products/{item_code}
+- Get product details by item_code
+- Parameters:
+  - item_code: int
+
+GET /products
+- Get products with optional filters and pagination
+- Parameters:
+  - item_group: str | None
+  - item_category: str | None
+  - limit: int
+  - offset: int
+
+GET /favourites/{item_code}
+- Add product to favourites
+- Parameters:
+  - item_code: int
+  - user_id: int
+
+POST /users/register
+- Register a new user
+- Parameters:
+  - user: UserRegister object
+
+GET /favourites
+- Get user favourites products
+- Parameters:
+  - user_id: int
+
+DELETE /favourites/{item_code}
+- Remove product from user favourites
+- Parameters:
+  - item_code: int
+  - user_id: int
+
+GET /favourites/{item_code}/status
+- Check whether a product is in user favourites
+- Parameters:
+  - item_code: int
+  - user_id: int
+
+POST /favourites/optimize/single-store
+- Optimize basket for a single store
+- Parameters:
+  - request_data: BasketOptimizationInput object
+
+POST /favourites/optimize/multi-store
+- Optimize basket across multiple stores
+- Parameters:
+  - request_data: BasketOptimizationInput object
