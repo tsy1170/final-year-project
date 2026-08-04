@@ -1,14 +1,15 @@
 PriceCatcher Backend API Endpoints
 =================================
+✅ - Implemented
 
 GET /
 - Root endpoint
 - Returns server status message
 
-GET /products/categories
+GET /products/categories ✅
 - Get all product groups and categories
 
-GET /products/{item_code}/nearby-price-levels
+GET /products/{item_code}/nearby-price-levels ✅
 - Get nearby store prices for a product with price levels
 - Parameters:
   - item_code: int
@@ -16,7 +17,7 @@ GET /products/{item_code}/nearby-price-levels
   - longitude: float
   - radius_km: float
 
-GET /products/search
+GET /products/search ✅
 - Search products by name
 - Parameters:
   - q: str

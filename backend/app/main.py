@@ -338,7 +338,7 @@ def get_nearby_price_levels(item_code: int,
 
 # Search products by name
 @app.get("/products/search")
-def search_products(q: str = Query(...)):
+def search_products(q: str = Query(...), request: Request = None):
     with engine.connect() as conn:
         result = conn.execute(text("""
             SELECT
@@ -346,16 +346,31 @@ def search_products(q: str = Query(...)):
                 item_name,
                 unit,
                 item_group,
-                item_category
+                item_category,
+                image_path
             FROM items
             WHERE item_name ILIKE :keyword
             ORDER BY item_name
             LIMIT 20;
         """), {
             "keyword": f"%{q}%"
-        })
+        }).mappings().all()
 
-        return [dict(row._mapping) for row in result]
+        search_results = []
+
+        for row in result:
+            product = dict(row)
+            image_path = product.pop("image_path", None)
+
+            if image_path:
+                base_url = str(request.base_url).rstrip("/") if request is not None else None
+                product["image_url"] = f"{base_url}{image_path}" if base_url else image_path
+            else:
+                product["image_url"] = None
+
+            search_results.append(product)
+
+        return search_results
 
 
 # Get product prices within a radius of the user's location
