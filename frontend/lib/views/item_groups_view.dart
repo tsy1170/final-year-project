@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/grocery_view_model.dart';
+import '../models/item_group.dart';
+import 'categorized_products_view.dart';
 
 class ItemGroupsView extends StatefulWidget {
   final double scale;
@@ -130,8 +132,15 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
                                   color: Colors.transparent,
                                   child: InkWell(
                                     onTap: () {
-                                      debugPrint("Selected ALL for Group: ${group.name}");
-                                      // Implement API call passing only group.name here
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => CategorizedProductsView(
+                                            group: group.name,
+                                            scale: widget.scale,
+                                          ),
+                                        ),
+                                      );
                                     },
                                     child: Container(
                                       width: double.infinity,
@@ -153,8 +162,16 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
                                     color: Colors.transparent,
                                     child: InkWell(
                                       onTap: () {
-                                        debugPrint("Selected Group: ${group.name}, Category: $category");
-                                        // Implement API call passing group.name AND category here
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => CategorizedProductsView(
+                                              group: group.name,
+                                              category: category,
+                                              scale: widget.scale,
+                                            ),
+                                          ),
+                                        );
                                       },
                                       child: Container(
                                         width: double.infinity,

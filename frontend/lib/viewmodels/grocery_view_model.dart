@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/grocery_product.dart';
 import '../models/item_group.dart';
+import '../models/store_price.dart';
 import '../services/grocery_service.dart';
 
 class GroceryViewModel extends ChangeNotifier {
@@ -39,6 +40,19 @@ class GroceryViewModel extends ChangeNotifier {
   bool _isCategoriesLoading = false;
   bool get isCategoriesLoading => _isCategoriesLoading;
 
+  // Categorized Products State
+  List<GroceryProduct> _categorizedProducts = [];
+  List<GroceryProduct> get categorizedProducts => _categorizedProducts;
+
+  bool _isCategorizedLoading = false;
+  bool get isCategorizedLoading => _isCategorizedLoading;
+
+  bool _hasMoreProducts = true;
+  bool get hasMoreProducts => _hasMoreProducts;
+
+  int _currentOffset = 0;
+  final int _pageSize = 20;
+
   // Product Details State
   Map<String, dynamic>? _selectedProductDetails;
   Map<String, dynamic>? get selectedProductDetails => _selectedProductDetails;
@@ -72,7 +86,8 @@ class GroceryViewModel extends ChangeNotifier {
   Future<void> loadProducts() async {
     _isLoading = true;
     notifyListeners();
-    _allProducts = await _groceryService.fetchProducts();
+    // Using demoFetchProducts for offline demo in main view
+    _allProducts = await _groceryService.demoFetchProducts();
     _isLoading = false;
     notifyListeners();
   }
@@ -83,6 +98,44 @@ class GroceryViewModel extends ChangeNotifier {
     _itemGroups = await _groceryService.fetchCategories();
     _isCategoriesLoading = false;
     notifyListeners();
+  }
+
+  Future<void> fetchCategorizedProducts({
+    String? group,
+    String? category,
+    bool isRefresh = true,
+  }) async {
+    if (isRefresh) {
+      _currentOffset = 0;
+      _categorizedProducts = [];
+      _hasMoreProducts = true;
+      _isCategorizedLoading = true;
+    } else {
+      if (!_hasMoreProducts || _isCategorizedLoading) return;
+    }
+
+    notifyListeners();
+
+    try {
+      final newProducts = await _groceryService.fetchProducts(
+        itemGroup: group,
+        itemCategory: category,
+        limit: _pageSize,
+        offset: _currentOffset,
+      );
+
+      if (newProducts.length < _pageSize) {
+        _hasMoreProducts = false;
+      }
+
+      _categorizedProducts.addAll(newProducts);
+      _currentOffset += newProducts.length;
+    } catch (e) {
+      debugPrint('Error fetching categorized products: $e');
+    } finally {
+      _isCategorizedLoading = false;
+      notifyListeners();
+    }
   }
 
   /// Determine the current position of the device.
@@ -97,7 +150,7 @@ class GroceryViewModel extends ChangeNotifier {
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       // Location services are not enabled don't continue
-      // accessing the position and request users of the 
+      // accessing the position and request users of the
       // App to enable the location services.
       return Future.error('Location services are disabled.');
     }
@@ -108,7 +161,7 @@ class GroceryViewModel extends ChangeNotifier {
       if (permission == LocationPermission.denied) {
         // Permissions are denied, next time you could try
         // requesting permissions again (this is also where
-        // Android's shouldShowRequestPermissionRationale 
+        // Android's shouldShowRequestPermissionRationale
         // returned true. According to Android guidelines
         // your App should show an explanatory UI now.
         return Future.error('Location permissions are denied');
@@ -116,7 +169,7 @@ class GroceryViewModel extends ChangeNotifier {
     }
     
     if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately. 
+      // Permissions are denied forever, handle appropriately.
       return Future.error(
         'Location permissions are permanently denied, we cannot request permissions.');
     } 

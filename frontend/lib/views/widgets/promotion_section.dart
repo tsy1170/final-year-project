@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/grocery_product.dart';
 import '../../viewmodels/grocery_view_model.dart';
+import 'animated_notification.dart';
 
 class PromotionSection extends StatefulWidget {
   final double scale;
@@ -24,7 +25,6 @@ class _PromotionSectionState extends State<PromotionSection> {
   @override
   void initState() {
     super.initState();
-    // Start in the middle of a very large count to allow "infinite" swiping in both directions
     _pageController = PageController(
       viewportFraction: 0.9,
       initialPage: 10 * (_infiniteFactor ~/ 2),
@@ -40,7 +40,6 @@ class _PromotionSectionState extends State<PromotionSection> {
 
   @override
   Widget build(BuildContext context) {
-    // Take max 10 items for promotions as requested
     final promoProducts = widget.viewModel.visibleProducts.take(10).toList();
     if (promoProducts.isEmpty) return const SizedBox.shrink();
 
@@ -55,7 +54,6 @@ class _PromotionSectionState extends State<PromotionSection> {
             15 * widget.scale,
           ),
           child: Text(
-            textAlign: TextAlign.center,
             'Worth Buying',
             style: TextStyle(
               fontSize: 18 * widget.scale,
@@ -76,12 +74,18 @@ class _PromotionSectionState extends State<PromotionSection> {
             },
             itemBuilder: (context, index) {
               final product = promoProducts[index % promoProducts.length];
+              final isFavourite = widget.viewModel.favourites.contains(product.name);
+              
               return _PromotionCard(
                 product: product,
                 scale: widget.scale,
-                isFavourite: widget.viewModel.favourites.contains(product.name),
-                onFavourite: () =>
-                    widget.viewModel.toggleFavourite(product.name),
+                isFavourite: isFavourite,
+                onFavourite: () {
+                  widget.viewModel.toggleFavourite(product.name);
+                  if (!isFavourite) {
+                    showTopNotification(context, "Successfully Added to Favourites", widget.scale);
+                  }
+                },
               );
             },
           ),
@@ -91,7 +95,7 @@ class _PromotionSectionState extends State<PromotionSection> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
             promoProducts.length,
-            (index) => AnimatedContainer(
+                (index) => AnimatedContainer(
               duration: const Duration(milliseconds: 130),
               margin: EdgeInsets.symmetric(horizontal: 2 * widget.scale),
               height: 3 * widget.scale,
@@ -129,7 +133,7 @@ class _PromotionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       clipBehavior: Clip.antiAlias,
-      margin: EdgeInsets.fromLTRB(5 * scale, 0, 5 * scale, 14 * scale),
+      margin: EdgeInsets.fromLTRB(4 * scale, 0, 4 * scale, 14 * scale),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(
@@ -149,7 +153,6 @@ class _PromotionCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              // Image placeholder
               Container(
                 width: 130 * scale,
                 height: double.infinity,
@@ -161,36 +164,61 @@ class _PromotionCard extends StatelessWidget {
                   ),
                 ),
                 padding: EdgeInsets.all(2 * scale),
-                child: Image.asset(
-                  'assets/figma/100_plus.png',
-                  fit: BoxFit.contain,
-                ),
+                child: product.imageUrl != null 
+                  ? Image.network(product.imageUrl!, fit: BoxFit.contain)
+                  : Image.asset(
+                      'assets/figma/100_plus.png',
+                      fit: BoxFit.contain,
+                    ),
               ),
-              // Info Section
               Expanded(
                 child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 18 * scale,
-                    vertical: 12 * scale,
+                  padding: EdgeInsets.fromLTRB(
+                    12 * scale,
+                    12 * scale,
+                    15 * scale,
+                    12 * scale
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        product.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 14 * scale,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1A1D1F),
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              product.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12 * scale,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF1A1D1F),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 15 * scale),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: onFavourite,
+                              customBorder: const CircleBorder(),
+                                child: Icon(
+                                  isFavourite ? Icons.favorite : Icons.favorite_border,
+                                  size: 24 * scale,
+                                  color: isFavourite
+                                      ? const Color(0xFFED1A4B)
+                                      : const Color(0xFF1A1D1F),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       Text(
                         product.unit,
                         style: TextStyle(
-                          fontSize: 12 * scale,
+                          fontSize: 11 * scale,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF1A1D1F).withValues(alpha: 0.6),
                         ),
@@ -215,9 +243,9 @@ class _PromotionCard extends StatelessWidget {
                                 Text(
                                   'RM 3.50',
                                   style: TextStyle(
-                                    fontSize: 16 * scale,
+                                    fontSize: 13 * scale,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFFED1A4B),
+                                    color: const Color(0xFF1A1D1F),
                                   ),
                                 ),
                               ],
@@ -229,47 +257,26 @@ class _PromotionCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Container(
-                padding: EdgeInsets.fromLTRB(
-                  0,
-                  110 * scale,
-                  23 * scale,
-                  10 * scale,
-                ),
-                child: GestureDetector(
-                  onTap: onFavourite,
-                  child: Icon(
-                    isFavourite ? Icons.favorite : Icons.favorite_border,
-                    size: 24 * scale,
-                    color: isFavourite
-                        ? const Color(0xFFED1A4B)
-                        : const Color(0xFF1A1D1F),
-                  ),
-                ),
-              ),
             ],
           ),
           Positioned(
-            top: 15 * scale,
-            right: -36 * scale,
-            child: Transform.rotate(
-              angle: 0.785398,
+            top: 0,
+            left: 0,
               child: Container(
-                width: 120 * scale,
+                width: 50 * scale,
                 color: const Color(0xFFED1A4B),
-                padding: EdgeInsets.symmetric(vertical: 2 * scale),
+                padding: EdgeInsets.symmetric(vertical: 1 * scale),
                 child: Text(
                   'Deals',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 9 * scale,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

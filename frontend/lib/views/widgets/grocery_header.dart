@@ -37,6 +37,7 @@ class GroceryHeader extends StatelessWidget {
                     IconButton(
                       onPressed: () {},
                       constraints: const BoxConstraints(),
+                      alignment: Alignment.center,
                       icon: Icon(
                         Icons.notifications_none_rounded,
                         size: 24 * scale,
@@ -53,6 +54,8 @@ class GroceryHeader extends StatelessWidget {
                         );
                       },
                       constraints: const BoxConstraints(),
+                      visualDensity: VisualDensity.compact, // Removes the internal padding
+                      alignment: Alignment.center,
                       icon: Icon(
                         Icons.menu_rounded,
                         size: 24 * scale,

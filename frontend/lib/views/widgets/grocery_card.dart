@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/grocery_product.dart';
+import 'animated_notification.dart';
 
 class GroceryCard extends StatelessWidget {
   const GroceryCard({
@@ -78,15 +79,27 @@ class GroceryCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        GestureDetector(
-                          onTap: onFavourite,
-                          child: Icon(
-                            isFavourite ? Icons.favorite : Icons.favorite_border,
-                            size: 20 * scale,
-                            color: isFavourite
-                                ? const Color(0xFFED1A4B)
-                                : const Color(0xFF1A1D1F),
-                          ),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              onFavourite();
+                              if (!isFavourite) {
+                                showTopNotification(context, "Successfully Added to Favourites", scale);
+                              }
+                            },
+                            customBorder: const CircleBorder(),
+                            child: Padding(
+                              padding: EdgeInsets.all(5 * scale),
+                              child: Icon(
+                                isFavourite ? Icons.favorite : Icons.favorite_border,
+                                size: 20 * scale,
+                                color: isFavourite
+                                    ? const Color(0xFFED1A4B)
+                                    : const Color(0xFF1A1D1F),
+                              ),
+                            ),
+                          )
                         ),
                       ],
                     ),

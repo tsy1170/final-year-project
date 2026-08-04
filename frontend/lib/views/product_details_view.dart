@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../viewmodels/grocery_view_model.dart';
 import '../models/store_price.dart';
 import 'product_map_view.dart';
+import 'widgets/animated_notification.dart';
 
 class ProductDetailsView extends StatefulWidget {
   final int itemCode;
@@ -27,61 +28,6 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
       () =>
           context.read<GroceryViewModel>().loadProductDetails(widget.itemCode),
     );
-  }
-
-  void _showTopNotification(BuildContext context, String message) {
-    final overlay = Overlay.of(context);
-    final overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).padding.top + 30 * widget.scale,
-        left: 20 * widget.scale,
-        right: 20 * widget.scale,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: 16 * widget.scale,
-              vertical: 12 * widget.scale,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1D1F),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.check_circle,
-                  color: const Color(0xFFFFFDFD),
-                  size: 24 * widget.scale,
-                ),
-                SizedBox(width: 12 * widget.scale),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14 * widget.scale,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
-    overlay.insert(overlayEntry);
-    Future.delayed(const Duration(seconds: 2), () {
-      overlayEntry.remove();
-    });
   }
 
   @override
@@ -191,8 +137,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                                 IconButton(
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
-                                  visualDensity: VisualDensity
-                                      .compact, // Removes the internal padding
+                                  visualDensity: VisualDensity.compact, // Removes the internal padding
                                   alignment: Alignment.center,
                                   icon: Icon(
                                     Icons.edit_notifications_outlined,
@@ -302,14 +247,15 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    final isAdding = !viewModel.favourites.contains(
+                    final isAdding = viewModel.favourites.contains(
                       details['item'].name,
                     );
                     viewModel.toggleFavourite(details['item'].name);
-                    if (isAdding) {
-                      _showTopNotification(
+                    if (!isAdding) {
+                      showTopNotification(
                         context,
                         "Successfully Added to Favourites",
+                        widget.scale,
                       );
                     }
                   },

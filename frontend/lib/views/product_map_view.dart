@@ -40,6 +40,24 @@ class _ProductMapViewState extends State<ProductMapView> {
     return Colors.red;
   }
 
+  Widget _buildLegendItem(IconData icon, Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16 * widget.scale, color: color),
+        SizedBox(width: 8 * widget.scale),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11 * widget.scale,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF1A1D1F),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
@@ -91,7 +109,7 @@ class _ProductMapViewState extends State<ProductMapView> {
                       child: Icon(
                         Icons.my_location,
                         color: Colors.blueAccent,
-                        size: 30 * widget.scale,
+                        size: 25 * widget.scale
                       ),
                     ),
                   // Store location markers
@@ -106,7 +124,7 @@ class _ProductMapViewState extends State<ProductMapView> {
                           setState(() {
                             _selectedStore = store;
                           });
-                          _mapController.move(LatLng(store.latitude, store.longitude), 15.0);
+                          _mapController.move(LatLng(store.latitude, store.longitude), 13.0);
                         },
                         child: Icon(
                           Icons.location_on,
@@ -119,6 +137,34 @@ class _ProductMapViewState extends State<ProductMapView> {
                 ],
               ),
             ],
+          ),
+          // Marker Legend
+          Positioned(
+            top: 15 * widget.scale,
+            right: 15 * widget.scale,
+            child: Container(
+              padding: EdgeInsets.all(10 * widget.scale),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(10 * widget.scale),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildLegendItem(Icons.my_location, Colors.blueAccent, "Current Location"),
+                  SizedBox(height: 6 * widget.scale),
+                  _buildLegendItem(Icons.location_on, const Color(0xFF1A1D1F), "Stores"),
+                ],
+              ),
+            ),
           ),
           // Bottom info card - Now filled to bottom
           Positioned(
@@ -226,7 +272,7 @@ class _ProductMapViewState extends State<ProductMapView> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1A1D1F),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10 * widget.scale),
+                          borderRadius: BorderRadius.circular(1 * widget.scale),
                         ),
                         padding: EdgeInsets.symmetric(vertical: 12 * widget.scale),
                       ),

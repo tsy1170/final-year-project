@@ -7,7 +7,7 @@ import '../models/store_price.dart';
 class GroceryService {
   static const String baseUrl = 'http://192.168.1.111:8000';
 
-  Future<List<GroceryProduct>> fetchProducts() async {
+  Future<List<GroceryProduct>> demoFetchProducts() async {
     // Mocking an API call
     return const [
       GroceryProduct(itemCode: 1, name: 'AYAM BERSIH - STANDARD', unit: '1 KG'),
@@ -19,6 +19,36 @@ class GroceryService {
       GroceryProduct(itemCode: 7, name: 'ANGGUR HIJAU BERBIJI', unit: '1 KG'),
       GroceryProduct(itemCode: 8, name: 'TIMUN', unit: '1 KG'),
     ];
+  }
+
+  Future<List<GroceryProduct>> fetchProducts({
+    String? itemGroup,
+    String? itemCategory,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    try {
+      final queryParams = {
+        'limit': limit.toString(),
+        'offset': offset.toString(),
+      };
+      if (itemGroup != null) queryParams['item_group'] = itemGroup;
+      if (itemCategory != null) queryParams['item_category'] = itemCategory;
+
+      final url = Uri.parse('$baseUrl/products').replace(queryParameters: queryParams);
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> productsJson = data['products'];
+        return productsJson.map((json) => GroceryProduct.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load products');
+      }
+    } catch (e) {
+      print('Error fetching products: $e');
+      return [];
+    }
   }
 
   Future<List<ItemGroup>> fetchCategories() async {
