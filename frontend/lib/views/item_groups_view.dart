@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/grocery_view_model.dart';
-import '../models/item_group.dart';
 
 class ItemGroupsView extends StatefulWidget {
   final double scale;
@@ -42,7 +41,8 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
       backgroundColor: const Color(0xFFFFFDFD),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        elevation: 2,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
           onPressed: () => Navigator.pop(context),

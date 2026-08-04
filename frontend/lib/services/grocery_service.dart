@@ -68,4 +68,20 @@ class GroceryService {
       rethrow;
     }
   }
+
+  Future<List<GroceryProduct>> searchProducts(String query) async {
+    try {
+      final url = Uri.parse('$baseUrl/products/search').replace(queryParameters: {'q': query});
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => GroceryProduct.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to search products');
+      }
+    } catch (e) {
+      print('Error searching products: $e');
+      return [];
+    }
+  }
 }

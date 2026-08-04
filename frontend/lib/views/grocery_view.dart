@@ -14,6 +14,8 @@ class GroceryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewModel = context.watch<GroceryViewModel>();
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -32,17 +34,16 @@ class GroceryView extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final scale = constraints.maxWidth / 402;
-              final viewModel = context.watch<GroceryViewModel>();
-              double navBarHeight = MediaQuery.of(context).padding.bottom;
+              final double navBarHeight = MediaQuery.of(context).padding.bottom;
 
-              if (viewModel.isLoading) {
-                return const Center(child: CircularProgressIndicator());
+              if (viewModel.isLoading && viewModel.visibleProducts.isEmpty) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF1A1D1F)),
+                );
               }
 
               return Container(
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFFFDFD)
-                ),
+                color: const Color(0xFFFFFDFD),
                 child: Stack(
                   children: [
                     // 1. Scrollable Content
@@ -61,6 +62,7 @@ class GroceryView extends StatelessWidget {
                               viewModel: viewModel,
                             ),
                           ),
+                          // Shop By Category Section
                           SliverToBoxAdapter(
                             child: ShopByCategory(
                               scale: scale,
@@ -125,13 +127,14 @@ class GroceryView extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // 2. Blurred Header at the top
+                    // 2. Header at the top
                     Positioned(
                       top: 0,
                       left: 0,
                       right: 0,
                       child: GroceryHeader(scale: scale, viewModel: viewModel),
                     ),
+                    // 3. Bottom Navigation
                     Positioned(
                       bottom: 0,
                       left: 0,
