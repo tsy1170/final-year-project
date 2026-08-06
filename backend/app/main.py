@@ -1,21 +1,22 @@
-from fastapi import FastAPI, Query, Request, HTTPException, status
+from fastapi import FastAPI, Query, Request, HTTPException, status, Depends
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from pathlib import Path
-from pwdlib import PasswordHash
-from .schemas import UserRegister, BasketOptimizationInput
+from typing import Annotated
+from .schemas import AccessTokenResponse, UserRegister, BasketOptimizationInput
 from .database import engine
 from .basket_helpers import load_basket_data, calculate_single_store_recommendation, calculate_multi_store_recommendation
 from .osrm_services import get_road_distance
 from .price_level_helpers import calculate_percentile
+from .auth_service import verify_password, hash_password
+from .auth_dependencies import get_current_user
+from .security import JWT_ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
 import traceback
 
 # Initialize FastAPI app and database connection
 app = FastAPI()
-
-# Initialize password hasher
-password_hasher = PasswordHash.recommended()
 
 # Set up static file serving for product images
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -565,7 +566,7 @@ def add_favourites(item_code: int, user_id: int = Query(...)):
 def register_user(user: UserRegister):
     normalized_email = str(user.email).lower().strip()
     normalized_user_name = str(user.user_name).strip()
-    hashed_password = password_hasher.hash(user.password)
+    hashed_password = hash_password(user.password)
 
     try:
         with engine.begin() as conn:
@@ -599,6 +600,9 @@ def register_user(user: UserRegister):
                 "user": dict(new_user)
             }
 
+    except HTTPException:
+        raise
+
     except IntegrityError:
         raise HTTPException(
             status_code = status.HTTP_409_CONFLICT,
@@ -608,8 +612,84 @@ def register_user(user: UserRegister):
     except Exception as e:
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = f"Failed to register user: {str(e)}"
+            detail = f"Failed to register user"
         )
+
+
+# User login endpoint
+@app.post("/users/login", response_model = AccessTokenResponse)
+def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    # Although OAuth2PasswordRequestForm uses 'username', we treat it as email here
+    normalized_email = str(form_data.username).lower().strip()  
+
+    try:
+        with engine.begin() as conn:
+            user = conn.execute(text(""" 
+                SELECT 
+                    user_id,
+                    user_name,
+                    email,
+                    password_hash
+                FROM users
+                WHERE LOWER(email) = LOWER(:email)
+                LIMIT 1
+            """), {
+                "email": normalized_email
+            }).mappings().first()
+
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Unable to process login"
+        ) from e
+
+    # Use the same error for missing email and wrong password.
+    # To avoids revealing whether an account exists.
+    if user is None:
+        raise HTTPException(
+            status_code = status.HTTP_401_UNAUTHORIZED,
+            detail = "Invalid email or password",
+            headers = {"WWW-Authenticate": "Bearer"}
+        )
+
+    try:
+        password_is_valid = verify_password(form_data.password, user["password_hash"])
+    except Exception as e:
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Unable to verify password"
+        ) from e
+
+    # Use the same error for missing email and wrong password.
+    if not password_is_valid:
+        raise HTTPException(
+            status_code = status.HTTP_401_UNAUTHORIZED,
+            detail = "Invalid email or password",
+            headers = {"WWW-Authenticate": "Bearer"}
+        )
+
+    # Generate JWT access token for the authenticated user
+    access_token = create_access_token(
+        user_id = user["user_id"],
+        email = user["email"],
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "expires_in": JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        "user": {
+            "user_id": user["user_id"],
+            "user_name": user["user_name"],
+            "email": user["email"] 
+        }
+    }
+
+
+# Get the currently logged-in user's information
+@app.get("/users/me")
+def get_logged_in_user(current_user: Annotated[dict, Depends(get_current_user)]):
+    return current_user
 
 
 # Get user favourites products
@@ -670,7 +750,7 @@ def remove_favourite(item_code: int, user_id: int = Query(...)):
 
             return {
                 "message": "Item removed from favourites",
-                "item__code": deleted_item
+                "item_code": deleted_item
             }
         
     except Exception as e:

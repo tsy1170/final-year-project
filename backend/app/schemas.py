@@ -9,6 +9,15 @@ class UserRegister(BaseModel):
 # -----------------------------------------------------------------------------------------
 
 
+# -----------------------Pydantic model for access token response-----------------------
+class AccessTokenResponse(BaseModel):
+    access_token: str = Field(description="JWT access token for authenticated user")
+    token_type: str = Field(description="Type of the token, typically 'bearer'")
+    expires_in: int = Field(description="Time in seconds until the token expires")
+    user: dict = Field(description="User information associated with the token")
+# --------------------------------------------------------------------------------------
+
+
 # ------------------------Pydantic model for basket optimization input----------------------------
 class BasketItemInput(BaseModel):
     item_code: int = Field(gt=0, description="Unique identifier for the product")
