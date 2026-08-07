@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/grocery_product.dart';
 import '../models/item_group.dart';
 import '../models/store_price.dart';
@@ -7,6 +8,7 @@ import '../services/grocery_service.dart';
 
 class GroceryViewModel extends ChangeNotifier {
   final GroceryService _groceryService = GroceryService();
+  final _storage = const FlutterSecureStorage();
 
   List<GroceryProduct> _allProducts = [];
   List<GroceryProduct> get visibleProducts {
@@ -63,15 +65,49 @@ class GroceryViewModel extends ChangeNotifier {
   Position? _currentPosition;
   Position? get currentPosition => _currentPosition;
 
+  // Authentication State
+  bool _isLoggedIn = false;
+  bool get isLoggedIn => _isLoggedIn;
+  
+  String? _userName;
+  String? get userName => _userName;
+
+  String? _userEmail;
+  String? get userEmail => _userEmail;
+
+  bool _isRegistering = false;
+  bool get isRegistering => _isRegistering;
+
+  bool _isLoggingIn = false;
+  bool get isLoggingIn => _isLoggingIn;
+
   GroceryViewModel() {
+    _groceryService.onUnauthorized = () => logout();
     _searchController.addListener(_onSearchChanged);
     loadProducts();
     loadCategories();
     _initLocation();
+    _checkLoginStatus();
   }
 
   void _onSearchChanged() {
     notifyListeners();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final token = await _storage.read(key: 'access_token');
+    if (token != null) {
+      try {
+        final userData = await _groceryService.getCurrentUser(token);
+        _userName = userData['user_name'];
+        _userEmail = userData['email'];
+        _isLoggedIn = true;
+      } catch (e) {
+        debugPrint('Auto-login check failed: $e');
+        await logout();
+      }
+      notifyListeners();
+    }
   }
 
   Future<void> _initLocation() async {
@@ -172,7 +208,7 @@ class GroceryViewModel extends ChangeNotifier {
       // Permissions are denied forever, handle appropriately.
       return Future.error(
         'Location permissions are permanently denied, we cannot request permissions.');
-    } 
+    }
 
     // When we reach here, permissions are granted and we can
     // continue accessing the position of the device.
@@ -185,23 +221,21 @@ class GroceryViewModel extends ChangeNotifier {
     notifyListeners();
     
     try {
-      // Ensure we have a position, otherwise try to fetch it again
       _currentPosition ??= await _determinePosition();
-      
+
       double lat = _currentPosition?.latitude ?? 5.356;
       double lng = _currentPosition?.longitude ?? 100.301;
 
       _selectedProductDetails = await _groceryService.fetchProductDetails(
-        itemCode: itemCode, 
-        lat: lat, 
+        itemCode: itemCode,
+        lat: lat,
         lng: lng
       );
     } catch (e) {
       print("Error loading product details: $e");
-      // Fallback to default Penang coordinates if location fails
       _selectedProductDetails = await _groceryService.fetchProductDetails(
-        itemCode: itemCode, 
-        lat: 5.356, 
+        itemCode: itemCode,
+        lat: 5.356,
         lng: 100.301
       );
     } finally {
@@ -210,13 +244,69 @@ class GroceryViewModel extends ChangeNotifier {
     }
   }
 
-  void setCategory(String value) {
-    _category = value;
+  Future<bool> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    _isRegistering = true;
     notifyListeners();
+    
+    try {
+      final success = await _groceryService.register(
+        userName: name,
+        email: email,
+        password: password,
+      );
+      
+      return success;
+    } catch (e) {
+      // Rethrow to let the view handle the error message
+      rethrow;
+    } finally {
+      _isRegistering = false;
+      notifyListeners();
+    }
   }
 
-  void setSubCategory(String value) {
-    _subCategory = value;
+  Future<bool> login({
+    required String email,
+    required String password,
+  }) async {
+    _isLoggingIn = true;
+    notifyListeners();
+
+    try {
+      final response = await _groceryService.login(
+        email: email,
+        password: password,
+      );
+
+      final token = response['access_token'];
+      final userData = response['user'];
+
+      await _storage.write(key: 'access_token', value: token);
+      await _storage.write(key: 'user_name', value: userData['user_name']);
+      await _storage.write(key: 'user_email', value: userData['email']);
+
+      _userName = userData['user_name'];
+      _userEmail = userData['email'];
+      _isLoggedIn = true;
+
+      return true;
+    } catch (e) {
+      rethrow;
+    } finally {
+      _isLoggingIn = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> logout() async {
+    await _storage.deleteAll();
+    _isLoggedIn = false;
+    _userName = null;
+    _userEmail = null;
     notifyListeners();
   }
 

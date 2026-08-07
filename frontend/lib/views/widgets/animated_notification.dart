@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 class AnimatedTopNotification extends StatefulWidget {
   final String message;
+  final bool status;
   final double scale;
   final VoidCallback onDismiss;
 
   const AnimatedTopNotification({
     super.key,
     required this.message,
+    required this.status,
     required this.scale,
     required this.onDismiss,
   });
@@ -92,7 +94,9 @@ class _AnimatedTopNotificationState extends State<AnimatedTopNotification>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.check_circle,
+                        widget.status == true
+                            ? Icons.check_circle
+                            : Icons.error,
                         color: const Color(0xFFFFFDFD),
                         size: 24 * widget.scale,
                       ),
@@ -119,13 +123,14 @@ class _AnimatedTopNotificationState extends State<AnimatedTopNotification>
   }
 }
 
-void showTopNotification(BuildContext context, String message, double scale) {
+void showTopNotification(BuildContext context, String message, bool status, double scale) {
   final overlay = Overlay.of(context);
   late OverlayEntry overlayEntry;
 
   overlayEntry = OverlayEntry(
     builder: (context) => AnimatedTopNotification(
       message: message,
+      status: status,
       scale: scale,
       onDismiss: () => overlayEntry.remove(),
     ),

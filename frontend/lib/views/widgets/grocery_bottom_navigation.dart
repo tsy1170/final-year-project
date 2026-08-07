@@ -23,6 +23,12 @@ class GroceryBottomNavigation extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(24 * scale, 0, 24 * scale, bottomPadding),
       decoration: BoxDecoration(
         color: const Color(0xFFFFFDFD),
+        border: Border(
+          top: BorderSide(
+            color: Colors.grey.withValues(alpha: 0.3),
+            width: 1 * scale
+          )
+        ),
         boxShadow: [
           BoxShadow(
             color: const Color(0x1A000000),
@@ -38,15 +44,15 @@ class GroceryBottomNavigation extends StatelessWidget {
           _NavItem(
             index: 0,
             selectedIndex: selectedIndex,
-            label: 'Grocery',
-            icon: Icons.shopping_cart_outlined,
+            label: 'GROCERY',
+            icon: Icons.local_grocery_store_outlined,
             onTap: onTap,
             scale: scale,
           ),
           _NavItem(
             index: 1,
             selectedIndex: selectedIndex,
-            label: 'Favourites',
+            label: 'FAVOURITES',
             icon: Icons.favorite_border,
             onTap: onTap,
             scale: scale,
@@ -54,15 +60,15 @@ class GroceryBottomNavigation extends StatelessWidget {
           _NavItem(
             index: 2,
             selectedIndex: selectedIndex,
-            label: 'Complaint',
-            icon: Icons.feedback_outlined,
+            label: 'COMPLAINT',
+            icon: Icons.assignment_late_outlined,
             onTap: onTap,
             scale: scale,
           ),
           _NavItem(
             index: 3,
             selectedIndex: selectedIndex,
-            label: 'Profile',
+            label: 'PROFILE',
             icon: Icons.person_outline,
             onTap: onTap,
             scale: scale,
@@ -127,17 +133,17 @@ class _NavItem extends StatelessWidget {
                   width: isSelected ? null : 0,
                   child: isSelected
                       ? Padding(
-                          padding: EdgeInsets.only(left: 8 * scale),
-                          child: Text(
-                            label,
-                            maxLines: 1,
-                            style: TextStyle(
-                              color: const Color(0xFFFFFDFD),
-                              fontSize: 13 * scale,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        )
+                    padding: EdgeInsets.only(left: 8 * scale),
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: const Color(0xFFFFFDFD),
+                        fontSize: 13 * scale,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
                       : const SizedBox.shrink(),
                 ),
               ),

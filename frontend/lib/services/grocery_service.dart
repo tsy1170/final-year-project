@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/grocery_product.dart';
 import '../models/item_group.dart';
@@ -6,9 +7,15 @@ import '../models/store_price.dart';
 
 class GroceryService {
   static const String baseUrl = 'http://192.168.1.111:8000';
+  VoidCallback? onUnauthorized;
+
+  void _handleResponse(http.Response response) {
+    if (response.statusCode == 401) {
+      onUnauthorized?.call();
+    }
+  }
 
   Future<List<GroceryProduct>> demoFetchProducts() async {
-    // Mocking an API call
     return const [
       GroceryProduct(itemCode: 1, name: 'AYAM BERSIH - STANDARD', unit: '1 KG'),
       GroceryProduct(itemCode: 2, name: '100 PLUS (ORIGINAL)', unit: '1.5 L'),
@@ -37,6 +44,7 @@ class GroceryService {
 
       final url = Uri.parse('$baseUrl/products').replace(queryParameters: queryParams);
       final response = await http.get(url);
+      _handleResponse(response);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -54,6 +62,7 @@ class GroceryService {
   Future<List<ItemGroup>> fetchCategories() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/products/categories'));
+      _handleResponse(response);
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> groupsJson = data['item_groups'];
@@ -81,6 +90,7 @@ class GroceryService {
       });
 
       final response = await http.get(url);
+      _handleResponse(response);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return {
@@ -103,6 +113,7 @@ class GroceryService {
     try {
       final url = Uri.parse('$baseUrl/products/search').replace(queryParameters: {'q': query});
       final response = await http.get(url);
+      _handleResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((json) => GroceryProduct.fromJson(json)).toList();
@@ -112,6 +123,89 @@ class GroceryService {
     } catch (e) {
       print('Error searching products: $e');
       return [];
+    }
+  }
+
+  Future<bool> register({
+    required String userName,
+    required String email,
+    required String password,
+  }) async {
+    final url = Uri.parse('$baseUrl/users/register');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'user_name': userName,
+        'email': email,
+        'password': password,
+      }),
+    );
+    _handleResponse(response);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return true;
+    } else {
+      String errorMessage = 'Registration failed';
+      try {
+        final Map<String, dynamic> errorData = json.decode(response.body);
+        if (errorData['detail'] != null) {
+          errorMessage = errorData['detail'].toString();
+        }
+      } catch (e) {
+        // Fallback
+      }
+      throw Exception(errorMessage);
+    }
+  }
+
+  Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  }) async {
+    final url = Uri.parse('$baseUrl/users/login');
+    
+    // OAuth2PasswordRequestForm expects application/x-www-form-urlencoded
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: {
+        'username': email, // backend expects 'username' for OAuth2 form
+        'password': password,
+      },
+    );
+    _handleResponse(response);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      String errorMessage = 'Login failed';
+      try {
+        final Map<String, dynamic> errorData = json.decode(response.body);
+        if (errorData['detail'] != null) {
+          errorMessage = errorData['detail'].toString();
+        }
+      } catch (e) {
+        // Fallback
+      }
+      throw Exception(errorMessage);
+    }
+  }
+
+  Future<Map<String, dynamic>> getCurrentUser(String token) async {
+    final url = Uri.parse('$baseUrl/users/me');
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+    _handleResponse(response);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to fetch current user');
     }
   }
 }

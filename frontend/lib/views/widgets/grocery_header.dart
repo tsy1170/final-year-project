@@ -14,7 +14,15 @@ class GroceryHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: 160 * scale,
-      color: const Color(0xFFFFFDFD),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFDFD),
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.grey.withValues(alpha: 0.3),
+            width: 1 * scale
+          )
+        )
+      ),
       child: Stack(
         children: [
           Positioned(

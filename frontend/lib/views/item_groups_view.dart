@@ -50,7 +50,7 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'All Categories',
+          'ALL CATEGORIES',
           style: TextStyle(
             color: const Color(0xFF1A1D1F),
             fontSize: 18 * widget.scale,

@@ -255,6 +255,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                       showTopNotification(
                         context,
                         "Successfully Added to Favourites",
+                        true,
                         widget.scale,
                       );
                     }

@@ -54,12 +54,12 @@ class _PromotionSectionState extends State<PromotionSection> {
             15 * widget.scale,
           ),
           child: Text(
-            'Worth Buying',
+            'WORTH BUYING',
             style: TextStyle(
-              fontSize: 18 * widget.scale,
+              fontSize: 17 * widget.scale,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF1A1D1F),
-              letterSpacing: -0.5,
+              letterSpacing: 0,
             ),
           ),
         ),
@@ -83,7 +83,7 @@ class _PromotionSectionState extends State<PromotionSection> {
                 onFavourite: () {
                   widget.viewModel.toggleFavourite(product.name);
                   if (!isFavourite) {
-                    showTopNotification(context, "Successfully Added to Favourites", widget.scale);
+                    showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
                   }
                 },
               );

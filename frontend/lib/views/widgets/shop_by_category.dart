@@ -25,12 +25,12 @@ class ShopByCategory extends StatelessWidget {
             15 * scale,
           ),
             child: Text(
-              "Shop By Category",
+              "SHOP BY CATEGORY",
               style: TextStyle(
-                fontSize: 18 * scale,
+                fontSize: 17 * scale,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF1A1D1F),
-                letterSpacing: -0.5,
+                letterSpacing: 0,
               ),
             ),
         ),

@@ -85,7 +85,7 @@ class GroceryCard extends StatelessWidget {
                             onTap: () {
                               onFavourite();
                               if (!isFavourite) {
-                                showTopNotification(context, "Successfully Added to Favourites", scale);
+                                showTopNotification(context, "Successfully Added to Favourites", true, scale);
                               }
                             },
                             customBorder: const CircleBorder(),
