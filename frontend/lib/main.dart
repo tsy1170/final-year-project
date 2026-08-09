@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'views/grocery_view.dart';
 import 'viewmodels/grocery_view_model.dart';
+import 'viewmodels/auth_view_model.dart';
+import 'services/grocery_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,10 +27,13 @@ void main() {
     ),
   );
 
+  final groceryService = GroceryService();
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => GroceryViewModel()),
+        ChangeNotifierProvider(create: (_) => AuthViewModel(groceryService)),
+        ChangeNotifierProvider(create: (_) => GroceryViewModel(groceryService)),
       ],
       child: const GroceryApp(),
     ),

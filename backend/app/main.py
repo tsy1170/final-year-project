@@ -5,8 +5,9 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from pathlib import Path
 from typing import Annotated
-from .schemas import AccessTokenResponse, UserRegister, BasketOptimizationInput
+from .schemas import AccessTokenResponse, UserRegister, BasketOptimizationInput, FavouriteItem
 from .database import engine
+from .image_url_builder import build_image_url
 from .basket_helpers import load_basket_data, calculate_single_store_recommendation, calculate_multi_store_recommendation
 from .osrm_services import get_road_distance
 from .price_level_helpers import calculate_percentile
@@ -212,13 +213,7 @@ def get_nearby_price_levels(item_code: int,
 
     # get the shared values like item code, store count, price statistics 
     first_row = rows[0]
-
-    item_image_path = first_row["image_path"]
-    item_image_url = None
-
-    if item_image_path:
-        base_url = str(request.base_url).rstrip("/")
-        item_image_url = base_url + item_image_path
+    item_image_url = build_image_url(request, first_row["image_path"])
 
     candidate_stores = []
 
@@ -362,13 +357,7 @@ def search_products(q: str = Query(...), request: Request = None):
         for row in result:
             product = dict(row)
             image_path = product.pop("image_path", None)
-
-            if image_path:
-                base_url = str(request.base_url).rstrip("/") if request is not None else None
-                product["image_url"] = f"{base_url}{image_path}" if base_url else image_path
-            else:
-                product["image_url"] = None
-
+            product["image_url"] = build_image_url(request, image_path)
             search_results.append(product)
 
         return search_results
@@ -447,11 +436,7 @@ def get_product(item_code: int, request: Request):
             detail="Product not found"
         )
 
-    image_url = None
-
-    if product["image_path"]:
-        base_url = str(request.base_url).rstrip("/")
-        image_url = base_url + product["image_path"]
+    image_url = build_image_url(request, product["image_path"])
 
     return {
         "item_code": product["item_code"],
@@ -503,13 +488,7 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
             for row in result:
                 product = dict(row._mapping)
                 image_path = product.pop("image_path", None)
-
-                if image_path:
-                    base_url = str(request.base_url).rstrip("/")
-                    product["image_url"] = base_url + image_path
-                else:
-                    product["image_url"] = None
-
+                product["image_url"] = build_image_url(request, image_path)
                 products.append(product)
 
             return {
@@ -524,40 +503,6 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail = f"Failed to retrieve products: {str(e)}"
-        )
-
-
-# add product to favourites
-@app.get("/favourites/{item_code}")
-def add_favourites(item_code: int, user_id: int = Query(...)):
-    try:
-        with engine.connect() as conn:
-            result = conn.execute(text("""
-                INSERT INTO favourites (user_id, item_code)
-                VALUES (:user_id, :item_code)
-                ON CONFLICT (user_id, item_code) DO NOTHING;
-                RETURNING user_id, item_code;
-            """), {
-                "user_id": user_id,
-                "item_code": item_code
-            })
-
-            favourite = result.mappings().first()
-
-            if favourite is None:
-                return {
-                    "message": "Item already exists in favourites"
-                }
-            else:
-                return {
-                    "message": "Item added to favourites",
-                    "favourite": dict(favourite)
-                }
-    
-    except Exception as e:
-        raise HTTPException(
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = f"Failed to add favourite: {str(e)}"
         )
 
 
@@ -606,7 +551,7 @@ def register_user(user: UserRegister):
     except IntegrityError:
         raise HTTPException(
             status_code = status.HTTP_409_CONFLICT,
-            detail = "An account with this email already exists."
+            detail = "This email already exists."
         )
     
     except Exception as e:
@@ -692,9 +637,46 @@ def get_logged_in_user(current_user: Annotated[dict, Depends(get_current_user)])
     return current_user
 
 
+# add product to favourite
+@app.post("/favourites")
+def add_favourite(request_data: FavouriteItem, 
+                  current_user: Annotated[dict, Depends(get_current_user)]):
+    # get the user_id from JWT payload
+    user_id = current_user["user_id"]
+
+    try: 
+        with engine.begin() as conn:
+            favourite = conn.execute(text("""
+                INSERT INTO favourites(user_id, item_code)
+                VALUES (:user_id, :item_code)
+                ON CONFLICT(user_id, item_code)
+                DO NOTHING
+                RETURNING user_id, item_code
+            """), {
+                "user_id": user_id,
+                "item_code": request_data.item_code
+            }).mappings().first()
+
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Unable to add favourite"
+        ) from e
+
+    if favourite is None:
+        return {
+            "message": "Item is already in favourite"
+        }
+
+    return {
+        "message": "Item already added to favourite",
+        "favourite": dict(favourite)
+    }
+
+
 # Get user favourites products
 @app.get("/favourites")
-def get_user_favourites(user_id: int = Query(...)):
+def get_user_favourites(current_user: Annotated[dict, Depends(get_current_user)], request: Request = None):
     try:
         with engine.connect() as conn:
             result = conn.execute(text("""
@@ -710,14 +692,18 @@ def get_user_favourites(user_id: int = Query(...)):
                 WHERE f.user_id = :user_id     
                 ORDER BY i.item_name ASC;        
             """), {
-                "user_id": user_id
+                "user_id": current_user["user_id"]
             })
 
             favourites = [dict(row._mapping) for row in result]
 
+            for favourite in favourites:
+                image_path = favourite.pop("image_path", None)
+                favourite["image_url"] = build_image_url(request, image_path)
+
             return {
                 "message": "User favourites retrieved successfully",
-                "user_id": user_id,
+                "user_id": current_user["user_id"],
                 "favourites": favourites
             }
         
@@ -730,7 +716,11 @@ def get_user_favourites(user_id: int = Query(...)):
 
 #  Remove product from user favourites
 @app.delete("/favourites/{item_code}")
-def remove_favourite(item_code: int, user_id: int = Query(...)):
+def remove_favourite(item_code: int, 
+                     current_user: Annotated[dict, Depends(get_current_user)]):
+    # get the user_id from JWT payload
+    user_id = current_user["user_id"]
+
     try:
         with engine.begin() as conn:
             deleted_item = conn.execute(text("""
@@ -756,8 +746,8 @@ def remove_favourite(item_code: int, user_id: int = Query(...)):
     except Exception as e:
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = f"Failed to remove favourite: {str(e)}"
-        )
+            detail = f"Failed to remove favourite"
+        ) from e
     
 
 # Check whether a product is in user's favourites

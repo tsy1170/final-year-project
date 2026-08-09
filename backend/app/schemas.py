@@ -18,6 +18,10 @@ class AccessTokenResponse(BaseModel):
 # --------------------------------------------------------------------------------------
 
 
+class FavouriteItem(BaseModel):
+    item_code: int = Field(gt = 0, description="Unique identifier for the product")
+
+
 # ------------------------Pydantic model for basket optimization input----------------------------
 class BasketItemInput(BaseModel):
     item_code: int = Field(gt=0, description="Unique identifier for the product")
