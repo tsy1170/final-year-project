@@ -22,19 +22,6 @@ GET /products/search ✅
 - Parameters:
   - q: str
 
-GET /products/{item_code}/prices
-- Get product prices within a radius of the user location
-- Parameters:
-  - item_code: int
-  - user_lng: float
-  - user_lat: float
-  - radius_km: float
-
-GET /products/{item_code}
-- Get product details by item_code
-- Parameters:
-  - item_code: int
-
 GET /products
 - Get products with optional filters and pagination
 - Parameters:
@@ -43,40 +30,43 @@ GET /products
   - limit: int
   - offset: int
 
-GET /favourites/{item_code}
-- Add product to favourites
-- Parameters:
-  - item_code: int
-  - user_id: int
-
-POST /users/register
+POST /users/register ✅
 - Register a new user
 - Parameters:
   - user: UserRegister object
 
-GET /favourites
-- Get user favourites products
+POST /users/login ✅
+- Log in and receive a JWT access token
 - Parameters:
-  - user_id: int
+  - username: str (email)
+  - password: str
 
-DELETE /favourites/{item_code}
-- Remove product from user favourites
+GET /users/me ✅
+- Get the currently authenticated user's information
+- Authorization: Bearer token required
+
+POST /favourites ✅
+- Add a product to the authenticated user's favourites
+- Authorization: Bearer token required
+- Parameters:
+  - request_data: FavouriteItem object
+
+GET /favourites ✅
+- Get the authenticated user's favourite products
+- Authorization: Bearer token required
+
+DELETE /favourites/{item_code} ✅
+- Remove a product from the authenticated user's favourites
+- Authorization: Bearer token required
 - Parameters:
   - item_code: int
-  - user_id: int
 
-GET /favourites/{item_code}/status
-- Check whether a product is in user favourites
-- Parameters:
-  - item_code: int
-  - user_id: int
-
-POST /favourites/optimize/single-store
+POST /favourites/optimize/single-store 
 - Optimize basket for a single store
 - Parameters:
   - request_data: BasketOptimizationInput object
 
-POST /favourites/optimize/multi-store
+POST /favourites/optimize/multi-store 
 - Optimize basket across multiple stores
 - Parameters:
   - request_data: BasketOptimizationInput object
