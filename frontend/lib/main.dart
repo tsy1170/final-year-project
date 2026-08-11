@@ -33,7 +33,17 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthViewModel(groceryService)),
-        ChangeNotifierProvider(create: (_) => GroceryViewModel(groceryService)),
+        ChangeNotifierProxyProvider<AuthViewModel, GroceryViewModel>(
+          create: (_) => GroceryViewModel(groceryService),
+          update: (_, auth, grocery) {
+            if (auth.isLoggedIn && auth.accessToken != null) {
+              grocery!.loadFavourites(auth.accessToken!);
+            } else {
+              grocery!.clearFavourites();
+            }
+            return grocery;
+          },
+        ),
       ],
       child: const GroceryApp(),
     ),
@@ -50,7 +60,7 @@ class GroceryApp extends StatelessWidget {
       title: 'Grocery',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFFC83A)),
-        // Setting a solid background here ensures the transparent nav bar 
+        // Setting a solid background here ensures the transparent nav bar
         // has a color to show through from the Scaffold.
         scaffoldBackgroundColor: Colors.white,
         fontFamily: 'Montserrat',

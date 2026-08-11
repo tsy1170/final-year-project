@@ -44,7 +44,6 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
-        elevation: 2,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
           onPressed: () => Navigator.pop(context),

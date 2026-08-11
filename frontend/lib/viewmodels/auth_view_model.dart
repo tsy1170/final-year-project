@@ -1,0 +1,113 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../services/grocery_service.dart';
+
+class AuthViewModel extends ChangeNotifier {
+  final GroceryService _groceryService;
+  final _storage = const FlutterSecureStorage();
+
+  bool _isLoggedIn = false;
+  bool get isLoggedIn => _isLoggedIn;
+  
+  String? _userName;
+  String? get userName => _userName;
+
+  String? _userEmail;
+  String? get userEmail => _userEmail;
+
+  String? _accessToken;
+  String? get accessToken => _accessToken;
+
+  bool _isRegistering = false;
+  bool get isRegistering => _isRegistering;
+
+  bool _isLoggingIn = false;
+  bool get isLoggingIn => _isLoggingIn;
+
+  AuthViewModel(this._groceryService) {
+    // Handle global 401 Unauthorized errors
+    _groceryService.onUnauthorized = () => logout();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final token = await _storage.read(key: 'access_token');
+    if (token != null) {
+      try {
+        final userData = await _groceryService.getCurrentUser(token);
+        _userName = userData['user_name'];
+        _userEmail = userData['email'];
+        _accessToken = token;
+        _isLoggedIn = true;
+      } catch (e) {
+        debugPrint('Auto-login check failed: $e');
+        await logout();
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<bool> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    _isRegistering = true;
+    notifyListeners();
+    try {
+      final success = await _groceryService.register(
+        userName: name,
+        email: email,
+        password: password,
+      );
+      return success;
+    } catch (e) {
+      rethrow;
+    } finally {
+      _isRegistering = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> login({
+    required String email,
+    required String password,
+  }) async {
+    _isLoggingIn = true;
+    notifyListeners();
+    try {
+      final response = await _groceryService.login(
+        email: email,
+        password: password,
+      );
+
+      final token = response['access_token'];
+      final userData = response['user'];
+
+      await _storage.write(key: 'access_token', value: token);
+      await _storage.write(key: 'user_name', value: userData['user_name']);
+      await _storage.write(key: 'user_email', value: userData['email']);
+
+      _userName = userData['user_name'];
+      _userEmail = userData['email'];
+      _accessToken = token;
+      _isLoggedIn = true;
+
+      return true;
+    } catch (e) {
+      rethrow;
+    } finally {
+      _isLoggingIn = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> logout() async {
+    await _storage.deleteAll();
+    _isLoggedIn = false;
+    _userName = null;
+    _userEmail = null;
+    _accessToken = null;
+    notifyListeners();
+  }
+}

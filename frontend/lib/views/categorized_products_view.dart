@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/grocery_view_model.dart';
+import '../viewmodels/auth_view_model.dart';
 import 'product_details_view.dart';
 import 'widgets/grocery_card.dart';
+import 'widgets/animated_notification.dart';
 
 class CategorizedProductsView extends StatefulWidget {
   final String group;
@@ -57,13 +59,14 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<GroceryViewModel>();
+    final authViewModel = context.watch<AuthViewModel>();
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFDFD),
       appBar: AppBar(
+        elevation: 2,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
-        elevation: 2,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
           onPressed: () => Navigator.pop(context),
@@ -103,11 +106,21 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final product = viewModel.categorizedProducts[index];
+                            final isFavourite = viewModel.favourites.contains(product.itemCode);
                             return GroceryCard(
                               product: product,
                               scale: widget.scale,
-                              isFavourite: viewModel.favourites.contains(product.name),
-                              onFavourite: () => viewModel.toggleFavourite(product.name),
+                              isFavourite: isFavourite,
+                              onFavourite: () {
+                                if (authViewModel.isLoggedIn) {
+                                  viewModel.toggleFavourite(product.itemCode, authViewModel.accessToken!);
+                                  if (!isFavourite) {
+                                    showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
+                                  }
+                                } else {
+                                  showTopNotification(context, "Please login to add favourites", false, widget.scale);
+                                }
+                              },
                               onTap: () {
                                 Navigator.push(
                                   context,

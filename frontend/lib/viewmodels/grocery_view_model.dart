@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/grocery_product.dart';
 import '../models/item_group.dart';
 import '../models/store_price.dart';
 import '../services/grocery_service.dart';
 
 class GroceryViewModel extends ChangeNotifier {
-  final GroceryService _groceryService = GroceryService();
-  final _storage = const FlutterSecureStorage();
+  final GroceryService _groceryService;
+  String? _lastToken;
 
   List<GroceryProduct> _allProducts = [];
   List<GroceryProduct> get visibleProducts {
@@ -30,8 +29,11 @@ class GroceryViewModel extends ChangeNotifier {
   String _subCategory = 'Sub Category';
   String get subCategory => _subCategory;
 
-  final Set<String> _favourites = <String>{};
-  Set<String> get favourites => _favourites;
+  final Set<int> _favourites = <int>{};
+  Set<int> get favourites => _favourites;
+
+  List<GroceryProduct> _favouriteProducts = [];
+  List<GroceryProduct> get favouriteProducts => _favouriteProducts;
 
   int _selectedIndex = 0;
   int get selectedIndex => _selectedIndex;
@@ -41,6 +43,9 @@ class GroceryViewModel extends ChangeNotifier {
 
   bool _isCategoriesLoading = false;
   bool get isCategoriesLoading => _isCategoriesLoading;
+
+  bool _isFavouritesLoading = false;
+  bool get isFavouritesLoading => _isFavouritesLoading;
 
   // Categorized Products State
   List<GroceryProduct> _categorizedProducts = [];
@@ -65,49 +70,15 @@ class GroceryViewModel extends ChangeNotifier {
   Position? _currentPosition;
   Position? get currentPosition => _currentPosition;
 
-  // Authentication State
-  bool _isLoggedIn = false;
-  bool get isLoggedIn => _isLoggedIn;
-  
-  String? _userName;
-  String? get userName => _userName;
-
-  String? _userEmail;
-  String? get userEmail => _userEmail;
-
-  bool _isRegistering = false;
-  bool get isRegistering => _isRegistering;
-
-  bool _isLoggingIn = false;
-  bool get isLoggingIn => _isLoggingIn;
-
-  GroceryViewModel() {
-    _groceryService.onUnauthorized = () => logout();
+  GroceryViewModel(this._groceryService) {
     _searchController.addListener(_onSearchChanged);
     loadProducts();
     loadCategories();
     _initLocation();
-    _checkLoginStatus();
   }
 
   void _onSearchChanged() {
     notifyListeners();
-  }
-
-  Future<void> _checkLoginStatus() async {
-    final token = await _storage.read(key: 'access_token');
-    if (token != null) {
-      try {
-        final userData = await _groceryService.getCurrentUser(token);
-        _userName = userData['user_name'];
-        _userEmail = userData['email'];
-        _isLoggedIn = true;
-      } catch (e) {
-        debugPrint('Auto-login check failed: $e');
-        await logout();
-      }
-      notifyListeners();
-    }
   }
 
   Future<void> _initLocation() async {
@@ -122,7 +93,6 @@ class GroceryViewModel extends ChangeNotifier {
   Future<void> loadProducts() async {
     _isLoading = true;
     notifyListeners();
-    // Using demoFetchProducts for offline demo in main view
     _allProducts = await _groceryService.demoFetchProducts();
     _isLoading = false;
     notifyListeners();
@@ -133,6 +103,33 @@ class GroceryViewModel extends ChangeNotifier {
     notifyListeners();
     _itemGroups = await _groceryService.fetchCategories();
     _isCategoriesLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> loadFavourites(String token) async {
+    if (_lastToken == token) return; // Prevent redundant loads
+    _lastToken = token;
+    _isFavouritesLoading = true;
+    notifyListeners();
+    
+    try {
+      final favs = await _groceryService.fetchFavourites(token);
+      _favouriteProducts = favs;
+      _favourites.clear();
+      _favourites.addAll(favs.map((e) => e.itemCode));
+    } catch (e) {
+      debugPrint('Error loading favourites: $e');
+      _lastToken = null;
+    } finally {
+      _isFavouritesLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void clearFavourites() {
+    _favourites.clear();
+    _favouriteProducts = [];
+    _lastToken = null;
     notifyListeners();
   }
 
@@ -174,20 +171,12 @@ class GroceryViewModel extends ChangeNotifier {
     }
   }
 
-  /// Determine the current position of the device.
-  ///
-  /// When the location services are not enabled or permissions
-  /// are denied the `Future` will return an error.
   Future<Position> _determinePosition() async {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the
-      // App to enable the location services.
       return Future.error('Location services are disabled.');
     }
 
@@ -195,23 +184,14 @@ class GroceryViewModel extends ChangeNotifier {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        // Permissions are denied, next time you could try
-        // requesting permissions again (this is also where
-        // Android's shouldShowRequestPermissionRationale
-        // returned true. According to Android guidelines
-        // your App should show an explanatory UI now.
         return Future.error('Location permissions are denied');
       }
     }
     
     if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
-      return Future.error(
-        'Location permissions are permanently denied, we cannot request permissions.');
+      return Future.error('Location permissions are permanently denied');
     }
 
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
     return await Geolocator.getCurrentPosition();
   }
 
@@ -222,99 +202,45 @@ class GroceryViewModel extends ChangeNotifier {
     
     try {
       _currentPosition ??= await _determinePosition();
-
       double lat = _currentPosition?.latitude ?? 5.356;
       double lng = _currentPosition?.longitude ?? 100.301;
-
-      _selectedProductDetails = await _groceryService.fetchProductDetails(
-        itemCode: itemCode,
-        lat: lat,
-        lng: lng
-      );
+      _selectedProductDetails = await _groceryService.fetchProductDetails(itemCode: itemCode, lat: lat, lng: lng);
     } catch (e) {
-      print("Error loading product details: $e");
-      _selectedProductDetails = await _groceryService.fetchProductDetails(
-        itemCode: itemCode,
-        lat: 5.356,
-        lng: 100.301
-      );
+      debugPrint("Error loading product details: $e");
+      _selectedProductDetails = await _groceryService.fetchProductDetails(itemCode: itemCode, lat: 5.356, lng: 100.301);
     } finally {
       _isDetailsLoading = false;
       notifyListeners();
     }
   }
 
-  Future<bool> register({
-    required String name,
-    required String email,
-    required String password,
-  }) async {
-    _isRegistering = true;
-    notifyListeners();
-    
-    try {
-      final success = await _groceryService.register(
-        userName: name,
-        email: email,
-        password: password,
-      );
-      
-      return success;
-    } catch (e) {
-      // Rethrow to let the view handle the error message
-      rethrow;
-    } finally {
-      _isRegistering = false;
+  Future<void> toggleFavourite(int itemCode, String token) async {
+    if (_favourites.contains(itemCode)) {
+      _favourites.remove(itemCode);
+      _favouriteProducts.removeWhere((p) => p.itemCode == itemCode);
       notifyListeners();
-    }
-  }
-
-  Future<bool> login({
-    required String email,
-    required String password,
-  }) async {
-    _isLoggingIn = true;
-    notifyListeners();
-
-    try {
-      final response = await _groceryService.login(
-        email: email,
-        password: password,
-      );
-
-      final token = response['access_token'];
-      final userData = response['user'];
-
-      await _storage.write(key: 'access_token', value: token);
-      await _storage.write(key: 'user_name', value: userData['user_name']);
-      await _storage.write(key: 'user_email', value: userData['email']);
-
-      _userName = userData['user_name'];
-      _userEmail = userData['email'];
-      _isLoggedIn = true;
-
-      return true;
-    } catch (e) {
-      rethrow;
-    } finally {
-      _isLoggingIn = false;
+      try {
+        await _groceryService.removeFavourite(token, itemCode);
+      } catch (e) {
+        debugPrint('Error removing favourite: $e');
+      }
+    } else {
+      _favourites.add(itemCode);
       notifyListeners();
+      try {
+        await _groceryService.addFavourite(token, itemCode);
+        // Refresh to get full product info for the Favourites page
+        final favs = await _groceryService.fetchFavourites(token);
+        _favouriteProducts = favs;
+        _favourites.clear();
+        _favourites.addAll(favs.map((e) => e.itemCode));
+        notifyListeners();
+      } catch (e) {
+        _favourites.remove(itemCode);
+        notifyListeners();
+        debugPrint('Error adding favourite: $e');
+      }
     }
-  }
-
-  Future<void> logout() async {
-    await _storage.deleteAll();
-    _isLoggedIn = false;
-    _userName = null;
-    _userEmail = null;
-    notifyListeners();
-  }
-
-  void toggleFavourite(String productName) {
-    if (!_favourites.add(productName)) {
-      _favourites.remove(productName);
-    }
-    notifyListeners();
   }
 
   void setSelectedIndex(int index) {

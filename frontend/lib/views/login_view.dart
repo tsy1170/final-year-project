@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/grocery_view_model.dart';
+import '../viewmodels/auth_view_model.dart';
 import 'widgets/animated_notification.dart';
 import 'register_view.dart';
 
@@ -28,9 +28,9 @@ class _LoginViewState extends State<LoginView> {
 
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      final viewModel = context.read<GroceryViewModel>();
+      final authViewModel = context.read<AuthViewModel>();
       try {
-        final success = await viewModel.login(
+        final success = await authViewModel.login(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
@@ -103,7 +103,7 @@ class _LoginViewState extends State<LoginView> {
                 },
               ),
               SizedBox(height: 40 * widget.scale),
-              context.watch<GroceryViewModel>().isLoggingIn
+              context.watch<AuthViewModel>().isLoggingIn
                   ? const Center(child: CircularProgressIndicator(color: Color(0xFF1A1D1F)))
                   : SizedBox(
                       width: double.infinity,

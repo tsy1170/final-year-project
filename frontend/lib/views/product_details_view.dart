@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../viewmodels/grocery_view_model.dart';
+import '../viewmodels/auth_view_model.dart';
 import '../models/store_price.dart';
 import 'product_map_view.dart';
 import 'widgets/animated_notification.dart';
@@ -33,6 +34,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<GroceryViewModel>();
+    final authViewModel = context.watch<AuthViewModel>();
     final details = viewModel.selectedProductDetails;
 
     return Scaffold(
@@ -237,7 +239,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                 color: const Color(0xFFFFFDFD),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withOpacity(0.1),
                     offset: const Offset(0, -2),
                     blurRadius: 10,
                   ),
@@ -247,17 +249,20 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    final isAdding = viewModel.favourites.contains(
-                      details['item'].name,
-                    );
-                    viewModel.toggleFavourite(details['item'].name);
-                    if (!isAdding) {
-                      showTopNotification(
-                        context,
-                        "Successfully Added to Favourites",
-                        true,
-                        widget.scale,
-                      );
+                    final itemCode = details['item'].itemCode;
+                    final isAdding = !viewModel.favourites.contains(itemCode);
+                    if (authViewModel.isLoggedIn) {
+                      viewModel.toggleFavourite(itemCode, authViewModel.accessToken!);
+                      if (isAdding) {
+                        showTopNotification(
+                          context,
+                          "Successfully Added to Favourites",
+                          true,
+                          widget.scale,
+                        );
+                      }
+                    } else {
+                      showTopNotification(context, "Please login to add favourites", false, widget.scale);
                     }
                   },
                   child: Padding(
@@ -268,20 +273,20 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          viewModel.favourites.contains(details['item'].name)
+                          viewModel.favourites.contains(details['item'].itemCode)
                               ? Icons.favorite
                               : Icons.favorite_border,
                           size: 24 * widget.scale,
                           color:
                               viewModel.favourites.contains(
-                                details['item'].name,
+                                details['item'].itemCode,
                               )
                               ? const Color(0xFFED1A4B)
                               : const Color(0xFF1A1D1F),
                         ),
                         SizedBox(width: 8 * widget.scale),
                         Text(
-                          viewModel.favourites.contains(details['item'].name)
+                          viewModel.favourites.contains(details['item'].itemCode)
                               ? "In Favourites"
                               : "Add to Favourites",
                           style: TextStyle(
@@ -371,11 +376,11 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
           decoration: BoxDecoration(
             border: Border(
               top: BorderSide(
-                color: Colors.black.withValues(alpha: 0.1),
+                color: Colors.black.withOpacity(0.1),
                 width: 1 * widget.scale,
               ),
               bottom: BorderSide(
-                color: Colors.black.withValues(alpha: 0.1),
+                color: Colors.black.withOpacity(0.1),
                 width: 1 * widget.scale,
               ),
             ),

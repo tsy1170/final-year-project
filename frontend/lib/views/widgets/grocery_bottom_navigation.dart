@@ -29,14 +29,6 @@ class GroceryBottomNavigation extends StatelessWidget {
             width: 1 * scale
           )
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0x1A000000),
-            // Shadow appears ABOVE the bar
-            offset: Offset(0, -4 * scale),
-            blurRadius: 15 * scale,
-          ),
-        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

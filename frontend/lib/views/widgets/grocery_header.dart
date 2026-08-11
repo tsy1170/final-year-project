@@ -13,22 +13,16 @@ class GroceryHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 160 * scale,
+      height: 140 * scale,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFDFD),
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.grey.withValues(alpha: 0.3),
-            width: 1 * scale
-          )
-        )
+        color: const Color(0xFFFFFDFD)
       ),
       child: Stack(
         children: [
           Positioned(
             left: 20 * scale,
             right: 20 * scale,
-            top: 45 * scale,
+            top: 40 * scale,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -36,7 +30,7 @@ class GroceryHeader extends StatelessWidget {
                   'GROCERY',
                   style: TextStyle(
                     color: const Color(0xFF1A1D1F),
-                    fontSize: 24 * scale,
+                    fontSize: 22 * scale,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -76,10 +70,10 @@ class GroceryHeader extends StatelessWidget {
             )
           ),
           Positioned(
-            left: 20 * scale,
-            right: 20 * scale,
+            left: 0 * scale,
+            right: 0 * scale,
             top: 95 * scale,
-            height: 46 * scale,
+            height: 45 * scale,
             child: GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -94,21 +88,26 @@ class GroceryHeader extends StatelessWidget {
                   readOnly: true,
                   style: TextStyle(
                     fontSize: 12 * scale,
-                    color: const Color(0xFF354349),
+                    color: const Color(0xFF1A1D1F),
                   ),
                   decoration: InputDecoration(
                     hintText: 'Search Items',
                     hintStyle: TextStyle(
                       fontSize: 12 * scale,
-                      color: const Color(0xFF354349),
-                      letterSpacing: -0.5
+                      color: const Color(0xFF1A1D1F),
+                      letterSpacing: 0
                     ),
                     prefixIcon: Padding(
-                      padding: EdgeInsets.all(10 * scale),
+                      padding: EdgeInsets.fromLTRB(
+                        20 * scale,
+                        10 * scale,
+                        10 * scale,
+                        10 * scale,
+                      ),
                       child: Icon(
                         Icons.search,
                         size: 20 * scale,
-                        color: const Color(0xFF354349),
+                        color: const Color(0xFF1A1D1F),
                       ),
                     ),
                     prefixIconConstraints: BoxConstraints(
@@ -131,8 +130,11 @@ class GroceryHeader extends StatelessWidget {
   }
 }
 
-OutlineInputBorder searchBorder(double scale, {double width = 0.5}) =>
+OutlineInputBorder searchBorder(double scale, {double width = 1.0}) =>
     OutlineInputBorder(
       borderRadius: BorderRadius.circular(1 * scale),
-      borderSide: BorderSide(color: const Color(0x80000000), width: width),
+      borderSide: BorderSide(
+        color: Colors.grey.withValues(alpha: 0.3), 
+        width: width * scale,
+      ),
     );

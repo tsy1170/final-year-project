@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../models/grocery_product.dart';
-import 'animated_notification.dart';
 
 class GroceryCard extends StatelessWidget {
   const GroceryCard({
@@ -26,13 +25,17 @@ class GroceryCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(1 * scale),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x1A000000),
-              offset: Offset(0, 4),
-              blurRadius: 8,
-            ),
-          ],
+          // boxShadow: const [
+          //   BoxShadow(
+          //     color: Color(0x1A000000),
+          //     offset: Offset(0, 4),
+          //     blurRadius: 8,
+          //   ),
+          // ],
+          border: Border.all(
+            color: Colors.grey.withValues(alpha: 0.3),
+            width: 1 * scale
+          )
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,12 +85,7 @@ class GroceryCard extends StatelessWidget {
                         Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            onTap: () {
-                              onFavourite();
-                              if (!isFavourite) {
-                                showTopNotification(context, "Successfully Added to Favourites", true, scale);
-                              }
-                            },
+                            onTap: onFavourite,
                             customBorder: const CircleBorder(),
                             child: Padding(
                               padding: EdgeInsets.all(5 * scale),

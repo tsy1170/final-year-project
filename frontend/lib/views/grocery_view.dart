@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/grocery_view_model.dart';
+import '../viewmodels/auth_view_model.dart';
 import 'widgets/promotion_section.dart';
 import 'widgets/shop_by_category.dart';
 import 'widgets/grocery_card.dart';
 import 'widgets/grocery_bottom_navigation.dart';
 import 'widgets/grocery_header.dart';
+import 'widgets/animated_notification.dart';
 import 'product_details_view.dart';
 import 'profile_view.dart';
+import 'favourite_view.dart';
 
 class GroceryView extends StatefulWidget {
   const GroceryView({super.key});
@@ -23,7 +26,6 @@ class _GroceryViewState extends State<GroceryView> {
   @override
   void initState() {
     super.initState();
-    // Initialize PageController with the current index from the ViewModel
     final viewModel = context.read<GroceryViewModel>();
     _pageController = PageController(initialPage: viewModel.selectedIndex);
   }
@@ -37,13 +39,14 @@ class _GroceryViewState extends State<GroceryView> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<GroceryViewModel>();
+    final authViewModel = context.watch<AuthViewModel>();
 
-    // Synchronize PageView position with ViewModel's selectedIndex when it changes
     if (_pageController.hasClients) {
       if (_pageController.page?.round() != viewModel.selectedIndex) {
-        _pageController.jumpToPage(
-          viewModel.selectedIndex
-        );
+        _pageController.animateToPage(
+            viewModel.selectedIndex,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubicEmphasized,);
       }
     }
 
@@ -77,9 +80,9 @@ class _GroceryViewState extends State<GroceryView> {
                         controller: _pageController,
                         physics: const NeverScrollableScrollPhysics(), // Navigation is controlled via BottomNav
                         children: [
-                          _buildGroceryPage(context, viewModel, scale, navBarHeight),
-                          _buildSimplePage('Favourites', scale),
-                          _buildSimplePage('Complaint', scale),
+                          _buildGroceryPage(context, viewModel, authViewModel, scale, navBarHeight),
+                          FavouriteView(scale: scale),
+                          _buildSimplePage('COMPLAINT', scale),
                           ProfileView(scale: scale),
                         ],
                       ),
@@ -106,11 +109,9 @@ class _GroceryViewState extends State<GroceryView> {
     );
   }
 
-  /// Builds a simple placeholder page with a consistent header height
   Widget _buildSimplePage(String title, double scale) {
     return Column(
       children: [
-        // Header to maintain height consistency across pages
         Container(
           width: double.infinity,
           height: 160 * scale,
@@ -126,27 +127,24 @@ class _GroceryViewState extends State<GroceryView> {
           ),
         ),
         Expanded(
-          child: Center(
-            child: Text('$title Coming Soon'),
-          ),
+          child: Center(child: Text('$title Coming Soon')),
         ),
       ],
     );
   }
 
-  /// Wraps the Grocery content and its header so they animate together
   Widget _buildGroceryPage(
     BuildContext context, 
-    GroceryViewModel viewModel, 
+    GroceryViewModel viewModel,
+    AuthViewModel authViewModel,
     double scale, 
     double navBarHeight
   ) {
     return Stack(
       children: [
         Positioned.fill(
-          child: _buildGroceryContent(context, viewModel, scale, navBarHeight),
+          child: _buildGroceryContent(context, viewModel, authViewModel, scale, navBarHeight),
         ),
-        // Positioned header inside the page ensures it slides with the page content
         Positioned(
           top: 0,
           left: 0,
@@ -157,10 +155,10 @@ class _GroceryViewState extends State<GroceryView> {
     );
   }
 
-  /// The original grocery scrollable content
   Widget _buildGroceryContent(
     BuildContext context, 
-    GroceryViewModel viewModel, 
+    GroceryViewModel viewModel,
+    AuthViewModel authViewModel,
     double scale, 
     double navBarHeight
   ) {
@@ -197,13 +195,9 @@ class _GroceryViewState extends State<GroceryView> {
             ),
           ),
         ),
+        // The Grid of Products
         SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            6 * scale,
-            0,
-            6 * scale,
-            (80 + 25) * scale + navBarHeight,
-          ),
+          padding: EdgeInsets.fromLTRB(6 * scale, 0, 6 * scale, (80 + 25) * scale + navBarHeight),
           sliver: SliverGrid(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
@@ -217,8 +211,14 @@ class _GroceryViewState extends State<GroceryView> {
                 return GroceryCard(
                   product: product,
                   scale: scale,
-                  isFavourite: viewModel.favourites.contains(product.name),
-                  onFavourite: () => viewModel.toggleFavourite(product.name),
+                  isFavourite: viewModel.favourites.contains(product.itemCode),
+                  onFavourite: () {
+                    if (authViewModel.isLoggedIn) {
+                      viewModel.toggleFavourite(product.itemCode, authViewModel.accessToken!);
+                    } else {
+                      showTopNotification(context, "Please login to add favourites", false, scale);
+                    }
+                  },
                   onTap: () {
                     Navigator.push(
                       context,

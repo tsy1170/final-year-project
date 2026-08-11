@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/grocery_product.dart';
 import '../../viewmodels/grocery_view_model.dart';
+import '../../viewmodels/auth_view_model.dart';
 import 'animated_notification.dart';
 
 class PromotionSection extends StatefulWidget {
@@ -40,6 +42,7 @@ class _PromotionSectionState extends State<PromotionSection> {
 
   @override
   Widget build(BuildContext context) {
+    final authViewModel = context.watch<AuthViewModel>();
     final promoProducts = widget.viewModel.visibleProducts.take(10).toList();
     if (promoProducts.isEmpty) return const SizedBox.shrink();
 
@@ -49,7 +52,7 @@ class _PromotionSectionState extends State<PromotionSection> {
         Padding(
           padding: EdgeInsets.fromLTRB(
             20 * widget.scale,
-            20 * widget.scale,
+            5 * widget.scale,
             20 * widget.scale,
             15 * widget.scale,
           ),
@@ -74,16 +77,23 @@ class _PromotionSectionState extends State<PromotionSection> {
             },
             itemBuilder: (context, index) {
               final product = promoProducts[index % promoProducts.length];
-              final isFavourite = widget.viewModel.favourites.contains(product.name);
+              final isFavourite = widget.viewModel.favourites.contains(product.itemCode);
               
               return _PromotionCard(
                 product: product,
                 scale: widget.scale,
                 isFavourite: isFavourite,
                 onFavourite: () {
-                  widget.viewModel.toggleFavourite(product.name);
-                  if (!isFavourite) {
-                    showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
+                  if (authViewModel.isLoggedIn) {
+                    final token = authViewModel.accessToken;
+                    if (token != null) {
+                      widget.viewModel.toggleFavourite(product.itemCode, token);
+                      if (!isFavourite) {
+                        showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
+                      }
+                    }
+                  } else {
+                    showTopNotification(context, "Please login to add favourites", false, widget.scale);
                   }
                 },
               );
@@ -141,13 +151,13 @@ class _PromotionCard extends StatelessWidget {
           width: 0.5 * scale,
         ),
         borderRadius: BorderRadius.circular(1 * scale),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0x1A000000),
-            offset: Offset(2, 4 * scale),
-            blurRadius: 8 * scale,
-          ),
-        ],
+        // boxShadow: [
+        //   BoxShadow(
+        //     color: const Color(0x1A000000),
+        //     offset: Offset(2, 4 * scale),
+        //     blurRadius: 8 * scale,
+        //   ),
+        // ],
       ),
       child: Stack(
         children: [
@@ -220,7 +230,7 @@ class _PromotionCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 11 * scale,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF1A1D1F).withValues(alpha: 0.6),
+                          color: const Color(0xFF9A9FA5),
                         ),
                       ),
                       const Spacer(),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/grocery_view_model.dart';
+import '../viewmodels/auth_view_model.dart';
 import 'widgets/animated_notification.dart';
 import 'login_view.dart';
 
@@ -33,9 +33,9 @@ class _RegisterViewState extends State<RegisterView> {
 
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
-      final viewModel = context.read<GroceryViewModel>();
+      final authViewModel = context.read<AuthViewModel>();
       try {
-        final success = await viewModel.register(
+        final success = await authViewModel.register(
           name: _usernameController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text,
@@ -43,7 +43,7 @@ class _RegisterViewState extends State<RegisterView> {
 
         if (mounted) {
           if (success) {
-            showTopNotification(context, "Registration Successful!", true, widget.scale);
+            showTopNotification(context, "Registration Successful! Please login.", true, widget.scale);
             // Redirect to Login page after successful registration
             Navigator.pushReplacement(
               context,
@@ -65,12 +65,14 @@ class _RegisterViewState extends State<RegisterView> {
 
   @override
   Widget build(BuildContext context) {
+    final authViewModel = context.watch<AuthViewModel>();
+    
     return Scaffold(
       backgroundColor: const Color(0xFFFFFDFD),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFFDFD),
         surfaceTintColor: Colors.transparent,
-        elevation: 2,
+        elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
           onPressed: () => Navigator.pop(context),
@@ -146,7 +148,7 @@ class _RegisterViewState extends State<RegisterView> {
                 },
               ),
               SizedBox(height: 40 * widget.scale),
-              context.watch<GroceryViewModel>().isRegistering
+              authViewModel.isRegistering
                   ? const Center(child: CircularProgressIndicator(color: Color(0xFF1A1D1F)))
                   : SizedBox(
                       width: double.infinity,

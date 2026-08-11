@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/grocery_view_model.dart';
+import '../viewmodels/auth_view_model.dart';
 import 'register_view.dart';
 import 'login_view.dart';
 
@@ -11,22 +11,22 @@ class ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<GroceryViewModel>();
+    final authViewModel = context.watch<AuthViewModel>();
 
     return Container(
       color: const Color(0xFFFFFDFD),
       child: Column(
         children: [
-          // Profile Header Bar
+          // Profile Header Bar with Settings
           Container(
             width: double.infinity,
-            // height: 100 * scale,
+            height: 90 * scale,
             padding: EdgeInsets.only(
-              top: 45 * scale,
+              top: 40 * scale,
               left: 20 * scale,
-              bottom: 15 * scale,
+              right: 20 * scale,
+              bottom: 10 * scale,
             ),
-            alignment: Alignment.topLeft,
             decoration: BoxDecoration(
               color: const Color(0xFFFFFDFD),
               border: Border(
@@ -36,18 +36,34 @@ class ProfileView extends StatelessWidget {
                 ),
               ),
             ),
-            child: Text(
-              'PROFILE',
-              style: TextStyle(
-                color: const Color(0xFF1A1D1F),
-                fontSize: 24 * scale,
-                fontWeight: FontWeight.w700,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'PROFILE',
+                  style: TextStyle(
+                    color: const Color(0xFF1A1D1F),
+                    fontSize: 22 * scale,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (authViewModel.isLoggedIn)
+                  IconButton(
+                    onPressed: () {},
+                    icon: Icon(
+                      Icons.settings_outlined,
+                      size: 24 * scale,
+                      color: const Color(0xFF1A1D1F),
+                    ),
+                    constraints: const BoxConstraints(),
+                    padding: EdgeInsets.zero,
+                  ),
+              ],
             ),
           ),
           Expanded(
-            child: viewModel.isLoggedIn
-                ? _buildLoggedInUI(context, viewModel)
+            child: authViewModel.isLoggedIn
+                ? _buildLoggedInUI(context, authViewModel)
                 : _buildLoggedOutUI(context),
           ),
         ],
@@ -55,43 +71,234 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  Widget _buildLoggedInUI(BuildContext context, GroceryViewModel viewModel) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.account_circle,
-            size: 80 * scale,
+  void _showLogoutConfirmation(BuildContext context, AuthViewModel viewModel) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        insetPadding: EdgeInsets.symmetric(horizontal: 20 * scale),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(1 * scale),
+            side: BorderSide(color: Colors.grey.withValues(alpha: 0.3), width: 1 * scale)),
+        titlePadding: EdgeInsets.fromLTRB(20 * scale, 15 * scale, 10 * scale, 0),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.logout_rounded, color: const Color(0xFF1A1D1F), size: 20 * scale),
+                SizedBox(width: 7 * scale),
+                Text(
+                  "LOGOUT",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16 * scale,
+                    color: const Color(0xFF1A1D1F),
+                  ),
+                ),
+              ],
+            ),
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: Icon(Icons.close, color: const Color(0xFF1A1D1F), size: 20 * scale),
+              constraints: const BoxConstraints(),
+              padding: EdgeInsets.zero,
+            ),
+          ],
+        ),
+        content: Text(
+          "Are you sure you want to log out?",
+          style: TextStyle(
+            fontSize: 14 * scale,
             color: const Color(0xFF1A1D1F),
           ),
-          SizedBox(height: 20 * scale),
-          Text(
-            'Welcome, ${viewModel.userName}',
-            style: TextStyle(
-              fontSize: 20 * scale,
-              fontWeight: FontWeight.w700,
+        ),
+        actionsPadding: EdgeInsets.fromLTRB(20 * scale, 10 * scale, 20 * scale, 20 * scale),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Cancel",
+              style: TextStyle(
+                color: const Color(0xFF1A1D1F),
+                fontWeight: FontWeight.w600,
+                fontSize: 14 * scale,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              viewModel.logout();
+              Navigator.pop(context);
+            },
+            child: Text(
+              "Confirm",
+              style: TextStyle(
+                color: const Color(0xFFED1A4B),
+                fontWeight: FontWeight.w700,
+                fontSize: 14 * scale,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoggedInUI(BuildContext context, AuthViewModel viewModel) {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: 25 * scale, vertical: 40 * scale),
+      child: Column(
+        children: [
+          // User Information Card
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(20 * scale),
+            decoration: BoxDecoration(
               color: const Color(0xFF1A1D1F),
+              borderRadius: BorderRadius.circular(1 * scale),
+              border: Border.all(
+                color: Colors.grey.withValues(alpha: 0.3),
+                width: 1 * scale,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.account_circle, color: const Color(0xFFFFFDFD), size: 60 * scale),
+                SizedBox(width: 20 * scale),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        viewModel.userName ?? 'User',
+                        style: TextStyle(
+                          fontSize: 18 * scale,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFFFFFDFD),
+                        ),
+                      ),
+                      SizedBox(height: 8 * scale),
+                      Text(
+                        viewModel.userEmail ?? '',
+                        style: TextStyle(
+                          fontSize: 13 * scale,
+                          color: const Color(0xFFFFFDFD),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           SizedBox(height: 5 * scale),
-          Text(
-            '${viewModel.userEmail}',
-            style: TextStyle(
-              fontSize: 14 * scale,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF1A1D1F).withOpacity(0.5),
-            ),
+          // Grid View for items
+          GridView.count(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            crossAxisSpacing: 5 * scale,
+            mainAxisSpacing: 5 * scale,
+            childAspectRatio: 1.0,
+            children: [
+              _buildGridItem(
+                Icons.favorite_border_rounded,
+                'Favourites',
+                'Items you saved',
+                () {},
+              ),
+              _buildGridItem(
+                Icons.notifications_none_rounded,
+                'Notifications',
+                'Notify prices',
+                () {},
+              ),
+              _buildGridItem(
+                Icons.lock_reset_rounded,
+                'Change Password',
+                'Change security',
+                () {},
+              ),
+              _buildGridItem(
+                Icons.assignment_late_outlined,
+                'Complaints',
+                'Submit an complaint',
+                () {},
+              ),
+            ],
           ),
-          SizedBox(height: 40 * scale),
+
+          SizedBox(height: 70 * scale),
+
+          // Logout Button
           _buildButton(
             context,
-            'Logout',
-            () => viewModel.logout(),
-            const Color(0xFFED1A4B),
+            'LOGOUT',
+            () => _showLogoutConfirmation(context, viewModel),
             Colors.white,
+            const Color(0xFFED1A4B),
+            isOutlined: true,
+            icon: Icons.logout_rounded,
           ),
+
+          SizedBox(height: 100 * scale), // Padding for bottom nav
         ],
+      ),
+    );
+  }
+
+  Widget _buildGridItem(IconData icon, String title, String desc, VoidCallback onTap) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.all(16 * scale),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFFDFD),
+            borderRadius: BorderRadius.circular(1 * scale),
+            border: Border.all(
+              color: Colors.grey.withValues(alpha: 0.3),
+              width: 1 * scale,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(8 * scale),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1D1F).withValues(alpha: 0.05),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: const Color(0xFF1A1D1F), size: 22 * scale),
+              ),
+              const Spacer(),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14 * scale,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1A1D1F),
+                ),
+              ),
+              SizedBox(height: 2 * scale),
+              Text(
+                desc,
+                style: TextStyle(
+                  fontSize: 11 * scale,
+                  color: const Color(0xFF1A1D1F).withValues(alpha: 0.5),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -136,7 +343,6 @@ class ProfileView extends StatelessWidget {
                 fontSize: 14 * scale,
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF1A1D1F),
-                letterSpacing: 0
               ),
             ),
           ],
@@ -152,6 +358,7 @@ class ProfileView extends StatelessWidget {
     Color bg,
     Color text, {
     bool isOutlined = false,
+    IconData? icon,
   }) {
     return SizedBox(
       width: double.infinity,
@@ -161,15 +368,21 @@ class ProfileView extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: bg,
           foregroundColor: text,
-          elevation: 0,
           side: isOutlined
-              ? const BorderSide(color: Color(0xFF1A1D1F))
+              ? BorderSide(color: text)
               : BorderSide.none,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(1 * scale),
           ),
+          padding: EdgeInsets.symmetric(horizontal: 20 * scale),
         ),
-        child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        child: Row(
+          mainAxisAlignment: icon != null ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
+          children: [
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+            if (icon != null) Icon(icon, size: 20 * scale),
+          ],
+        ),
       ),
     );
   }
