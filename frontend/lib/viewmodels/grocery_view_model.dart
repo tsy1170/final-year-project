@@ -67,6 +67,16 @@ class GroceryViewModel extends ChangeNotifier {
   bool _isDetailsLoading = false;
   bool get isDetailsLoading => _isDetailsLoading;
 
+  // Optimization State
+  Map<String, dynamic>? _singleStoreOptimization;
+  Map<String, dynamic>? get singleStoreOptimization => _singleStoreOptimization;
+
+  Map<String, dynamic>? _multiStoreOptimization;
+  Map<String, dynamic>? get multiStoreOptimization => _multiStoreOptimization;
+
+  bool _isOptimizationLoading = false;
+  bool get isOptimizationLoading => _isOptimizationLoading;
+
   Position? _currentPosition;
   Position? get currentPosition => _currentPosition;
 
@@ -171,6 +181,73 @@ class GroceryViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> loadProductDetails(int itemCode) async {
+    _isDetailsLoading = true;
+    _selectedProductDetails = null;
+    notifyListeners();
+    
+    try {
+      _currentPosition ??= await _determinePosition();
+      double lat = _currentPosition?.latitude ?? 5.356;
+      double lng = _currentPosition?.longitude ?? 100.301;
+      _selectedProductDetails = await _groceryService.fetchProductDetails(itemCode: itemCode, lat: lat, lng: lng);
+    } catch (e) {
+      debugPrint("Error loading product details: $e");
+      _selectedProductDetails = await _groceryService.fetchProductDetails(itemCode: itemCode, lat: 5.356, lng: 100.301);
+    } finally {
+      _isDetailsLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchSingleStoreOptimization(String token) async {
+    if (_favouriteProducts.isEmpty) return;
+    
+    _isOptimizationLoading = true;
+    _singleStoreOptimization = null;
+    notifyListeners();
+
+    try {
+      _currentPosition ??= await _determinePosition();
+      
+      _singleStoreOptimization = await _groceryService.fetchSingleStoreOptimization(
+        token: token,
+        latitude: _currentPosition!.latitude,
+        longitude: _currentPosition!.longitude,
+        itemCodes: _favouriteProducts.map((p) => p.itemCode).toList(),
+      );
+    } catch (e) {
+      debugPrint('Error fetching optimization: $e');
+    } finally {
+      _isOptimizationLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchMultiStoreOptimization(String token) async {
+    if (_favouriteProducts.isEmpty) return;
+    
+    _isOptimizationLoading = true;
+    _multiStoreOptimization = null;
+    notifyListeners();
+
+    try {
+      _currentPosition ??= await _determinePosition();
+      
+      _multiStoreOptimization = await _groceryService.fetchMultiStoreOptimization(
+        token: token,
+        latitude: _currentPosition!.latitude,
+        longitude: _currentPosition!.longitude,
+        itemCodes: _favouriteProducts.map((p) => p.itemCode).toList(),
+      );
+    } catch (e) {
+      debugPrint('Error fetching multi-store optimization: $e');
+    } finally {
+      _isOptimizationLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<Position> _determinePosition() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -193,25 +270,6 @@ class GroceryViewModel extends ChangeNotifier {
     }
 
     return await Geolocator.getCurrentPosition();
-  }
-
-  Future<void> loadProductDetails(int itemCode) async {
-    _isDetailsLoading = true;
-    _selectedProductDetails = null;
-    notifyListeners();
-    
-    try {
-      _currentPosition ??= await _determinePosition();
-      double lat = _currentPosition?.latitude ?? 5.356;
-      double lng = _currentPosition?.longitude ?? 100.301;
-      _selectedProductDetails = await _groceryService.fetchProductDetails(itemCode: itemCode, lat: lat, lng: lng);
-    } catch (e) {
-      debugPrint("Error loading product details: $e");
-      _selectedProductDetails = await _groceryService.fetchProductDetails(itemCode: itemCode, lat: 5.356, lng: 100.301);
-    } finally {
-      _isDetailsLoading = false;
-      notifyListeners();
-    }
   }
 
   Future<void> toggleFavourite(int itemCode, String token) async {

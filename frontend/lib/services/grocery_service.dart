@@ -19,8 +19,8 @@ class GroceryService {
     return const [
       GroceryProduct(itemCode: 1, name: 'AYAM BERSIH - STANDARD', unit: '1 KG'),
       GroceryProduct(itemCode: 2, name: '100 PLUS (ORIGINAL)', unit: '1.5 L'),
-      GroceryProduct(itemCode: 3, name: 'ANGGUR HIJAU BERBIJI', unit: '1 KG'),
-      GroceryProduct(itemCode: 4, name: 'TIMUN', unit: '1 KG'),
+      GroceryProduct(itemCode: 129, name: 'ANGGUR HIJAU BERBIJI', unit: '1 KG'),
+      GroceryProduct(itemCode: 1550, name: 'TIMUN', unit: '1 KG'),
       GroceryProduct(itemCode: 5, name: 'AYAM BERSIH - STANDARD', unit: '1 KG'),
       GroceryProduct(itemCode: 6, name: '100 PLUS (ORIGINAL)', unit: '1.5 L'),
       GroceryProduct(itemCode: 7, name: 'ANGGUR HIJAU BERBIJI', unit: '1 KG'),
@@ -250,5 +250,69 @@ class GroceryService {
       },
     );
     _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> fetchSingleStoreOptimization({
+    required String token,
+    required double latitude,
+    required double longitude,
+    required List<int> itemCodes,
+    double radiusKm = 10.0,
+    double travelCostPerKm = 0.15,
+  }) async {
+    final url = Uri.parse('$baseUrl/basket-optimizations/single-store');
+    final response = await http.post(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'latitude': latitude,
+        'longitude': longitude,
+        'basket_items': itemCodes.map((code) => {'item_code': code}).toList(),
+        'radius_km': radiusKm,
+        'travel_cost_per_km': travelCostPerKm,
+      }),
+    );
+    _handleResponse(response);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to fetch single store optimization');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchMultiStoreOptimization({
+    required String token,
+    required double latitude,
+    required double longitude,
+    required List<int> itemCodes,
+    double radiusKm = 10.0,
+    double travelCostPerKm = 0.15,
+  }) async {
+    final url = Uri.parse('$baseUrl/basket-optimizations/multi-store');
+    final response = await http.post(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'latitude': latitude,
+        'longitude': longitude,
+        'basket_items': itemCodes.map((code) => {'item_code': code}).toList(),
+        'radius_km': radiusKm,
+        'travel_cost_per_km': travelCostPerKm,
+      }),
+    );
+    _handleResponse(response);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to fetch multi store optimization');
+    }
   }
 }

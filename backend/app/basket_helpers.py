@@ -586,7 +586,7 @@ def calculate_multi_store_recommendation(request_data: BasketOptimizationInput,
             "product_cost": round(product_cost, 2),
             # "store_to_store_distance_km": round(store_to_store_distance_km, 3),
             "estimated_route_distance_km": round(route_distance_km, 3),
-            "travel_cost": travel_cost,
+            "travel_cost": round(travel_cost, 2),
             "total_cost": total_cost
         })
 

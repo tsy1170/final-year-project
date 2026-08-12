@@ -6,6 +6,7 @@ import 'widgets/favourite_item_card.dart';
 import 'product_details_view.dart';
 import 'item_groups_view.dart';
 import 'login_view.dart';
+import 'optimization_view.dart';
 
 class FavouriteView extends StatelessWidget {
   final double scale;
@@ -67,7 +68,7 @@ class FavouriteView extends StatelessWidget {
                           );
                         },
                         icon: Icon(
-                          Icons.add_outlined,
+                          Icons.add_circle_outline_rounded,
                           size: 26 * scale,
                           color: const Color(0xFF1A1D1F),
                         ),
@@ -91,14 +92,14 @@ class FavouriteView extends StatelessWidget {
               left: 0,
               right: 0,
               bottom: 70 * scale + navBarHeight,
-              child: _buildCompareButton(viewModel),
+              child: _buildCompareButton(context, viewModel),
             ),
         ],
       ),
     );
   }
 
-  Widget _buildCompareButton(GroceryViewModel viewModel) {
+  Widget _buildCompareButton(BuildContext context, GroceryViewModel viewModel) {
     return Container(
       width: double.infinity,
       height: 60 * scale,
@@ -116,7 +117,12 @@ class FavouriteView extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-            // Handle compare action
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => OptimizationView(scale: scale),
+              ),
+            );
           },
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 20 * scale),
