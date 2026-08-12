@@ -9,7 +9,7 @@ from .schemas import AccessTokenResponse, UserRegister, BasketOptimizationInput,
 from .database import engine
 from .image_url_builder import build_image_url
 from .basket_helpers import load_basket_data, calculate_single_store_recommendation, calculate_multi_store_recommendation
-from .osrm_services import get_road_distance
+from .osrm_services import get_road_distance, get_road_distance_matrix, filter_stores_by_road_distance
 from .price_level_helpers import calculate_percentile
 from .auth_service import verify_password, hash_password
 from .auth_dependencies import get_current_user
@@ -668,18 +668,53 @@ def remove_favourite(item_code: int,
 # ---------------------------------------------------
 # Single-store basket optimization endpoint
 # ---------------------------------------------------
-@app.post("/favourites/optimize/single-store")
-def optimize_single_store(request_data: BasketOptimizationInput):
+@app.post("/basket-optimizations/single-store")
+def optimize_single_store(request: Request,
+                          request_data: BasketOptimizationInput,
+                          current_user: Annotated[dict, Depends(get_current_user)]):
     (basket_item_codes, item_information, stores) = load_basket_data(request_data)
-    
-    recommendation = calculate_single_store_recommendation(request_data, basket_item_codes, item_information, stores)
+
+    for item in item_information.values():
+        image_path = item.pop("image_path", None)
+        item["image_url"] = build_image_url(request, image_path)
+
+    matrix_result = get_road_distance_matrix(
+        request_data.latitude,
+        request_data.longitude,
+        stores
+    )
+    road_filtered_stores = filter_stores_by_road_distance(
+        stores,
+        matrix_result["distance_matrix"],
+        matrix_result["store_index_by_code"],
+        request_data.radius_km
+    )
+
+    if not road_filtered_stores:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                "Stores were found within the straight-line radius, but none "
+                "are within the selected driving-distance radius."
+            )
+        )
+
+    recommendation = calculate_single_store_recommendation(
+        request_data,
+        basket_item_codes,
+        item_information,
+        road_filtered_stores,
+        matrix_result["distance_matrix"],
+        matrix_result["store_index_by_code"]
+    )
 
     return {
         "basket_summary": {
             "item_count": len(basket_item_codes),
             "radius_km": request_data.radius_km,
             "travel_cost_per_km": request_data.travel_cost_per_km,
-            "candidate_store_count": len(stores)
+            "straight_line_candidate_store_count": len(stores),
+            "road_filtered_store_count": len(road_filtered_stores)
         },
 
         "single-store-recommendation": recommendation
@@ -689,19 +724,56 @@ def optimize_single_store(request_data: BasketOptimizationInput):
 # ---------------------------------------------------
 # Multi-store basket optimization endpoint
 # ---------------------------------------------------
-@app.post("/favourites/optimize/multi-store")
-def optimize_multi_store(request_data: BasketOptimizationInput):
+@app.post("/basket-optimizations/multi-store")
+def optimize_multi_store(request: Request,
+                         request_data: BasketOptimizationInput,
+                         current_user: Annotated[dict, Depends(get_current_user)]):
     (basket_item_codes, item_information, stores) = load_basket_data(request_data)
-    
-    recommendation = calculate_multi_store_recommendation(request_data, basket_item_codes, item_information, stores)
+
+    for item in item_information.values():
+        image_path = item.pop("image_path", None)
+        item["image_url"] = build_image_url(request, image_path)
+
+    matrix_result = get_road_distance_matrix(
+        request_data.latitude,
+        request_data.longitude,
+        stores
+    )
+    road_filtered_stores = filter_stores_by_road_distance(
+        stores,
+        matrix_result["distance_matrix"],
+        matrix_result["store_index_by_code"],
+        request_data.radius_km
+    )
+
+    if not road_filtered_stores:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                "Stores were found within the straight-line radius, but none "
+                "are within the selected driving-distance radius."
+            )
+        )
+
+    recommendation = calculate_multi_store_recommendation(
+        request_data,
+        basket_item_codes,
+        item_information,
+        road_filtered_stores,
+        matrix_result["distance_matrix"],
+        matrix_result["store_index_by_code"]
+    )
 
     return {
         "basket_summary": {
             "item_count": len(basket_item_codes),
             "radius_km": request_data.radius_km,
             "travel_cost_per_km": request_data.travel_cost_per_km,
-            "candidate_store_count": len(stores),
-            "evaluated_pair_count": (len(stores) * (len(stores) - 1)) // 2
+            "straight_line_candidate_store_count": len(stores),
+            "road_filtered_store_count": len(road_filtered_stores),
+            "evaluated_pair_count": (
+                len(road_filtered_stores) * (len(road_filtered_stores) - 1)
+            ) // 2
         },
         "multi_store_recommendation": recommendation
     }

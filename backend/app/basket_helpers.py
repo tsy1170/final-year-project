@@ -5,7 +5,6 @@ from sqlalchemy import text, bindparam
 from sqlalchemy.exc import SQLAlchemyError
 import traceback
 from itertools import combinations
-from math import radians, sin, cos, sqrt, atan2
 from .database import engine
 
 
@@ -27,7 +26,8 @@ def load_basket_data(request_data: BasketOptimizationInput) -> tuple[list[int], 
                     SELECT 
                         item_code,
                         item_name, 
-                        unit
+                        unit,
+                        image_path
                     FROM items 
                     WHERE item_code IN :item_codes
                 """).bindparams(
@@ -168,7 +168,7 @@ def load_basket_data(request_data: BasketOptimizationInput) -> tuple[list[int], 
 
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = f"A database error occurred while retrieving basket optimisation data: {str(e)}"
+            detail = f"A database error occurred while retrieving basket optimisation data"
         )
     
     if not price_rows:
@@ -181,7 +181,8 @@ def load_basket_data(request_data: BasketOptimizationInput) -> tuple[list[int], 
     item_information = {
         row["item_code"]: {
             "item_name": row["item_name"],
-            "unit": row["unit"]
+            "unit": row["unit"],
+            "image_path": row["image_path"]
         }
         for row in item_rows
     }
@@ -234,7 +235,8 @@ def build_missing_items(basket_item_codes: list[int],
             missing_items.append({
                 "item_code": item_code,
                 "item_name": item_information[item_code]["item_name"],
-                "unit": item_information[item_code]["unit"]
+                "unit": item_information[item_code]["unit"],
+                "image_url": item_information[item_code]["image_url"]
             })
 
     return missing_items
@@ -252,7 +254,15 @@ def build_store_information(store: dict,
         "state": store["state"],
         "latitude": store["latitude"],
         "longitude": store["longitude"],
-        "distance_from_user_km": round(store["distance_from_user_km"], 3),
+        "straight_line_distance_from_user_km": round(
+            store["distance_from_user_km"], 3
+        ),
+        "distance_from_user_km": round(
+            store["road_distance_from_user_km"], 3
+        ),
+        "road_distance_from_user_km": round(
+            store["road_distance_from_user_km"], 3
+        ),
         "items": selected_items
     }
     
@@ -261,7 +271,9 @@ def build_store_information(store: dict,
 def calculate_single_store_recommendation(request_data: BasketOptimizationInput,  # entire passed data from user side
                                           basket_item_codes: list[int],  # items passed from user side
                                           item_information: dict[int, dict],   # informations of items that passed from user side
-                                          stores: list[dict]) -> dict:   # Each nearby store holds the available item prices
+                                          stores: list[dict],
+                                          distance_matrix: list[list[float | None]],
+                                          store_index_by_code: dict[int, int]) -> dict:   # Each nearby store holds the available item prices
     total_item_count = len(basket_item_codes)
 
     single_store_results = []
@@ -296,6 +308,7 @@ def calculate_single_store_recommendation(request_data: BasketOptimizationInput,
                 "item_code": item_code,
                 "item_name": item_information[item_code]["item_name"],
                 "unit": item_information[item_code]["unit"],
+                "image_url": item_information[item_code]["image_url"],
                 "price": round(price_data["price"], 2),
                 "price_date": price_data["price_date"]
             })
@@ -306,19 +319,28 @@ def calculate_single_store_recommendation(request_data: BasketOptimizationInput,
         missing_items = build_missing_items(basket_item_codes, item_information, available_item_codes)
 
 
-        # Calculate route cost
-        route_distance_km = store["distance_from_user_km"] * 2
+        # Calculate User -> Store -> User using directional road distances.
+        store_index = store_index_by_code[store["premise_code"]]
+        outbound_distance_metres = distance_matrix[0][store_index]
+        return_distance_metres = distance_matrix[store_index][0]
+
+        if outbound_distance_metres is None or return_distance_metres is None:
+            continue
+
+        route_distance_km = (
+            outbound_distance_metres + return_distance_metres
+        ) / 1000
         travel_cost = route_distance_km * request_data.travel_cost_per_km
 
         # total product cost plus travel cost
         total_cost = product_cost + travel_cost
 
-        result_status = "complete" if available_item_codes == total_item_count else "partial"
+        result_status = "complete" if available_item_count == total_item_count else "partial"
 
         # saved each single-store recommendations
         single_store_results.append({
             "status": result_status,
-            "recommended_type": "single-store",
+            "recommendation_type": "single-store",
             "available_item_count": available_item_count,
             "total_item_count": total_item_count,
             "coverage_percentage": round((available_item_count/total_item_count) * 100, 2),
@@ -404,40 +426,13 @@ def assign_items_to_store_pair(basket_items_codes: list[int],
     return assignments
 
 
-# calculate the distance between 2 points on earth by using haversine formula
-def haversine_distance(latitude_1: float,
-                       longitude_1: float,
-                       latitude_2: float,
-                       longitude_2: float) -> float:
-    # Calculate the straight-line distance between two coordinates in km
-    earth_radius = 6371.0088
-
-    latitude_1_radians = radians(latitude_1)
-    longitude_1_radians = radians(longitude_1)
-
-    latitude_2_radians = radians(latitude_2)
-    longitude_2_radians = radians(longitude_2)
-
-    latitude_difference = latitude_2_radians - latitude_1_radians
-    longitude_difference = longitude_2_radians - longitude_1_radians
-
-    haversine_value = (
-        sin(latitude_difference / 2) ** 2
-        + cos(latitude_1_radians)
-        * cos(latitude_2_radians)
-        * sin(longitude_difference / 2) ** 2
-    )
-
-    central_angle = 2 * atan2(sqrt(haversine_value), sqrt(1 - haversine_value))
-
-    return earth_radius * central_angle
-
-
 # calculate the optimized result for the selected items in multi-store
 def calculate_multi_store_recommendation(request_data: BasketOptimizationInput,
                                          basket_item_codes: list[int],
                                          item_information: dict[int, dict],
-                                         stores: list[dict]) -> dict:
+                                         stores: list[dict],
+                                         distance_matrix: list[list[float | None]],
+                                         store_index_by_code: dict[int, int]) -> dict:
     total_item_count = len(basket_item_codes)
 
     if len(stores) < 2:
@@ -497,6 +492,7 @@ def calculate_multi_store_recommendation(request_data: BasketOptimizationInput,
                 "item_code": item_code,
                 "item_name": item_information[item_code]["item_name"],
                 "unit": item_information[item_code]["unit"],
+                "image_url": item_information[item_code]["image_url"],
                 "price": round(item_price, 2),
                 "price_date": price_data["price_date"]
             })
@@ -507,24 +503,41 @@ def calculate_multi_store_recommendation(request_data: BasketOptimizationInput,
 
         missing_items = build_missing_items(basket_item_codes, item_information, available_item_codes)
 
-        store_to_store_distance_km = haversine_distance(store_1["latitude"],
-                                                        store_1["longitude"],
-                                                        store_2["latitude"],
-                                                        store_2["longitude"])
-        
-        # Multi-store route:
-        #
-        # User -> Store 1 -> Store 2 -> User
-        #
-        # With straight-line distance, reversing the order
-        # gives the same total distance.
-        route_distance_km = store_1["distance_from_user_km"] + store_to_store_distance_km + store_2["distance_from_user_km"]
+        store_1_index = store_index_by_code[store_1_code]
+        store_2_index = store_index_by_code[store_2_code]
 
-        # Show the nearer premise first in the route
-        if store_1["distance_from_user_km"] <= store_2["distance_from_user_km"]:
-            route_order = [store_1_code, store_2_code]
-        else:
-            route_order = [store_2_code, store_1_code]
+        # Road distances are directional, so evaluate both visit orders.
+        route_options = []
+
+        route_1_distances = (
+            distance_matrix[0][store_1_index],
+            distance_matrix[store_1_index][store_2_index],
+            distance_matrix[store_2_index][0]
+        )
+        if all(distance is not None for distance in route_1_distances):
+            route_options.append((
+                sum(route_1_distances) / 1000,
+                [store_1_code, store_2_code]
+            ))
+
+        route_2_distances = (
+            distance_matrix[0][store_2_index],
+            distance_matrix[store_2_index][store_1_index],
+            distance_matrix[store_1_index][0]
+        )
+        if all(distance is not None for distance in route_2_distances):
+            route_options.append((
+                sum(route_2_distances) / 1000,
+                [store_2_code, store_1_code]
+            ))
+
+        if not route_options:
+            continue
+
+        route_distance_km, route_order = min(
+            route_options,
+            key=lambda route: route[0]
+        )
 
         stores_by_code = {
             store_1_code: store_1,
@@ -532,17 +545,28 @@ def calculate_multi_store_recommendation(request_data: BasketOptimizationInput,
         }
 
         recommended_stores = []
+        previous_matrix_index = 0
 
         for premise_code in route_order:
             store = stores_by_code[premise_code]
+            current_matrix_index = store_index_by_code[premise_code]
 
             # get the store information
             store_information = build_store_information(store, items_by_store[premise_code])
+
+            # For the first store this is User -> Store 1. For the second
+            # store this is Store 1 -> Store 2.
+            route_leg_distance_metres = distance_matrix[previous_matrix_index][current_matrix_index]
+            store_information["distance_from_previous_stop_km"] = round(
+                route_leg_distance_metres / 1000,
+                3
+            )
 
             # append a new entry for subtotal (multi-store only)
             store_information["subtotal"] = round(store_subtotals[premise_code], 2)
 
             recommended_stores.append(store_information)
+            previous_matrix_index = current_matrix_index
 
         travel_cost = route_distance_km * request_data.travel_cost_per_km
 
