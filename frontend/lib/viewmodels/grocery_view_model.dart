@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/grocery_product.dart';
 import '../models/item_group.dart';
-import '../models/store_price.dart';
 import '../services/grocery_service.dart';
+import '../services/favourite_service.dart';
+import '../services/optimization_service.dart';
 
 class GroceryViewModel extends ChangeNotifier {
   final GroceryService _groceryService;
+  final FavouriteService _favouriteService;
+  final OptimizationService _optimizationService;
   String? _lastToken;
 
   List<GroceryProduct> _allProducts = [];
+  List<GroceryProduct> get allProducts => _allProducts;
   List<GroceryProduct> get visibleProducts {
     final query = _searchController.text.trim().toLowerCase();
     return _allProducts.where((product) {
@@ -60,6 +64,11 @@ class GroceryViewModel extends ChangeNotifier {
   int _currentOffset = 0;
   final int _pageSize = 20;
 
+  // All Products Pagination State
+  bool _hasMoreAllProducts = true;
+  bool get hasMoreAllProducts => _hasMoreAllProducts;
+  int _allProductsOffset = 0;
+
   // Product Details State
   Map<String, dynamic>? _selectedProductDetails;
   Map<String, dynamic>? get selectedProductDetails => _selectedProductDetails;
@@ -80,7 +89,7 @@ class GroceryViewModel extends ChangeNotifier {
   Position? _currentPosition;
   Position? get currentPosition => _currentPosition;
 
-  GroceryViewModel(this._groceryService) {
+  GroceryViewModel(this._groceryService, this._favouriteService, this._optimizationService) {
     _searchController.addListener(_onSearchChanged);
     loadProducts();
     loadCategories();
@@ -100,12 +109,36 @@ class GroceryViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> loadProducts() async {
-    _isLoading = true;
+  Future<void> loadProducts({bool isRefresh = true}) async {
+    if (isRefresh) {
+      _allProductsOffset = 0;
+      _allProducts = [];
+      _hasMoreAllProducts = true;
+      _isLoading = true;
+    } else {
+      if (!_hasMoreAllProducts || _isLoading) return;
+    }
+
     notifyListeners();
-    _allProducts = await _groceryService.demoFetchProducts();
-    _isLoading = false;
-    notifyListeners();
+
+    try {
+      final newProducts = await _groceryService.fetchProducts(
+        limit: _pageSize,
+        offset: _allProductsOffset,
+      );
+
+      if (newProducts.length < _pageSize) {
+        _hasMoreAllProducts = false;
+      }
+
+      _allProducts.addAll(newProducts);
+      _allProductsOffset += newProducts.length;
+    } catch (e) {
+      debugPrint('Error fetching all products: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> loadCategories() async {
@@ -123,7 +156,7 @@ class GroceryViewModel extends ChangeNotifier {
     notifyListeners();
     
     try {
-      final favs = await _groceryService.fetchFavourites(token);
+      final favs = await _favouriteService.fetchFavourites(token);
       _favouriteProducts = favs;
       _favourites.clear();
       _favourites.addAll(favs.map((e) => e.itemCode));
@@ -210,7 +243,7 @@ class GroceryViewModel extends ChangeNotifier {
     try {
       _currentPosition ??= await _determinePosition();
       
-      _singleStoreOptimization = await _groceryService.fetchSingleStoreOptimization(
+      _singleStoreOptimization = await _optimizationService.fetchSingleStoreOptimization(
         token: token,
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
@@ -226,15 +259,15 @@ class GroceryViewModel extends ChangeNotifier {
 
   Future<void> fetchMultiStoreOptimization(String token) async {
     if (_favouriteProducts.isEmpty) return;
-    
+
     _isOptimizationLoading = true;
     _multiStoreOptimization = null;
     notifyListeners();
 
     try {
       _currentPosition ??= await _determinePosition();
-      
-      _multiStoreOptimization = await _groceryService.fetchMultiStoreOptimization(
+
+      _multiStoreOptimization = await _optimizationService.fetchMultiStoreOptimization(
         token: token,
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
@@ -278,7 +311,7 @@ class GroceryViewModel extends ChangeNotifier {
       _favouriteProducts.removeWhere((p) => p.itemCode == itemCode);
       notifyListeners();
       try {
-        await _groceryService.removeFavourite(token, itemCode);
+        await _favouriteService.removeFavourite(token, itemCode);
       } catch (e) {
         debugPrint('Error removing favourite: $e');
       }
@@ -286,9 +319,9 @@ class GroceryViewModel extends ChangeNotifier {
       _favourites.add(itemCode);
       notifyListeners();
       try {
-        await _groceryService.addFavourite(token, itemCode);
+        await _favouriteService.addFavourite(token, itemCode);
         // Refresh to get full product info for the Favourites page
-        final favs = await _groceryService.fetchFavourites(token);
+        final favs = await _favouriteService.fetchFavourites(token);
         _favouriteProducts = favs;
         _favourites.clear();
         _favourites.addAll(favs.map((e) => e.itemCode));

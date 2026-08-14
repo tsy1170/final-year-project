@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/grocery_product.dart';
 import '../../viewmodels/grocery_view_model.dart';
 import '../../viewmodels/auth_view_model.dart';
+import '../product_details_view.dart';
 import 'animated_notification.dart';
 
 class PromotionSection extends StatefulWidget {
@@ -77,8 +78,10 @@ class _PromotionSectionState extends State<PromotionSection> {
             },
             itemBuilder: (context, index) {
               final product = promoProducts[index % promoProducts.length];
-              final isFavourite = widget.viewModel.favourites.contains(product.itemCode);
-              
+              final isFavourite = widget.viewModel.favourites.contains(
+                product.itemCode,
+              );
+
               return _PromotionCard(
                 product: product,
                 scale: widget.scale,
@@ -89,11 +92,21 @@ class _PromotionSectionState extends State<PromotionSection> {
                     if (token != null) {
                       widget.viewModel.toggleFavourite(product.itemCode, token);
                       if (!isFavourite) {
-                        showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
+                        showTopNotification(
+                          context,
+                          "Successfully Added to Favourites",
+                          true,
+                          widget.scale,
+                        );
                       }
                     }
                   } else {
-                    showTopNotification(context, "Please login to add favourites", false, widget.scale);
+                    showTopNotification(
+                      context,
+                      "Please login to add favourites",
+                      false,
+                      widget.scale,
+                    );
                   }
                 },
               );
@@ -105,7 +118,7 @@ class _PromotionSectionState extends State<PromotionSection> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
             promoProducts.length,
-                (index) => AnimatedContainer(
+            (index) => AnimatedContainer(
               duration: const Duration(milliseconds: 130),
               margin: EdgeInsets.symmetric(horizontal: 2 * widget.scale),
               height: 3 * widget.scale,
@@ -141,154 +154,174 @@ class _PromotionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      margin: EdgeInsets.fromLTRB(4 * scale, 0, 4 * scale, 14 * scale),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(
-          color: Colors.black.withValues(alpha: 0.3),
-          width: 0.5 * scale,
-        ),
-        borderRadius: BorderRadius.circular(1 * scale),
-        // boxShadow: [
-        //   BoxShadow(
-        //     color: const Color(0x1A000000),
-        //     offset: Offset(2, 4 * scale),
-        //     blurRadius: 8 * scale,
-        //   ),
-        // ],
-      ),
-      child: Stack(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 130 * scale,
-                height: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(1 * scale),
-                    bottomLeft: Radius.circular(1 * scale),
-                  ),
-                ),
-                padding: EdgeInsets.all(2 * scale),
-                child: product.imageUrl != null 
-                  ? Image.network(product.imageUrl!, fit: BoxFit.contain)
-                  : Image.asset(
-                      'assets/figma/100_plus.png',
-                      fit: BoxFit.contain,
+    return GestureDetector(
+        onTap: () {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    ProductDetailsView(
+                      itemCode: product.itemCode,
+                      scale: scale,
                     ),
-              ),
-              Expanded(
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(
-                    12 * scale,
-                    12 * scale,
-                    15 * scale,
-                    12 * scale
+              )
+          );
+        },
+        child: Container(
+          clipBehavior: Clip.antiAlias,
+          margin: EdgeInsets.fromLTRB(4 * scale, 0, 4 * scale, 14 * scale),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(
+              color: Colors.black.withValues(alpha: 0.3),
+              width: 0.5 * scale,
+            ),
+            borderRadius: BorderRadius.circular(1 * scale),
+          ),
+          child: Stack(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 130 * scale,
+                    height: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(1 * scale),
+                        bottomLeft: Radius.circular(1 * scale),
+                      ),
+                    ),
+                    padding: EdgeInsets.all(2 * scale),
+                    child:
+                    (product.imageUrl != null && product.imageUrl!.isNotEmpty)
+                        ? Image.network(
+                        product.imageUrl!,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Icon(
+                              Icons.image_not_supported_outlined,
+                              size: 40 * scale,
+                              color: const Color(0xFF9A9FA5),
+                            )
+                    )
+                        : Icon(
+                      Icons.image_outlined,
+                      size: 40 * scale,
+                      color: const Color(0xFF9A9FA5),
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
+                  Expanded(
+                    child: Container(
+                      padding: EdgeInsets.fromLTRB(
+                        12 * scale,
+                        12 * scale,
+                        15 * scale,
+                        12 * scale,
+                      ),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Expanded(
-                            child: Text(
-                              product.name,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12 * scale,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF1A1D1F),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 15 * scale),
-                          Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: onFavourite,
-                              customBorder: const CircleBorder(),
-                                child: Icon(
-                                  isFavourite ? Icons.favorite : Icons.favorite_border,
-                                  size: 24 * scale,
-                                  color: isFavourite
-                                      ? const Color(0xFFED1A4B)
-                                      : const Color(0xFF1A1D1F),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      Text(
-                        product.unit,
-                        style: TextStyle(
-                          fontSize: 11 * scale,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF9A9FA5),
-                        ),
-                      ),
-                      const Spacer(),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Pulau-Pinang Sunshine Mart',
-                                  maxLines: 1,
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  product.name,
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    fontSize: 11 * scale,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF1A1D1F),
-                                  ),
-                                ),
-                                Text(
-                                  'RM 3.50',
-                                  style: TextStyle(
-                                    fontSize: 13 * scale,
+                                    fontSize: 12 * scale,
                                     fontWeight: FontWeight.w700,
                                     color: const Color(0xFF1A1D1F),
                                   ),
                                 ),
-                              ],
+                              ),
+                              SizedBox(width: 15 * scale),
+                              Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: onFavourite,
+                                  customBorder: const CircleBorder(),
+                                  child: Icon(
+                                    isFavourite
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    size: 24 * scale,
+                                    color: isFavourite
+                                        ? const Color(0xFFED1A4B)
+                                        : const Color(0xFF1A1D1F),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            product.unit,
+                            style: TextStyle(
+                              fontSize: 11 * scale,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF9A9FA5),
                             ),
+                          ),
+                          const Spacer(),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Pulau-Pinang Sunshine Mart',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 11 * scale,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF1A1D1F),
+                                      ),
+                                    ),
+                                    Text(
+                                      'RM 3.50',
+                                      style: TextStyle(
+                                        fontSize: 13 * scale,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF1A1D1F),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
+                  ),
+                ],
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                child: Container(
+                  width: 50 * scale,
+                  color: const Color(0xFFED1A4B),
+                  padding: EdgeInsets.symmetric(vertical: 1 * scale),
+                  child: Text(
+                    'Deals',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 9 * scale,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-          Positioned(
-            top: 0,
-            left: 0,
-              child: Container(
-                width: 50 * scale,
-                color: const Color(0xFFED1A4B),
-                padding: EdgeInsets.symmetric(vertical: 1 * scale),
-                child: Text(
-                  'Deals',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 9 * scale,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
+        )
     );
   }
 }

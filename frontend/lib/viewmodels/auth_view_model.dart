@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../services/grocery_service.dart';
+import '../services/auth_service.dart';
 
 class AuthViewModel extends ChangeNotifier {
-  final GroceryService _groceryService;
+  final AuthService _authService;
   final _storage = const FlutterSecureStorage();
 
   bool _isLoggedIn = false;
@@ -24,17 +24,22 @@ class AuthViewModel extends ChangeNotifier {
   bool _isLoggingIn = false;
   bool get isLoggingIn => _isLoggingIn;
 
-  AuthViewModel(this._groceryService) {
-    // Handle global 401 Unauthorized errors
-    _groceryService.onUnauthorized = () => logout();
+  AuthViewModel(this._authService) {
     _checkLoginStatus();
+  }
+
+  // This is the global callback for all services to trigger a logout
+  void handleServiceResponse(int statusCode) {
+    if (statusCode == 401) {
+      logout();
+    }
   }
 
   Future<void> _checkLoginStatus() async {
     final token = await _storage.read(key: 'access_token');
     if (token != null) {
       try {
-        final userData = await _groceryService.getCurrentUser(token);
+        final userData = await _authService.getCurrentUser(token);
         _userName = userData['user_name'];
         _userEmail = userData['email'];
         _accessToken = token;
@@ -55,7 +60,7 @@ class AuthViewModel extends ChangeNotifier {
     _isRegistering = true;
     notifyListeners();
     try {
-      final success = await _groceryService.register(
+      final success = await _authService.register(
         userName: name,
         email: email,
         password: password,
@@ -76,7 +81,7 @@ class AuthViewModel extends ChangeNotifier {
     _isLoggingIn = true;
     notifyListeners();
     try {
-      final response = await _groceryService.login(
+      final response = await _authService.login(
         email: email,
         password: password,
       );

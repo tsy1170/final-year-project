@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'views/grocery_view.dart';
+import 'views/root_view.dart';
 import 'viewmodels/grocery_view_model.dart';
 import 'viewmodels/auth_view_model.dart';
 import 'services/grocery_service.dart';
+import 'services/auth_service.dart';
+import 'services/favourite_service.dart';
+import 'services/optimization_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,24 +20,38 @@ void main() {
       statusBarColor: Colors.transparent,
       systemNavigationBarColor: Colors.transparent,
       systemNavigationBarDividerColor: Colors.transparent,
-
-      // Required for Android 10+ to prevent the system from adding a semi-transparent overlay
       systemNavigationBarContrastEnforced: false,
       systemStatusBarContrastEnforced: false,
-
       statusBarIconBrightness: Brightness.dark,
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
 
+  // Initialize Services
+  final authService = AuthService();
   final groceryService = GroceryService();
+  final favouriteService = FavouriteService();
+  final optimizationService = OptimizationService();
+
+  // Initialize AuthViewModel first as it handles the global auth state
+  final authViewModel = AuthViewModel(authService);
+
+  // Wire up the authentication guard across all services
+  authService.onResponseStatus = authViewModel.handleServiceResponse;
+  groceryService.onResponseStatus = authViewModel.handleServiceResponse;
+  favouriteService.onResponseStatus = authViewModel.handleServiceResponse;
+  optimizationService.onResponseStatus = authViewModel.handleServiceResponse;
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthViewModel(groceryService)),
+        ChangeNotifierProvider<AuthViewModel>.value(value: authViewModel),
         ChangeNotifierProxyProvider<AuthViewModel, GroceryViewModel>(
-          create: (_) => GroceryViewModel(groceryService),
+          create: (_) => GroceryViewModel(
+            groceryService,
+            favouriteService,
+            optimizationService,
+          ),
           update: (_, auth, grocery) {
             if (auth.isLoggedIn && auth.accessToken != null) {
               grocery!.loadFavourites(auth.accessToken!);
@@ -60,13 +77,11 @@ class GroceryApp extends StatelessWidget {
       title: 'Grocery',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFFC83A)),
-        // Setting a solid background here ensures the transparent nav bar
-        // has a color to show through from the Scaffold.
         scaffoldBackgroundColor: Colors.white,
         fontFamily: 'Montserrat',
         useMaterial3: true,
       ),
-      home: const GroceryView(),
+      home: const RootView(),
     );
   }
 }

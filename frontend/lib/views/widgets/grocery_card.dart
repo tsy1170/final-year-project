@@ -25,13 +25,6 @@ class GroceryCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(1 * scale),
-          // boxShadow: const [
-          //   BoxShadow(
-          //     color: Color(0x1A000000),
-          //     offset: Offset(0, 4),
-          //     blurRadius: 8,
-          //   ),
-          // ],
           border: Border.all(
             color: Colors.grey.withValues(alpha: 0.3),
             width: 1 * scale
@@ -42,17 +35,29 @@ class GroceryCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.vertical(
-                top: Radius.circular(12 * scale),
+                top: Radius.circular(1 * scale),
               ),
               child: Container(
                 height: 210 * scale,
                 width: double.infinity,
                 padding: EdgeInsets.all(8 * scale),
-                child: product.imageUrl != null 
-                  ? Image.network(product.imageUrl!, fit: BoxFit.contain)
-                  : Image.asset(
-                      'assets/figma/100_plus.png',
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                ),
+                child: (product.imageUrl != null && product.imageUrl!.isNotEmpty)
+                  ? Image.network(
+                      product.imageUrl!, 
                       fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.image_not_supported_outlined,
+                        size: 40 * scale,
+                        color: const Color(0xFF9A9FA5),
+                      ),
+                    )
+                  : Icon(
+                      Icons.image_outlined,
+                      size: 40 * scale,
+                      color: const Color(0xFF9A9FA5),
                     ),
               ),
             ),

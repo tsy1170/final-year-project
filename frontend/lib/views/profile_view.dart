@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../viewmodels/grocery_view_model.dart';
 import '../viewmodels/auth_view_model.dart';
 import 'register_view.dart';
 import 'login_view.dart';
@@ -147,6 +148,8 @@ class ProfileView extends StatelessWidget {
   }
 
   Widget _buildLoggedInUI(BuildContext context, AuthViewModel viewModel) {
+    final groceryViewModel = context.read<GroceryViewModel>();
+
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: 25 * scale, vertical: 40 * scale),
@@ -210,7 +213,9 @@ class ProfileView extends StatelessWidget {
                 Icons.favorite_border_rounded,
                 'Favourites',
                 'Items you saved',
-                () {},
+                () {
+                  groceryViewModel.setSelectedIndex(1);
+                },
               ),
               _buildGridItem(
                 Icons.notifications_none_rounded,
@@ -228,7 +233,9 @@ class ProfileView extends StatelessWidget {
                 Icons.assignment_late_outlined,
                 'Complaints',
                 'Submit an complaint',
-                () {},
+                () {
+                  groceryViewModel.setSelectedIndex(2);
+                },
               ),
             ],
           ),
