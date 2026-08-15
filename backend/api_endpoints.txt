@@ -22,7 +22,7 @@ GET /products/search ✅
 - Parameters:
   - q: str
 
-GET /products
+GET /products ✅
 - Get products with optional filters and pagination
 - Parameters:
   - item_group: str | None
@@ -61,12 +61,14 @@ DELETE /favourites/{item_code} ✅
 - Parameters:
   - item_code: int
 
-POST /favourites/optimize/single-store 
+POST /favourites/optimize/single-store ✅
 - Optimize basket for a single store
+- Authorization: Bearer token required
 - Parameters:
   - request_data: BasketOptimizationInput object
 
-POST /favourites/optimize/multi-store 
+POST /favourites/optimize/multi-store ✅
 - Optimize basket across multiple stores
+- Authorization: Bearer token required
 - Parameters:
   - request_data: BasketOptimizationInput object

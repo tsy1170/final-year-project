@@ -8,6 +8,19 @@ class UserRegister(BaseModel):
     password: str = Field(min_length=8, max_length=128, description="User's password")
 # -----------------------------------------------------------------------------------------
 
+#  ------------------------Pydantic model for user information editing----------------------------
+class UpdateUsernameInput(BaseModel):
+    user_name: str = Field(min_length=2, max_length=128, description="New Username input")
+
+class UpdateEmailInput(BaseModel):
+    new_email: EmailStr = Field(description="New Email Input")
+    current_password: str = Field(min_length=8, max_length=128)
+
+class UpdatePasswordInput(BaseModel):
+    current_password: str = Field(min_length=8, max_length=128)
+    new_password: str = Field(min_length=8, max_length=128)
+# -------------------------------------------------------------------------------------------------
+
 
 # -----------------------Pydantic model for access token response-----------------------
 class AccessTokenResponse(BaseModel):

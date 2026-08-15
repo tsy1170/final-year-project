@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from pathlib import Path
 from typing import Annotated
 from .schemas import AccessTokenResponse, UserRegister, BasketOptimizationInput, FavouriteItem
+from .schemas import UpdateUsernameInput, UpdateEmailInput, UpdatePasswordInput
 from .database import engine
 from .image_url_builder import build_image_url
 from .basket_helpers import load_basket_data, calculate_single_store_recommendation, calculate_multi_store_recommendation
@@ -202,13 +203,13 @@ def get_nearby_price_levels(item_code: int,
         traceback.print_exc()
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = f"Unable to retrieve nearby item prices: {str(error)}"
+            detail = f"Unable to retrieve nearby item prices"
         )
 
     if not rows:
         raise HTTPException(
             status_code = status.HTTP_404_NOT_FOUND,
-            detail = "No price records for this item were found within the selected radius"
+            detail = "No price records for this item were found"
         )
 
     # get the shared values like item code, store count, price statistics 
@@ -417,8 +418,8 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
     except Exception as e:
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = f"Failed to retrieve products: {str(e)}"
-        )
+            detail = f"Failed to retrieve products"
+        ) from e
 
 
 # User registration endpoint
@@ -550,6 +551,215 @@ def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
 @app.get("/users/me")
 def get_logged_in_user(current_user: Annotated[dict, Depends(get_current_user)]):
     return current_user
+
+
+# Update username
+@app.patch("/users/me/username")
+def update_username(request_data: UpdateUsernameInput,
+                    current_user: Annotated[dict, Depends(get_current_user)]): 
+    user_id = current_user["user_id"]
+
+    normalized_user_name = request_data.user_name.strip()
+
+    if len(normalized_user_name) < 2:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Username must at least contain 2 characters"
+        )
+
+    try:
+        with engine.begin() as conn:
+            updated_user_name = conn.execute(text("""
+                UPDATE users
+                    SET user_name = :user_name
+                    WHERE user_id = :user_id
+                RETURNING user_id, user_name, email
+            """), {
+                "user_name": normalized_user_name,
+                "user_id": user_id
+            }).mappings().first()
+
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to update username"
+        ) from e
+
+    if updated_user_name is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    return {
+        "message": "Username updated successfully",
+        "user": dict(updated_user_name)
+    }
+
+
+# Update user's email
+@app.patch("/users/me/email")
+def update_email(request_data: UpdateEmailInput,
+                  current_user: Annotated[dict, Depends(get_current_user)]):
+    user_id = current_user["user_id"]
+
+    normalized_email = str(request_data.new_email).strip().lower()
+
+    try:
+        with engine.begin() as conn:
+            user = conn.execute(
+                text("""
+                SELECT
+                    user_id,
+                    email,
+                    password_hash
+                FROM users
+                WHERE user_id = :user_id
+                LIMIT 1
+                """),
+                {
+                    "user_id": user_id
+                }
+            ).mappings().first()
+
+            if user is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User not found"
+                )
+
+            password_is_valid = verify_password(
+                request_data.current_password,
+                user["password_hash"]
+            )
+
+            if not password_is_valid:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Current password is incorrect"
+                )
+
+            existing_email = conn.execute(
+                text("""
+                    SELECT user_id
+                    FROM users
+                    WHERE LOWER(email) = :email
+                    AND user_id <> :user_id
+                    LIMIT 1
+                """),
+                {
+                    "email": normalized_email,
+                    "user_id": user_id
+                }
+            ).first()
+
+            if existing_email is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=(
+                        "An account with this email "
+                        "already exists"
+                    )
+                )
+
+            updated_user_email = conn.execute(
+                text("""
+                    UPDATE users
+                    SET email = :email
+                    WHERE user_id = :user_id
+
+                    RETURNING
+                        user_id,
+                        user_name,
+                        email
+                """),
+                {
+                    "email": normalized_email,
+                    "user_id": user_id
+                }
+            ).mappings().first()
+
+    except HTTPException:
+        raise
+
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to update email"
+        ) from e
+
+    return {
+        "message": "Email updated successfully. Please login again",
+        "user": dict(updated_user_email)
+    }
+
+# Update user's password
+@app.patch("/users/me/password")
+def update_password(request_data: UpdatePasswordInput, 
+                    current_user: Annotated[dict, Depends(get_current_user)]):
+    user_id = current_user["user_id"]
+
+    try:
+        with engine.begin() as conn:
+            user = conn.execute(
+                text("""
+                    SELECT password_hash
+                    FROM users
+                    WHERE user_id = :user_id
+                    LIMIT 1
+                """), {
+                    "user_id": user_id
+                }
+            ).mappings().first()
+
+            if user is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User not found"
+                )
+
+            current_password_is_valid = verify_password(request_data.current_password, user["password_hash"])
+
+            if not current_password_is_valid:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Current password is incorrect"
+                )
+
+            if (request_data.current_password == request_data.new_password):
+                 raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        "New password must be different from current password"
+                    )
+                )
+
+            new_password_hash = hash_password(request_data.new_password)
+
+            conn.execute(
+                text("""
+                    UPDATE users
+                    SET password_hash = :password_hash
+                    WHERE user_id = :user_id
+                    RETURNING user_id, user_name, email
+                """),{
+                    "password_hash": new_password_hash,
+                    "user_id": user_id
+                }
+            ).mappings().first()
+
+    except HTTPException:
+        raise
+
+    except SQLAlchemyError as e:
+         raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to update password"
+        ) from e
+
+    return {
+        "message": "Password updated successfully"
+    }
 
 
 # add product to favourite
