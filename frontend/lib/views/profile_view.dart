@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/grocery_view_model.dart';
+import '../viewmodels/navigation_view_model.dart';
 import '../viewmodels/auth_view_model.dart';
 import 'register_view.dart';
 import 'login_view.dart';
@@ -148,7 +148,7 @@ class ProfileView extends StatelessWidget {
   }
 
   Widget _buildLoggedInUI(BuildContext context, AuthViewModel viewModel) {
-    final groceryViewModel = context.read<GroceryViewModel>();
+    final navViewModel = context.read<NavigationViewModel>();
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -214,7 +214,7 @@ class ProfileView extends StatelessWidget {
                 'Favourites',
                 'Items you saved',
                 () {
-                  groceryViewModel.setSelectedIndex(1);
+                  navViewModel.setSelectedIndex(1);
                 },
               ),
               _buildGridItem(
@@ -234,7 +234,7 @@ class ProfileView extends StatelessWidget {
                 'Complaints',
                 'Submit an complaint',
                 () {
-                  groceryViewModel.setSelectedIndex(2);
+                  navViewModel.setSelectedIndex(2);
                 },
               ),
             ],
@@ -373,6 +373,7 @@ class ProfileView extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
+          elevation: 0,
           backgroundColor: bg,
           foregroundColor: text,
           side: isOutlined

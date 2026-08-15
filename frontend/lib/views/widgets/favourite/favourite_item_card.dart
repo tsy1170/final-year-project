@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/grocery_product.dart';
+import '../../../models/grocery_product.dart';
 
 class FavouriteItemCard extends StatelessWidget {
   final GroceryProduct product;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/auth_view_model.dart';
-import 'widgets/animated_notification.dart';
+import 'widgets/common/animated_notification.dart';
 import 'register_view.dart';
 
 class LoginView extends StatefulWidget {

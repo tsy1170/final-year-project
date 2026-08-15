@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 import 'views/root_view.dart';
 import 'viewmodels/grocery_view_model.dart';
 import 'viewmodels/auth_view_model.dart';
+import 'viewmodels/favourite_view_model.dart';
+import 'viewmodels/optimization_view_model.dart';
+import 'viewmodels/navigation_view_model.dart';
+import 'viewmodels/location_view_model.dart';
 import 'services/grocery_service.dart';
 import 'services/auth_service.dart';
 import 'services/favourite_service.dart';
@@ -46,20 +50,28 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthViewModel>.value(value: authViewModel),
-        ChangeNotifierProxyProvider<AuthViewModel, GroceryViewModel>(
-          create: (_) => GroceryViewModel(
-            groceryService,
-            favouriteService,
-            optimizationService,
-          ),
-          update: (_, auth, grocery) {
+        ChangeNotifierProvider<NavigationViewModel>(
+          create: (_) => NavigationViewModel(),
+        ),
+        ChangeNotifierProvider<LocationViewModel>(
+          create: (_) => LocationViewModel(),
+        ),
+        ChangeNotifierProvider<GroceryViewModel>(
+          create: (_) => GroceryViewModel(groceryService),
+        ),
+        ChangeNotifierProxyProvider<AuthViewModel, FavouriteViewModel>(
+          create: (_) => FavouriteViewModel(favouriteService),
+          update: (_, auth, favourite) {
             if (auth.isLoggedIn && auth.accessToken != null) {
-              grocery!.loadFavourites(auth.accessToken!);
+              favourite!.loadFavourites(auth.accessToken!);
             } else {
-              grocery!.clearFavourites();
+              favourite!.clearFavourites();
             }
-            return grocery;
+            return favourite;
           },
+        ),
+        ChangeNotifierProvider<OptimizationViewModel>(
+          create: (_) => OptimizationViewModel(optimizationService),
         ),
       ],
       child: const GroceryApp(),

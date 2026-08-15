@@ -22,7 +22,7 @@ class OptimizationItemRow extends StatelessWidget {
           Container(
             width: 55 * scale,
             height: 55 * scale,
-            padding: EdgeInsets.all(5 * scale),
+            padding: EdgeInsets.all(2 * scale),
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(8 * scale),
@@ -39,8 +39,6 @@ class OptimizationItemRow extends StatelessWidget {
           SizedBox(width: 15 * scale),
           // Name and Unit
           Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(top: 5 * scale),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.start,
@@ -65,7 +63,6 @@ class OptimizationItemRow extends StatelessWidget {
                 ],
               ),
             ),
-          ),
           SizedBox(width: 10 * scale),
           // Price
           Padding(

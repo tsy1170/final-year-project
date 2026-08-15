@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/grocery_view_model.dart';
 import '../viewmodels/auth_view_model.dart';
+import '../viewmodels/favourite_view_model.dart';
 import 'product_details_view.dart';
-import 'widgets/grocery_card.dart';
-import 'widgets/animated_notification.dart';
+import 'widgets/common/grocery_card.dart';
+import 'widgets/common/animated_notification.dart';
 
 class CategorizedProductsView extends StatefulWidget {
   final String group;
@@ -59,6 +60,7 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<GroceryViewModel>();
+    final favouriteViewModel = context.watch<FavouriteViewModel>();
     final authViewModel = context.watch<AuthViewModel>();
 
     return Scaffold(
@@ -106,14 +108,14 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final product = viewModel.categorizedProducts[index];
-                            final isFavourite = viewModel.favourites.contains(product.itemCode);
+                            final isFavourite = favouriteViewModel.favourites.contains(product.itemCode);
                             return GroceryCard(
                               product: product,
                               scale: widget.scale,
                               isFavourite: isFavourite,
                               onFavourite: () {
                                 if (authViewModel.isLoggedIn) {
-                                  viewModel.toggleFavourite(product.itemCode, authViewModel.accessToken!);
+                                  favouriteViewModel.toggleFavourite(product.itemCode, authViewModel.accessToken!);
                                   if (!isFavourite) {
                                     showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
                                   }

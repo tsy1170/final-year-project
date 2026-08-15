@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/grocery_view_model.dart';
 import '../viewmodels/auth_view_model.dart';
-import 'widgets/promotion_section.dart';
-import 'widgets/shop_by_category.dart';
-import 'widgets/grocery_card.dart';
-import 'widgets/grocery_header.dart';
-import 'widgets/animated_notification.dart';
+import '../viewmodels/favourite_view_model.dart';
+import 'widgets/grocery/promotion_section.dart';
+import 'widgets/grocery/shop_by_category.dart';
+import 'widgets/common/grocery_card.dart';
+import 'widgets/grocery/grocery_header.dart';
+import 'widgets/common/animated_notification.dart';
 import 'product_details_view.dart';
 
 class GroceryView extends StatefulWidget {
@@ -43,6 +44,7 @@ class _GroceryViewState extends State<GroceryView> {
   Widget build(BuildContext context) {
     final viewModel = context.watch<GroceryViewModel>();
     final authViewModel = context.watch<AuthViewModel>();
+    final favouriteViewModel = context.watch<FavouriteViewModel>();
     final double navBarHeight = MediaQuery.of(context).padding.bottom;
 
     if (viewModel.isLoading && viewModel.allProducts.isEmpty) {
@@ -58,10 +60,9 @@ class _GroceryViewState extends State<GroceryView> {
             controller: _scrollController,
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // Space for the overlay header
               SliverToBoxAdapter(child: SizedBox(height: 160 * widget.scale)),
               SliverToBoxAdapter(
-                child: PromotionSection(scale: widget.scale, viewModel: viewModel),
+                child: PromotionSection(scale: widget.scale, viewModel: viewModel, favouriteViewModel: favouriteViewModel,),
               ),
               SliverToBoxAdapter(
                 child: ShopByCategory(scale: widget.scale, viewModel: viewModel),
@@ -82,7 +83,6 @@ class _GroceryViewState extends State<GroceryView> {
                   ),
                 ),
               ),
-              // The Grid of Products
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(6 * widget.scale, 0, 6 * widget.scale, 10 * widget.scale),
                 sliver: SliverGrid(
@@ -95,13 +95,17 @@ class _GroceryViewState extends State<GroceryView> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final product = viewModel.allProducts[index];
+                      final isFavourite = favouriteViewModel.favourites.contains(product.itemCode);
                       return GroceryCard(
                         product: product,
                         scale: widget.scale,
-                        isFavourite: viewModel.favourites.contains(product.itemCode),
+                        isFavourite: isFavourite,
                         onFavourite: () {
                           if (authViewModel.isLoggedIn) {
-                            viewModel.toggleFavourite(product.itemCode, authViewModel.accessToken!);
+                            favouriteViewModel.toggleFavourite(product.itemCode, authViewModel.accessToken!);
+                            if (!isFavourite) {
+                              showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
+                            }
                           } else {
                             showTopNotification(context, "Please login to add favourites", false, widget.scale);
                           }

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/grocery_product.dart';
 
 class FavouriteService {
-  static const String baseUrl = 'http://192.168.1.115:8000';
+  static const String baseUrl = 'http://192.168.1.111:8000';
   void Function(int)? onResponseStatus;
 
   FavouriteService({this.onResponseStatus});

@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/grocery_product.dart';
-import '../../viewmodels/grocery_view_model.dart';
-import '../../viewmodels/auth_view_model.dart';
-import '../product_details_view.dart';
-import 'animated_notification.dart';
+import '../../../models/grocery_product.dart';
+import '../../../viewmodels/grocery_view_model.dart';
+import '../../../viewmodels/auth_view_model.dart';
+import '../../../viewmodels/favourite_view_model.dart';
+import '../../product_details_view.dart';
+import '../common/animated_notification.dart';
 
 class PromotionSection extends StatefulWidget {
   final double scale;
   final GroceryViewModel viewModel;
+  final FavouriteViewModel favouriteViewModel;
 
   const PromotionSection({
     super.key,
     required this.scale,
     required this.viewModel,
+    required this.favouriteViewModel,
   });
 
   @override
@@ -78,7 +81,7 @@ class _PromotionSectionState extends State<PromotionSection> {
             },
             itemBuilder: (context, index) {
               final product = promoProducts[index % promoProducts.length];
-              final isFavourite = widget.viewModel.favourites.contains(
+              final isFavourite = widget.favouriteViewModel.favourites.contains(
                 product.itemCode,
               );
 
@@ -90,7 +93,7 @@ class _PromotionSectionState extends State<PromotionSection> {
                   if (authViewModel.isLoggedIn) {
                     final token = authViewModel.accessToken;
                     if (token != null) {
-                      widget.viewModel.toggleFavourite(product.itemCode, token);
+                      widget.favouriteViewModel.toggleFavourite(product.itemCode, token);
                       if (!isFavourite) {
                         showTopNotification(
                           context,

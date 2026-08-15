@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/store_price.dart';
 import '../models/grocery_product.dart';
-import '../viewmodels/grocery_view_model.dart';
+import '../viewmodels/location_view_model.dart';
 
 class ProductMapView extends StatefulWidget {
   final GroceryProduct item;
@@ -61,7 +61,7 @@ class _ProductMapViewState extends State<ProductMapView> {
   @override
   Widget build(BuildContext context) {
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
-    final userPosition = context.read<GroceryViewModel>().currentPosition;
+    final userPosition = context.read<LocationViewModel>().currentPosition;
 
     return Scaffold(
       appBar: AppBar(

@@ -21,7 +21,7 @@ class OptimizationMissingItemRow extends StatelessWidget {
           Container(
             width: 45 * scale,
             height: 45 * scale,
-            padding: EdgeInsets.all(5 * scale),
+            padding: EdgeInsets.all(2 * scale),
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
               borderRadius: BorderRadius.circular(8 * scale),
@@ -37,8 +37,6 @@ class OptimizationMissingItemRow extends StatelessWidget {
           SizedBox(width: 15 * scale),
           // Name and Unit
           Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(top: 5 * scale),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -60,7 +58,7 @@ class OptimizationMissingItemRow extends StatelessWidget {
                 ],
               ),
             ),
-          ),
+
         ],
       ),
     );

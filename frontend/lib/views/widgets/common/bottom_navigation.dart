@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class GroceryBottomNavigation extends StatelessWidget {
-  const GroceryBottomNavigation({
+class BottomNavigation extends StatelessWidget {
+  const BottomNavigation({
     super.key,
     required this.scale,
     required this.selectedIndex,

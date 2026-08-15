@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../viewmodels/grocery_view_model.dart';
 import '../viewmodels/auth_view_model.dart';
+import '../viewmodels/favourite_view_model.dart';
+import '../viewmodels/location_view_model.dart';
 import '../models/store_price.dart';
 import 'product_map_view.dart';
-import 'widgets/animated_notification.dart';
+import 'widgets/common/animated_notification.dart';
 
 class ProductDetailsView extends StatefulWidget {
   final int itemCode;
@@ -25,16 +27,21 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () =>
-          context.read<GroceryViewModel>().loadProductDetails(widget.itemCode),
-    );
+    Future.microtask(() {
+      final location = context.read<LocationViewModel>();
+      context.read<GroceryViewModel>().loadProductDetails(
+        itemCode: widget.itemCode,
+        lat: location.currentPosition?.latitude ?? 5.356,
+        lng: location.currentPosition?.longitude ?? 100.301,
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<GroceryViewModel>();
     final authViewModel = context.watch<AuthViewModel>();
+    final favouriteViewModel = context.watch<FavouriteViewModel>();
     final details = viewModel.selectedProductDetails;
 
     return Scaffold(
@@ -52,7 +59,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          details?['item']?.name ?? 'Loading...',
+          details?['item']?.name ?? (viewModel.isDetailsLoading ? 'Loading...' : 'Error'),
           style: TextStyle(
             color: const Color(0xFF1A1D1F),
             fontSize: 13 * widget.scale,
@@ -60,14 +67,14 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              Icons.map_outlined,
-              color: const Color(0xFF1A1D1F),
-              size: 24 * widget.scale,
-            ),
-            onPressed: () {
-              if (details != null) {
+          if (details != null)
+            IconButton(
+              icon: Icon(
+                Icons.map_outlined,
+                color: const Color(0xFF1A1D1F),
+                size: 24 * widget.scale,
+              ),
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -78,21 +85,67 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                     ),
                   ),
                 );
-              }
-            },
-          ),
+              },
+            ),
           SizedBox(width: 10 * widget.scale),
         ],
       ),
       body: viewModel.isDetailsLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1A1D1F)))
           : details == null
-          ? const Center(child: Text("Failed to load details"))
+          ? Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 40 * widget.scale),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline_rounded,
+                      size: 60 * widget.scale,
+                      color: const Color(0xFF1A1D1F).withOpacity(0.2),
+                    ),
+                    SizedBox(height: 20 * widget.scale),
+                    Text(
+                      viewModel.detailsError ?? "An unexpected error occurred",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 15 * widget.scale,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF1A1D1F),
+                      ),
+                    ),
+                    SizedBox(height: 30 * widget.scale),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50 * widget.scale,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          final location = context.read<LocationViewModel>();
+                          viewModel.loadProductDetails(
+                            itemCode: widget.itemCode,
+                            lat: location.currentPosition?.latitude ?? 5.356,
+                            lng: location.currentPosition?.longitude ?? 100.301,
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1A1D1F),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(1 * widget.scale),
+                          ),
+                        ),
+                        child: const Text('RETRY', style: TextStyle(fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
           : SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product Image
                   Container(
                     width: double.infinity,
                     height: 300 * widget.scale,
@@ -139,7 +192,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                                 IconButton(
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
-                                  visualDensity: VisualDensity.compact, // Removes the internal padding
+                                  visualDensity: VisualDensity.compact,
                                   alignment: Alignment.center,
                                   icon: Icon(
                                     Icons.edit_notifications_outlined,
@@ -162,7 +215,6 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                         ),
                       ),
                       SizedBox(height: 30 * widget.scale),
-                      // Price Summary Row
                       Padding(
                         padding: EdgeInsets.symmetric(
                           horizontal: 45 * widget.scale,
@@ -208,23 +260,9 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                         ),
                       ),
                       SizedBox(height: 30 * widget.scale),
-                      // Price Sections
-                      _buildPriceSection(
-                        "Low Prices",
-                        details['stores'],
-                        "low",
-                        isFirst: true,
-                      ),
-                      _buildPriceSection(
-                        "Medium Prices",
-                        details['stores'],
-                        "medium",
-                      ),
-                      _buildPriceSection(
-                        "High Prices",
-                        details['stores'],
-                        "high",
-                      ),
+                      _buildPriceSection("Low Prices", details['stores'], "low"),
+                      _buildPriceSection("Medium Prices", details['stores'], "medium"),
+                      _buildPriceSection("High Prices", details['stores'], "high"),
                       SizedBox(height: 30 * widget.scale),
                     ],
                   ),
@@ -250,16 +288,11 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                 child: InkWell(
                   onTap: () {
                     final itemCode = details['item'].itemCode;
-                    final isAdding = !viewModel.favourites.contains(itemCode);
                     if (authViewModel.isLoggedIn) {
-                      viewModel.toggleFavourite(itemCode, authViewModel.accessToken!);
+                      final isAdding = !favouriteViewModel.favourites.contains(itemCode);
+                      favouriteViewModel.toggleFavourite(itemCode, authViewModel.accessToken!);
                       if (isAdding) {
-                        showTopNotification(
-                          context,
-                          "Successfully Added to Favourites",
-                          true,
-                          widget.scale,
-                        );
+                        showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
                       }
                     } else {
                       showTopNotification(context, "Please login to add favourites", false, widget.scale);
@@ -273,20 +306,17 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          viewModel.favourites.contains(details['item'].itemCode)
+                          favouriteViewModel.favourites.contains(details['item'].itemCode)
                               ? Icons.favorite
                               : Icons.favorite_border,
                           size: 24 * widget.scale,
-                          color:
-                              viewModel.favourites.contains(
-                                details['item'].itemCode,
-                              )
+                          color: favouriteViewModel.favourites.contains(details['item'].itemCode)
                               ? const Color(0xFFED1A4B)
                               : const Color(0xFF1A1D1F),
                         ),
                         SizedBox(width: 8 * widget.scale),
                         Text(
-                          viewModel.favourites.contains(details['item'].itemCode)
+                          favouriteViewModel.favourites.contains(details['item'].itemCode)
                               ? "In Favourites"
                               : "Add to Favourites",
                           style: TextStyle(
@@ -313,12 +343,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
           Row(
             children: [
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  7 * widget.scale,
-                  0,
-                  8 * widget.scale,
-                  0,
-                ),
+                padding: EdgeInsets.fromLTRB(7 * widget.scale, 0, 8 * widget.scale, 0),
                 child: Container(
                   width: 4 * widget.scale,
                   height: 15 * widget.scale,
@@ -351,23 +376,11 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
     );
   }
 
-  Widget _buildPriceSection(
-    String title,
-    List<StorePrice> allStores,
-    String level, {
-    bool isFirst = false,
-  }) {
+  Widget _buildPriceSection(String title, List<StorePrice> allStores, String level) {
     final stores = allStores.where((s) => s.priceLevel == level).toList();
     if (stores.isEmpty) return const SizedBox.shrink();
 
-    Color levelColor;
-    if (level == 'low') {
-      levelColor = Colors.green;
-    } else if (level == 'medium') {
-      levelColor = Colors.orange;
-    } else {
-      levelColor = Colors.red;
-    }
+    Color levelColor = level == 'low' ? Colors.green : (level == 'medium' ? Colors.orange : Colors.red);
 
     return Column(
       children: [
@@ -375,20 +388,11 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
           width: double.infinity,
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(
-                color: Colors.black.withOpacity(0.1),
-                width: 1 * widget.scale,
-              ),
-              bottom: BorderSide(
-                color: Colors.black.withOpacity(0.1),
-                width: 1 * widget.scale,
-              ),
+              top: BorderSide(color: Colors.black.withOpacity(0.1), width: 1 * widget.scale),
+              bottom: BorderSide(color: Colors.black.withOpacity(0.1), width: 1 * widget.scale),
             ),
           ),
-          padding: EdgeInsets.symmetric(
-            horizontal: 20 * widget.scale,
-            vertical: 25 * widget.scale,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 20 * widget.scale, vertical: 25 * widget.scale),
           child: Row(
             children: [
               Container(
@@ -408,11 +412,8 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
             ],
           ),
         ),
-        // Indented list of stores
         Column(
-          children: stores
-              .map((store) => _buildStoreTile(store, levelColor))
-              .toList(),
+          children: stores.map((store) => _buildStoreTile(store, levelColor)).toList(),
         ),
       ],
     );
@@ -425,10 +426,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
         onTap: () async {
           final String query = Uri.encodeComponent(store.premiseName);
           final Uri geoUrl = Uri.parse("geo:0,0?q=$query");
-          final Uri httpsUrl = Uri.parse(
-            "https://www.google.com/maps/search/?api=1&query=$query",
-          );
-
+          final Uri httpsUrl = Uri.parse("https://www.google.com/maps/search/?api=1&query=$query");
           try {
             if (await canLaunchUrl(geoUrl)) {
               await launchUrl(geoUrl);
@@ -436,22 +434,12 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
               await launchUrl(httpsUrl, mode: LaunchMode.externalApplication);
             }
           } catch (e) {
-            debugPrint("Could not launch maps: $e");
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Could not open Google Maps")),
-              );
-            }
+            if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Could not open maps")));
           }
         },
         child: Container(
           width: double.infinity,
-          padding: EdgeInsets.fromLTRB(
-            40 * widget.scale,
-            20 * widget.scale,
-            20 * widget.scale,
-            20 * widget.scale,
-          ),
+          padding: EdgeInsets.fromLTRB(40 * widget.scale, 20 * widget.scale, 20 * widget.scale, 20 * widget.scale),
           child: Row(
             children: [
               Expanded(
@@ -466,52 +454,20 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                             store.premiseName,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 14 * widget.scale,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1A1D1F),
-                            ),
+                            style: TextStyle(fontSize: 14 * widget.scale, fontWeight: FontWeight.w600, color: const Color(0xFF1A1D1F)),
                           ),
                         ),
-
-                        Icon(
-                          Icons.location_on,
-                          size: 23 * widget.scale,
-                          color: const Color(0xFF1A1D1F),
-                        ),
+                        Icon(Icons.location_on, size: 23 * widget.scale, color: const Color(0xFF1A1D1F)),
                       ],
                     ),
-
                     SizedBox(height: 2 * widget.scale),
-                    Text(
-                      "${store.distance.toStringAsFixed(2)} km away",
-                      style: TextStyle(
-                        fontSize: 12 * widget.scale,
-                        fontWeight: FontWeight.w400,
-                        color: const Color(0xFF1A1D1F),
-                      ),
-                    ),
+                    Text("${store.distance.toStringAsFixed(2)} km away", style: TextStyle(fontSize: 12 * widget.scale, fontWeight: FontWeight.w400, color: const Color(0xFF1A1D1F))),
                     SizedBox(height: 15 * widget.scale),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Updated on: ${store.priceDate}",
-                          style: TextStyle(
-                            fontSize: 12 * widget.scale,
-                            color: Colors.grey,
-                          ),
-                        ),
-
-                        Text(
-                          "RM ${store.price.toStringAsFixed(2)}",
-                          style: TextStyle(
-                            fontSize: 14 * widget.scale,
-                            fontWeight: FontWeight.w600,
-                            color: levelColor,
-                          ),
-                        ),
+                        Text("Updated on: ${store.priceDate}", style: TextStyle(fontSize: 12 * widget.scale, color: Colors.grey)),
+                        Text("RM ${store.price.toStringAsFixed(2)}", style: TextStyle(fontSize: 14 * widget.scale, fontWeight: FontWeight.w600, color: levelColor)),
                       ],
                     ),
                   ],

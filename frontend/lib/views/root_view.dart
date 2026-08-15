@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/grocery_view_model.dart';
+import '../viewmodels/navigation_view_model.dart';
 import 'grocery_view.dart';
 import 'favourite_view.dart';
 import 'profile_view.dart';
-import 'widgets/grocery_bottom_navigation.dart';
+import 'widgets/common/bottom_navigation.dart';
 
 class RootView extends StatefulWidget {
   const RootView({super.key});
@@ -20,8 +20,8 @@ class _RootViewState extends State<RootView> {
   @override
   void initState() {
     super.initState();
-    final viewModel = context.read<GroceryViewModel>();
-    _pageController = PageController(initialPage: viewModel.selectedIndex);
+    final navViewModel = context.read<NavigationViewModel>();
+    _pageController = PageController(initialPage: navViewModel.selectedIndex);
   }
 
   @override
@@ -32,12 +32,12 @@ class _RootViewState extends State<RootView> {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<GroceryViewModel>();
+    final navViewModel = context.watch<NavigationViewModel>();
 
     if (_pageController.hasClients) {
-      if (_pageController.page?.round() != viewModel.selectedIndex) {
+      if (_pageController.page?.round() != navViewModel.selectedIndex) {
         _pageController.animateToPage(
-          viewModel.selectedIndex,
+          navViewModel.selectedIndex,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOutCubicEmphasized,
         );
@@ -86,10 +86,10 @@ class _RootViewState extends State<RootView> {
                       bottom: 0,
                       left: 0,
                       right: 0,
-                      child: GroceryBottomNavigation(
+                      child: BottomNavigation(
                         scale: scale,
-                        selectedIndex: viewModel.selectedIndex,
-                        onTap: viewModel.setSelectedIndex,
+                        selectedIndex: navViewModel.selectedIndex,
+                        onTap: navViewModel.setSelectedIndex,
                       ),
                     ),
                   ],
@@ -110,7 +110,7 @@ class _RootViewState extends State<RootView> {
           height: 160 * scale,
           padding: EdgeInsets.only(top: 45 * scale, left: 20 * scale),
           child: Text(
-            title, 
+            title,
             style: TextStyle(
               fontSize: 24 * scale,
               fontWeight: FontWeight.w700,
@@ -129,4 +129,3 @@ class _RootViewState extends State<RootView> {
     );
   }
 }
-

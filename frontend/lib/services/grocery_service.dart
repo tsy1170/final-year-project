@@ -5,7 +5,7 @@ import '../models/item_group.dart';
 import '../models/store_price.dart';
 
 class GroceryService {
-  static const String baseUrl = 'http://192.168.1.115:8000';
+  static const String baseUrl = 'http://192.168.1.111:8000';
   void Function(int)? onResponseStatus;
 
   GroceryService({this.onResponseStatus});

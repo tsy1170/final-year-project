@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../viewmodels/grocery_view_model.dart';
+import '../../../viewmodels/optimization_view_model.dart';
 import 'optimization_item_row.dart';
 import 'optimization_missing_item_row.dart';
 
 class OptimizationMultiStoreContent extends StatelessWidget {
-  final GroceryViewModel viewModel;
+  final OptimizationViewModel viewModel;
   final double scale;
 
   const OptimizationMultiStoreContent({
@@ -16,7 +16,7 @@ class OptimizationMultiStoreContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (viewModel.isOptimizationLoading) {
+    if (viewModel.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: Color(0xFF1A1D1F)),
       );
