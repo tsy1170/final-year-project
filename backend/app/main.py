@@ -1,4 +1,6 @@
 from fastapi import FastAPI, Query, Request, HTTPException, status, Depends
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import text
@@ -27,6 +29,77 @@ app.mount("/product_images", StaticFiles(directory=IMAGE_DIRECTORY), name="produ
 
 
 # ----------------------------API Endpoints--------------------------------
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    request,
+    exc: RequestValidationError
+):
+    errors = exc.errors()
+
+    for error in errors:
+        location = error["loc"]
+
+        # Email validation
+        if location == ("body", "new_email"):
+            return JSONResponse(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                content={
+                    "detail": "Please enter a valid email address."
+                }
+            )
+
+        # Password validation
+        if location == ("body", "current_password"):
+            if error["type"] == "string_too_short":
+                return JSONResponse(
+                    status_code=422,
+                    content={
+                        "detail": (
+                            "Current password is incorrect"
+                        )
+                    }
+                )
+
+            if error["type"] == "string_too_long":
+                return JSONResponse(
+                    status_code=422,
+                    content={
+                        "detail": (
+                            "Current password is incorrect"
+                        )
+                    }
+                )
+
+        if location == ("body", "new_password"):
+            if error["type"] == "string_too_short":
+                return JSONResponse(
+                    status_code=422,
+                    content={
+                        "detail": (
+                            "New password must be at "
+                            "least 8 characters long."
+                        )
+                    }
+                )
+
+            if error["type"] == "string_too_long":
+                return JSONResponse(
+                    status_code=422,
+                    content={
+                        "detail": (
+                            "New password must not exceed "
+                            "128 characters."
+                        )
+                    }
+                )
+
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": "Invalid request data."
+        }
+    )
+
 # Root endpoint
 @app.get("/")
 def root():
@@ -600,7 +673,7 @@ def update_username(request_data: UpdateUsernameInput,
 # Update user's email
 @app.patch("/users/me/email")
 def update_email(request_data: UpdateEmailInput,
-                  current_user: Annotated[dict, Depends(get_current_user)]):
+                 current_user: Annotated[dict, Depends(get_current_user)]):
     user_id = current_user["user_id"]
 
     normalized_email = str(request_data.new_email).strip().lower()
@@ -637,6 +710,12 @@ def update_email(request_data: UpdateEmailInput,
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Current password is incorrect"
+                )
+
+            if normalized_email == user["email"].lower():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="The new email is the same as current email."
                 )
 
             existing_email = conn.execute(
