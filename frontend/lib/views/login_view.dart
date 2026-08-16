@@ -60,7 +60,7 @@ class _LoginViewState extends State<LoginView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Login',
+          'LOGIN',
           style: TextStyle(
             color: const Color(0xFF1A1D1F),
             fontSize: 18 * widget.scale,
@@ -116,7 +116,7 @@ class _LoginViewState extends State<LoginView> {
                           elevation: 0,
                         ),
                         child: Text(
-                          "Login",
+                          "LOGIN",
                           style: TextStyle(color: Colors.white, fontSize: 16 * widget.scale, fontWeight: FontWeight.w600),
                         ),
                       ),

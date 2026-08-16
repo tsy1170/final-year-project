@@ -3,9 +3,10 @@ import 'package:http/http.dart' as http;
 import '../models/grocery_product.dart';
 import '../models/item_group.dart';
 import '../models/store_price.dart';
+import '../constants/api_constants.dart';
 
 class GroceryService {
-  static const String baseUrl = 'http://192.168.1.111:8000';
+  final String baseUrl = ApiConstants.baseUrl;
   void Function(int)? onResponseStatus;
 
   GroceryService({this.onResponseStatus});

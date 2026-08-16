@@ -24,6 +24,9 @@ class AuthViewModel extends ChangeNotifier {
   bool _isLoggingIn = false;
   bool get isLoggingIn => _isLoggingIn;
 
+  bool _isUpdating = false;
+  bool get isUpdating => _isUpdating;
+
   AuthViewModel(this._authService) {
     _checkLoginStatus();
   }
@@ -114,5 +117,58 @@ class AuthViewModel extends ChangeNotifier {
     _userEmail = null;
     _accessToken = null;
     notifyListeners();
+  }
+
+  Future<void> updateUsername(String newUsername) async {
+    if (_accessToken == null) {
+      throw Exception('Session expired. Please login again.');
+    }
+    _isUpdating = true;
+    notifyListeners();
+    try {
+      final response = await _authService.updateUsername(_accessToken!, newUsername);
+      final userData = response['user'];
+      _userName = userData['user_name'];
+      await _storage.write(key: 'user_name', value: _userName);
+    } catch (e) {
+      rethrow;
+    } finally {
+      _isUpdating = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateEmail(String newEmail, String currentPassword) async {
+    if (_accessToken == null) {
+      throw Exception('Session expired. Please login again.');
+    }
+    _isUpdating = true;
+    notifyListeners();
+    try {
+      await _authService.updateEmail(_accessToken!, newEmail, currentPassword);
+      await logout();
+    } catch (e) {
+      rethrow;
+    } finally {
+      _isUpdating = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updatePassword(String newPassword, String currentPassword) async {
+    if (_accessToken == null) {
+      throw Exception('Session expired. Please login again.');
+    }
+    _isUpdating = true;
+    notifyListeners();
+    try {
+      await _authService.updatePassword(_accessToken!, newPassword, currentPassword);
+      await logout();
+    } catch (e) {
+      rethrow;
+    } finally {
+      _isUpdating = false;
+      notifyListeners();
+    }
   }
 }

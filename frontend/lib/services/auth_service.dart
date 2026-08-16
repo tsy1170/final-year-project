@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../constants/api_constants.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://192.168.1.111:8000';
+  final String baseUrl = ApiConstants.baseUrl;
   void Function(int)? onResponseStatus;
 
   AuthService({this.onResponseStatus});
@@ -91,6 +92,78 @@ class AuthService {
       return json.decode(response.body);
     } else {
       throw Exception('Failed to fetch current user');
+    }
+  }
+
+  Future<Map<String, dynamic>> updateUsername(String token, String newUsername) async {
+    final url = Uri.parse('$baseUrl/users/me/username');
+    final response = await http.patch(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'user_name': newUsername}),
+    );
+    _handleResponse(response);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception(_parseError(response.body, 'Failed to update username'));
+    }
+  }
+
+  Future<Map<String, dynamic>> updateEmail(String token, String newEmail, String currentPassword) async {
+    final url = Uri.parse('$baseUrl/users/me/email');
+    final response = await http.patch(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'new_email': newEmail,
+        'current_password': currentPassword,
+      }),
+    );
+    _handleResponse(response);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception(_parseError(response.body, 'Failed to update email'));
+    }
+  }
+
+  Future<Map<String, dynamic>> updatePassword(String token, String newPassword, String currentPassword) async {
+    final url = Uri.parse('$baseUrl/users/me/password');
+    final response = await http.patch(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'current_password': currentPassword,
+        'new_password': newPassword,
+      }),
+    );
+    _handleResponse(response);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception(_parseError(response.body, 'Failed to update password'));
+    }
+  }
+
+  String _parseError(String responseBody, String defaultMessage) {
+    try {
+      final Map<String, dynamic> errorData = json.decode(responseBody);
+      return errorData['detail']?.toString() ?? defaultMessage;
+    } catch (e) {
+      return defaultMessage;
     }
   }
 }

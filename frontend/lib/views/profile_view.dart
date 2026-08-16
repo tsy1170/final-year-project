@@ -4,6 +4,8 @@ import '../viewmodels/navigation_view_model.dart';
 import '../viewmodels/auth_view_model.dart';
 import 'register_view.dart';
 import 'login_view.dart';
+import 'edit_profile_view.dart';
+import 'change_password_view.dart';
 
 class ProfileView extends StatelessWidget {
   final double scale;
@@ -50,7 +52,14 @@ class ProfileView extends StatelessWidget {
                 ),
                 if (authViewModel.isLoggedIn)
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditProfileView(scale: scale),
+                        ),
+                      );
+                    },
                     icon: Icon(
                       Icons.settings_outlined,
                       size: 24 * scale,
@@ -227,7 +236,14 @@ class ProfileView extends StatelessWidget {
                 Icons.lock_reset_rounded,
                 'Change Password',
                 'Change security',
-                () {},
+                () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChangePasswordView(scale: scale),
+                      )
+                  );
+                },
               ),
               _buildGridItem(
                 Icons.assignment_late_outlined,

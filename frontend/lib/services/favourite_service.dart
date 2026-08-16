@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/grocery_product.dart';
+import '../constants/api_constants.dart';
 
 class FavouriteService {
-  static const String baseUrl = 'http://192.168.1.111:8000';
+  final String baseUrl = ApiConstants.baseUrl;
   void Function(int)? onResponseStatus;
 
   FavouriteService({this.onResponseStatus});

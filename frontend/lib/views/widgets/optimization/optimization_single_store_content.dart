@@ -84,7 +84,7 @@ class OptimizationSingleStoreContent extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: 5 * scale),
+        SizedBox(height: 10 * scale),
         Text(
           store['address'] ?? '',
           style: TextStyle(
