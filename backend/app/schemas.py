@@ -1,3 +1,4 @@
+from datetime import date
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -48,3 +49,26 @@ class BasketOptimizationInput(BaseModel):
     radius_km: float = Field(default=10, gt=0, le=20, description="Search radius in kilometers for finding product prices")
     travel_cost_per_km: float = Field(default=0.15, ge=0, le=10, description="Travel cost per kilometer for the user")
 # ------------------------------------------------------------------------------------------------
+
+# ------------------------Pydantic model for complaints----------------------------
+class CreateComplaintInput(BaseModel):
+    category: str = Field(..., min_length=1, max_length=100)
+    product_name: str = Field(..., min_length=1, max_length=255)
+
+    product_price: float | None = Field(default=None, ge=0)
+    loss_amount: float | None = Field(default=None, ge=0)
+
+    date_issue: date
+
+    premise_type: str | None = Field(default=None, max_length=100)
+    premise_name: str = Field(..., min_length=1, max_length=255)
+
+    phone_no: str | None = Field(default=None, max_length=30)
+    email: EmailStr | None = Field(default=None, max_length=255)
+
+    premise_address: str | None = None
+    postal_code: str | None = Field(default=None, max_length=20)
+    district: str | None = Field(default=None, max_length=100)
+    state: str | None = Field(default=None, max_length=100)
+
+    description: str | None = None

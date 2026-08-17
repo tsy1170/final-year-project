@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, Request, HTTPException, status, Depends
+from fastapi import FastAPI, File, Query, Request, HTTPException, status, Depends, UploadFile, Form
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from pathlib import Path
 from typing import Annotated
 from .schemas import AccessTokenResponse, UserRegister, BasketOptimizationInput, FavouriteItem
-from .schemas import UpdateUsernameInput, UpdateEmailInput, UpdatePasswordInput
+from .schemas import UpdateUsernameInput, UpdateEmailInput, UpdatePasswordInput, CreateComplaintInput
 from .database import engine
 from .image_url_builder import build_image_url
 from .basket_helpers import load_basket_data, calculate_single_store_recommendation, calculate_multi_store_recommendation
@@ -26,6 +26,11 @@ app = FastAPI()
 BASE_DIR = Path(__file__).resolve().parent.parent
 IMAGE_DIRECTORY = BASE_DIR / "product_images" 
 app.mount("/product_images", StaticFiles(directory=IMAGE_DIRECTORY), name="product_images")
+
+# Set up static file serving for complaint attachments
+COMPLAINT_BASE_DIR = Path(__file__).resolve().parent.parent
+COMPLAINT_ATTACHMENT_DIRECTORY = COMPLAINT_BASE_DIR / "complaint_attachments"
+app.mount("/complaint_attachments", StaticFiles(directory=COMPLAINT_ATTACHMENT_DIRECTORY), name="complaint_attachments")
 
 
 # ----------------------------API Endpoints--------------------------------
@@ -94,7 +99,7 @@ async def validation_exception_handler(
                 )
 
     return JSONResponse(
-        status_code=422,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={
             "detail": "Invalid request data."
         }
@@ -1067,3 +1072,237 @@ def optimize_multi_store(request: Request,
         "multi_store_recommendation": recommendation
     }
     
+
+# Create complaint
+@app.post("/complaints")
+async def create_complaint(
+    current_user: Annotated[dict, Depends(get_current_user)],
+    request_data: Annotated[CreateComplaintInput, Form()],
+    attachments: Annotated[list[UploadFile] | None, File()] = None
+):
+    user_id = current_user["user_id"]
+
+    if attachments and len(attachments) > 5:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You can upload a maximum of 5 images."
+        )
+
+    try:
+        with engine.begin() as conn:
+            complaint = conn.execute(
+                text("""
+                    INSERT INTO complaints (
+                        user_id,
+                        category,
+                        product_name,
+                        product_price,
+                        loss_amount,
+                        date_issue,
+                        premise_type,
+                        premise_name,
+                        phone_no,
+                        email,
+                        premise_address,
+                        postal_code,
+                        district,
+                        state,
+                        description
+                    )
+                    VALUES (
+                        :user_id,
+                        :category,
+                        :product_name,
+                        :product_price,
+                        :loss_amount,
+                        :date_issue,
+                        :premise_type,
+                        :premise_name,
+                        :phone_no,
+                        :email,
+                        :premise_address,
+                        :postal_code,
+                        :district,
+                        :state,
+                        :description
+                    )
+                    RETURNING complaint_id, created_at
+                """),{
+                    "user_id": user_id,
+                    "category": request_data.category,
+                    "product_name": request_data.product_name,
+                    "product_price": request_data.product_price,
+                    "loss_amount": request_data.loss_amount,
+                    "date_issue": request_data.date_issue,
+                    "premise_type": request_data.premise_type,
+                    "premise_name": request_data.premise_name,
+                    "phone_no": request_data.phone_no,
+                    "email": (
+                        str(request_data.email)
+                        if request_data.email is not None
+                        else None
+                    ),
+                    "premise_address": request_data.premise_address,
+                    "postal_code": request_data.postal_code,
+                    "district": request_data.district,
+                    "state": request_data.state,
+                    "description": request_data.description
+                }
+            ).mappings().first()
+
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to create complaint"
+        ) from e
+
+    complaint_id = complaint["complaint_id"]
+
+    # Create directory inside complaint_attachments folder. For example, complaint_attachments/13
+    complaint_directory = (
+        COMPLAINT_ATTACHMENT_DIRECTORY
+        / str(complaint_id)
+    )
+
+    complaint_directory.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    # saved attachments
+    saved_attachments = []
+
+    if attachments:
+        for index, attachment in enumerate(attachments, start=1):
+            if not attachment.filename:
+                continue
+
+            # Check file type
+            allowed_type = {
+                "image/jpeg",
+                "image/png",
+                "image/webp"
+            }
+
+            if attachment.content_type not in allowed_type:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        "Only JPG, PNG and WEBP "
+                        "images are allowed."
+                    )
+                )
+
+            file_extension = Path(attachment.filename).suffix.lower()
+            file_name = f"image_{index}{file_extension}"
+            file_path = complaint_directory / file_name
+
+            try:
+                with file_path.open("wb") as buffer:
+                    while True:
+                        chunk = await attachment.read(
+                            1024 * 1024
+                        )
+
+                        if not chunk:
+                            break
+
+                        buffer.write(chunk)
+
+            except OSError as e:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Unable to save complaint attachment"
+                ) from e
+
+            # Relative path saved in database
+            relative_path = f"complaint_attachments/{complaint_id}/{file_name}"
+            saved_attachments.append(relative_path)
+
+    # Saved attachment to database
+    if saved_attachments:
+        try:
+            with engine.begin() as conn:
+                insert_attachments = conn.execute(
+                    text("""
+                        INSERT INTO complaint_attachments (
+                            complaint_id,
+                            file_path
+                        )
+                        VALUES (
+                            :complaint_id,
+                            :file_path
+                        )
+                    """), {
+                        "complaint_id": complaint_id,
+                        "file_path": file_path
+                    }
+                )
+
+        except SQLAlchemyError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Complaint created, but attachments could not be saved."
+            ) from e
+
+    return {
+        "message": "Complaint submitted successfully",
+        "complaint_id": complaint_id,
+        "attachment_count": len(saved_attachments)
+    }
+
+
+# Get the complaints for user
+@app.get("/complaints")
+def get_complaints(current_user: Annotated[dict, Depends(get_current_user)]):
+    user_id = current_user["user_id"]
+
+    try:
+        with engine.connect() as conn:
+            complaints = conn.execute(
+                text("""
+                    SELECT
+                        complaint_id,
+                        category,
+                        product_name,
+                        product_price,
+                        loss_amount,
+                        date_issue,
+                        premise_type,
+                        premise_name,
+                        phone_no,
+                        email,
+                        premise_address,
+                        postal_code,
+                        district,
+                        state,
+                        description,
+                        created_at
+                    FROM complaints
+                    WHERE user_id = :user_id
+                    ORDER BY created_at DESC
+                """),{
+                    "user_id": user_id
+                }
+            ).mappings().all()
+
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to retrieve complaints"
+        ) from e
+
+    return {
+        "count": len(complaints),
+        "complaints": [
+            dict(complaint)
+            for complaint in complaints
+        ]
+    }
+
+# print(
+#     app.openapi()["components"]["schemas"]["Body_create_complaint_complaints_post"]
+# )
+
+
+
