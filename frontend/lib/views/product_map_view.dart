@@ -1,6 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/store_price.dart';
@@ -25,13 +25,26 @@ class ProductMapView extends StatefulWidget {
 
 class _ProductMapViewState extends State<ProductMapView> {
   late StorePrice _selectedStore;
-  final MapController _mapController = MapController();
+  final Completer<GoogleMapController> _controller = Completer<GoogleMapController>();
+  
+  // Custom marker icons
+  BitmapDescriptor? _storeMarkerIcon;
+  BitmapDescriptor? _selectedStoreMarkerIcon;
 
   @override
   void initState() {
     super.initState();
     // Default to the store with the lowest price
     _selectedStore = widget.stores.reduce((curr, next) => curr.price < next.price ? curr : next);
+    _loadMarkerIcons();
+  }
+
+  Future<void> _loadMarkerIcons() async {
+    // Note: You can also use custom assets here if you have them
+    // For now using default markers with colors
+    _storeMarkerIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
+    _selectedStoreMarkerIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose);
+    if (mounted) setState(() {});
   }
 
   Color _getPriceColor(String level) {
@@ -58,15 +71,45 @@ class _ProductMapViewState extends State<ProductMapView> {
     );
   }
 
+  Future<void> _onStoreTapped(StorePrice store) async {
+    setState(() {
+      _selectedStore = store;
+    });
+    
+    final GoogleMapController controller = await _controller.future;
+    controller.animateCamera(
+      CameraUpdate.newLatLng(
+        LatLng(store.latitude, store.longitude),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
     final userPosition = context.read<LocationViewModel>().currentPosition;
 
+    // Create markers for Google Maps
+    final Set<Marker> markers = widget.stores.map((store) {
+      final isSelected = _selectedStore.premiseCode == store.premiseCode;
+      return Marker(
+        markerId: MarkerId(store.premiseCode.toString()),
+        position: LatLng(store.latitude, store.longitude),
+        icon: isSelected 
+            ? (_selectedStoreMarkerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose))
+            : (_storeMarkerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure)),
+        onTap: () => _onStoreTapped(store),
+        infoWindow: InfoWindow(
+          title: store.premiseName,
+          snippet: "RM ${store.price.toStringAsFixed(2)}",
+        ),
+      );
+    }).toSet();
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFFDFD),
-        elevation: 2,
+        elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(
@@ -87,57 +130,22 @@ class _ProductMapViewState extends State<ProductMapView> {
       ),
       body: Stack(
         children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: LatLng(_selectedStore.latitude, _selectedStore.longitude),
-              initialZoom: 13.0,
+          GoogleMap(
+            mapType: MapType.normal,
+            initialCameraPosition: CameraPosition(
+              target: LatLng(_selectedStore.latitude, _selectedStore.longitude),
+              zoom: 14.0,
             ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.frontend',
-              ),
-              MarkerLayer(
-                markers: [
-                  // User current location marker
-                  if (userPosition != null)
-                    Marker(
-                      point: LatLng(userPosition.latitude, userPosition.longitude),
-                      width: 40 * widget.scale,
-                      height: 40 * widget.scale,
-                      child: Icon(
-                        Icons.my_location,
-                        color: Colors.blueAccent,
-                        size: 25 * widget.scale
-                      ),
-                    ),
-                  // Store location markers
-                  ...widget.stores.map((store) {
-                    final isSelected = _selectedStore.premiseCode == store.premiseCode;
-                    return Marker(
-                      point: LatLng(store.latitude, store.longitude),
-                      width: 50 * widget.scale,
-                      height: 50 * widget.scale,
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedStore = store;
-                          });
-                          _mapController.move(LatLng(store.latitude, store.longitude), 13.0);
-                        },
-                        child: Icon(
-                          Icons.location_on,
-                          color: isSelected ? const Color(0xFFED1A4B) : const Color(0xFF1A1D1F),
-                          size: (isSelected ? 40 : 30) * widget.scale,
-                        ),
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ],
+            markers: markers,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            mapToolbarEnabled: false,
+            onMapCreated: (GoogleMapController controller) {
+              _controller.complete(controller);
+            },
           ),
+          
           // Marker Legend
           Positioned(
             top: 15 * widget.scale,
@@ -146,7 +154,7 @@ class _ProductMapViewState extends State<ProductMapView> {
               padding: EdgeInsets.all(10 * widget.scale),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(10 * widget.scale),
+                borderRadius: BorderRadius.circular(1 * widget.scale),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.1),
@@ -159,14 +167,15 @@ class _ProductMapViewState extends State<ProductMapView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildLegendItem(Icons.my_location, Colors.blueAccent, "Current Location"),
+                  _buildLegendItem(Icons.circle_rounded, Colors.blueAccent, "My Location"),
                   SizedBox(height: 6 * widget.scale),
                   _buildLegendItem(Icons.location_on, const Color(0xFF1A1D1F), "Stores"),
                 ],
               ),
             ),
           ),
-          // Bottom info card - Now filled to bottom
+          
+          // Bottom info card
           Positioned(
             bottom: 0,
             left: 0,
@@ -176,7 +185,7 @@ class _ProductMapViewState extends State<ProductMapView> {
                 20 * widget.scale,
                 15 * widget.scale,
                 20 * widget.scale,
-                10 * widget.scale + bottomPadding, // Account for safe area
+                10 * widget.scale + bottomPadding,
               ),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFFDFD),
@@ -185,9 +194,9 @@ class _ProductMapViewState extends State<ProductMapView> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 15,
-                    offset: const Offset(0, -5), // Shadow above the card
+                    offset: const Offset(0, -5),
                   ),
                 ],
               ),
@@ -195,13 +204,33 @@ class _ProductMapViewState extends State<ProductMapView> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "RM ${_selectedStore.price.toStringAsFixed(2)}",
-                    style: TextStyle(
-                      fontSize: 20 * widget.scale,
-                      fontWeight: FontWeight.w700,
-                      color: _getPriceColor(_selectedStore.priceLevel),
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "RM ${_selectedStore.price.toStringAsFixed(2)}",
+                        style: TextStyle(
+                          fontSize: 20 * widget.scale,
+                          fontWeight: FontWeight.w700,
+                          color: _getPriceColor(_selectedStore.priceLevel),
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10 * widget.scale, vertical: 4 * widget.scale),
+                        decoration: BoxDecoration(
+                          color: _getPriceColor(_selectedStore.priceLevel).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20 * widget.scale),
+                        ),
+                        child: Text(
+                          _selectedStore.priceLevel.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10 * widget.scale,
+                            fontWeight: FontWeight.w800,
+                            color: _getPriceColor(_selectedStore.priceLevel),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 5 * widget.scale),
                   Divider(
@@ -209,21 +238,15 @@ class _ProductMapViewState extends State<ProductMapView> {
                     thickness: 1 * widget.scale,
                   ),
                   SizedBox(height: 5 * widget.scale),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _selectedStore.premiseName,
-                          style: TextStyle(
-                            fontSize: 15 * widget.scale,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF1A1D1F),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    _selectedStore.premiseName,
+                    style: TextStyle(
+                      fontSize: 15 * widget.scale,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1A1D1F),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 4 * widget.scale),
                   Row(
@@ -283,6 +306,24 @@ class _ProductMapViewState extends State<ProductMapView> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: 200 * widget.scale),
+        child: FloatingActionButton(
+          mini: true,
+          backgroundColor: Colors.white,
+          onPressed: () async {
+             if (userPosition != null) {
+               final GoogleMapController controller = await _controller.future;
+               controller.animateCamera(
+                 CameraUpdate.newLatLng(
+                   LatLng(userPosition.latitude, userPosition.longitude),
+                 ),
+               );
+             }
+          },
+          child: const Icon(Icons.my_location, color: Color(0xFF1A1D1F)),
+        ),
       ),
     );
   }

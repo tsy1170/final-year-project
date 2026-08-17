@@ -77,6 +77,10 @@ class _EditProfileViewState extends State<EditProfileView> {
             fontWeight: FontWeight.w700,
           ),
         ),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1 * widget.scale),
+          child: Divider(height: 1 * widget.scale, color: Colors.grey.withValues(alpha: 0.2)),
+        ),
         actions: [
           if (_hasChanges)
             TextButton(

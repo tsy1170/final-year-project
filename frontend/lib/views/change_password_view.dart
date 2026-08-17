@@ -116,6 +116,10 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
           'CHANGE PASSWORD',
           style: TextStyle(color: const Color(0xFF1A1D1F), fontSize: 16 * widget.scale, fontWeight: FontWeight.w700),
         ),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1 * widget.scale),
+          child: Divider(height: 1 * widget.scale, color: Colors.grey.withValues(alpha: 0.2)),
+        ),
       ),
       body: Padding(
         padding: EdgeInsets.all(20 * widget.scale),

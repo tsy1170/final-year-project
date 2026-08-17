@@ -248,7 +248,7 @@ class ProfileView extends StatelessWidget {
               _buildGridItem(
                 Icons.assignment_late_outlined,
                 'Complaints',
-                'Submit an complaint',
+                'Submit a complaint',
                 () {
                   navViewModel.setSelectedIndex(2);
                 },

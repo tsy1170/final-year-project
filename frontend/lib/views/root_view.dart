@@ -5,6 +5,7 @@ import '../viewmodels/navigation_view_model.dart';
 import 'grocery_view.dart';
 import 'favourite_view.dart';
 import 'profile_view.dart';
+import 'complaint_view.dart';
 import 'widgets/common/bottom_navigation.dart';
 
 class RootView extends StatefulWidget {
@@ -75,7 +76,7 @@ class _RootViewState extends State<RootView> {
                         children: [
                           GroceryView(scale: scale),
                           FavouriteView(scale: scale),
-                          _buildSimplePage('COMPLAINT', scale),
+                          ComplaintView(scale: scale),
                           ProfileView(scale: scale),
                         ],
                       ),
@@ -99,33 +100,6 @@ class _RootViewState extends State<RootView> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildSimplePage(String title, double scale) {
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          height: 160 * scale,
-          padding: EdgeInsets.only(top: 45 * scale, left: 20 * scale),
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: 24 * scale,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF1A1D1F),
-            ),
-          ),
-        ),
-        Expanded(
-          child: Center(
-            child: Text(
-              '$title coming soon'
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
