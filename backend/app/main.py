@@ -1,8 +1,12 @@
+from datetime import date
+import uuid
+from uuid import UUID
 from fastapi import FastAPI, File, Query, Request, HTTPException, status, Depends, UploadFile, Form
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import EmailStr
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from pathlib import Path
@@ -34,6 +38,14 @@ app.mount("/complaint_attachments", StaticFiles(directory=COMPLAINT_ATTACHMENT_D
 
 
 # ----------------------------API Endpoints--------------------------------
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": str(exc)}
+    )
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
     request,
@@ -41,69 +53,52 @@ async def validation_exception_handler(
 ):
     errors = exc.errors()
 
+    # print("=== VALIDATION ERROR ===")
+    # print(exc.errors())  # prints to your server terminal
+    
+    # # still return a readable response to Flutter
+    # return JSONResponse(
+    #     status_code=422,
+    #     content={"detail": exc.errors()}
+    # )
+
     for error in errors:
         location = error["loc"]
 
-        # Email validation
         if location == ("body", "new_email"):
             return JSONResponse(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                content={
-                    "detail": "Please enter a valid email address."
-                }
+                content={"detail": "Please enter a valid email address."}
             )
 
-        # Password validation
         if location == ("body", "current_password"):
-            if error["type"] == "string_too_short":
+            if error["type"] in ("string_too_short", "string_too_long"):
                 return JSONResponse(
-                    status_code=422,
-                    content={
-                        "detail": (
-                            "Current password is incorrect"
-                        )
-                    }
-                )
-
-            if error["type"] == "string_too_long":
-                return JSONResponse(
-                    status_code=422,
-                    content={
-                        "detail": (
-                            "Current password is incorrect"
-                        )
-                    }
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    content={"detail": "Current password is incorrect"}
                 )
 
         if location == ("body", "new_password"):
             if error["type"] == "string_too_short":
                 return JSONResponse(
-                    status_code=422,
-                    content={
-                        "detail": (
-                            "New password must be at "
-                            "least 8 characters long."
-                        )
-                    }
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    content={"detail": "New password must be at least 8 characters long."}
                 )
-
             if error["type"] == "string_too_long":
                 return JSONResponse(
-                    status_code=422,
-                    content={
-                        "detail": (
-                            "New password must not exceed "
-                            "128 characters."
-                        )
-                    }
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    content={"detail": "New password must not exceed 128 characters."}
                 )
 
+            
+
+    # Fallback for everything else (e.g. /complaints, or any other endpoint)
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-        content={
-            "detail": "Invalid request data."
-        }
+        status_code=422,
+        content={"detail": "An error occured"}  # or a friendlier generic message
     )
+
+    
 
 # Root endpoint
 @app.get("/")
@@ -1077,19 +1072,77 @@ def optimize_multi_store(request: Request,
 @app.post("/complaints")
 async def create_complaint(
     current_user: Annotated[dict, Depends(get_current_user)],
-    request_data: Annotated[CreateComplaintInput, Form()],
-    attachments: Annotated[list[UploadFile] | None, File()] = None
+
+    idempotency_key: Annotated[UUID, Form()],
+    category: Annotated[str, Form()],
+    product_name: Annotated[str, Form()],
+    product_price: Annotated[float, Form()],
+    loss_amount: Annotated[float, Form()],
+    date_issue: Annotated[date, Form()],
+    premise_type: Annotated[str, Form()],
+    premise_name: Annotated[str, Form()],
+    premise_address: Annotated[str, Form()],
+    postal_code: Annotated[str, Form()],
+    phone_no: Annotated[str | None, Form()] = None,
+    email: Annotated[EmailStr | None, Form()] = None,
+    district: Annotated[str | None, Form()] = None,
+    state: Annotated[str | None, Form()] = None,
+    description: Annotated[str | None, Form()] = None,
+    longitude: Annotated[float | None, Form()] = None,
+    latitude: Annotated[float | None, Form()] = None,
+    attachments: Annotated[list[UploadFile], File()] = []
 ):
+    request_data = CreateComplaintInput(
+        category=category, 
+        product_name=product_name, 
+        product_price=product_price,
+        loss_amount=loss_amount, 
+        date_issue=date_issue, 
+        phone_no=phone_no, 
+        email=email,
+        premise_type=premise_type, 
+        premise_name=premise_name, 
+        premise_address=premise_address,
+        postal_code=postal_code, 
+        district=district, state=state, 
+        description=description,
+        longitude=longitude, 
+        latitude=latitude,
+    )
+
     user_id = current_user["user_id"]
 
-    if attachments and len(attachments) > 5:
+    if attachments and len(attachments) > 4:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You can upload a maximum of 5 images."
+            detail="You can upload a maximum of 4 images."
         )
 
     try:
         with engine.begin() as conn:
+            existing_complaint = conn.execute(
+                text("""
+                    SELECT 
+                        user_id,
+                        complaint_id,
+                        idempotency_key
+                    FROM complaints
+                    WHERE user_id = :user_id 
+                    AND idempotency_key = :idempotency_key
+                    LIMIT 1
+                """), {
+                    "user_id": user_id,
+                    "idempotency_key": idempotency_key
+                }
+            ).mappings().first()
+
+            if existing_complaint:
+                return {
+                    "message": "Complaint already submitted",
+                    "complaint_id": existing_complaint["complaint_id"],
+                    "already_submitted": True
+                } 
+
             complaint = conn.execute(
                 text("""
                     INSERT INTO complaints (
@@ -1107,7 +1160,10 @@ async def create_complaint(
                         postal_code,
                         district,
                         state,
-                        description
+                        description,
+                        longitude,
+                        latitude,
+                        idempotency_key
                     )
                     VALUES (
                         :user_id,
@@ -1124,7 +1180,10 @@ async def create_complaint(
                         :postal_code,
                         :district,
                         :state,
-                        :description
+                        :description,
+                        :longitude,
+                        :latitude,
+                        :idempotency_key
                     )
                     RETURNING complaint_id, created_at
                 """),{
@@ -1146,7 +1205,10 @@ async def create_complaint(
                     "postal_code": request_data.postal_code,
                     "district": request_data.district,
                     "state": request_data.state,
-                    "description": request_data.description
+                    "description": request_data.description,
+                    "longitude": request_data.longitude,
+                    "latitude": request_data.latitude,
+                    "idempotency_key": idempotency_key
                 }
             ).mappings().first()
 
@@ -1223,21 +1285,22 @@ async def create_complaint(
     if saved_attachments:
         try:
             with engine.begin() as conn:
-                insert_attachments = conn.execute(
-                    text("""
-                        INSERT INTO complaint_attachments (
-                            complaint_id,
-                            file_path
-                        )
-                        VALUES (
-                            :complaint_id,
-                            :file_path
-                        )
-                    """), {
-                        "complaint_id": complaint_id,
-                        "file_path": file_path
-                    }
-                )
+                for file_relative_path in saved_attachments:
+                    conn.execute(
+                        text("""
+                            INSERT INTO complaint_attachments (
+                                complaint_id,
+                                file_path
+                            )
+                            VALUES (
+                                :complaint_id,
+                                :file_path
+                            )
+                        """), {
+                            "complaint_id": complaint_id,
+                            "file_path": file_relative_path
+                        }
+                    )
 
         except SQLAlchemyError as e:
             raise HTTPException(
@@ -1248,7 +1311,8 @@ async def create_complaint(
     return {
         "message": "Complaint submitted successfully",
         "complaint_id": complaint_id,
-        "attachment_count": len(saved_attachments)
+        "attachment_count": len(saved_attachments),
+        "already_submitted": False
     }
 
 
@@ -1277,7 +1341,9 @@ def get_complaints(current_user: Annotated[dict, Depends(get_current_user)]):
                         district,
                         state,
                         description,
-                        created_at
+                        created_at,
+                        longitude,
+                        latitude
                     FROM complaints
                     WHERE user_id = :user_id
                     ORDER BY created_at DESC

@@ -54,21 +54,21 @@ class BasketOptimizationInput(BaseModel):
 class CreateComplaintInput(BaseModel):
     category: str = Field(..., min_length=1, max_length=100)
     product_name: str = Field(..., min_length=1, max_length=255)
-
-    product_price: float | None = Field(default=None, ge=0)
-    loss_amount: float | None = Field(default=None, ge=0)
-
+    product_price: float = Field(default=None, ge=0)
+    loss_amount: float = Field(default=None, ge=0)
     date_issue: date
-
-    premise_type: str | None = Field(default=None, max_length=100)
-    premise_name: str = Field(..., min_length=1, max_length=255)
 
     phone_no: str | None = Field(default=None, max_length=30)
     email: EmailStr | None = Field(default=None, max_length=255)
 
+    premise_type: str | None = Field(default=None, max_length=100)
+    premise_name: str = Field(..., min_length=1, max_length=255)
     premise_address: str | None = None
     postal_code: str | None = Field(default=None, max_length=20)
     district: str | None = Field(default=None, max_length=100)
     state: str | None = Field(default=None, max_length=100)
 
     description: str | None = None
+
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    latitude: float | None = Field(default=None, ge=-90, le=90)

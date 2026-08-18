@@ -35,3 +35,5 @@ product_images/
 
 # testing files
 test.py
+
+tmp_complaint_check.py
