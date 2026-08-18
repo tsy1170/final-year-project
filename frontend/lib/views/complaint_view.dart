@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/auth_view_model.dart';
+import '../viewmodels/complaint_view_model.dart';
 import 'widgets/complaint/complaint_header.dart';
 import 'widgets/complaint/complaint_empty_state.dart';
 import 'widgets/complaint/complaint_logged_out.dart';
@@ -14,6 +15,7 @@ class ComplaintView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authViewModel = context.watch<AuthViewModel>();
+    final complaintViewModel = context.read<ComplaintViewModel>();
 
     return Container(
       color: const Color(0xFFFFFDFD),
@@ -23,6 +25,7 @@ class ComplaintView extends StatelessWidget {
             scale: scale,
             isLoggedIn: authViewModel.isLoggedIn,
             onAddPressed: () {
+              complaintViewModel.startNewComplaint();
               Navigator.push(
                 context,
                 MaterialPageRoute(

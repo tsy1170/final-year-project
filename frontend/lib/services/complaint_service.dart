@@ -1,0 +1,64 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import '../models/complaint.dart';
+import '../constants/api_constants.dart';
+
+class ComplaintService {
+  Future<Map<String, dynamic>> createComplaint(String token, Complaint complaint) async {
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${ApiConstants.baseUrl}/complaints'),
+    );
+
+    request.headers.addAll({
+      'Authorization': 'Bearer $token',
+    });
+
+    // Add all complaint fields as individual form fields
+    final fields = complaint.toFormFields();
+    fields.forEach((key, value) {
+      if (value != null) {
+        request.fields[key] = value.toString();
+      }
+    });
+
+    // Add attachments
+    for (var file in complaint.attachments) {
+      String extension = file.path.split('.').last.toLowerCase();
+      MediaType contentType;
+      
+      // Map extensions to the correct MediaType expected by the server
+      if (extension == 'png') {
+        contentType = MediaType('image', 'png');
+      } else if (extension == 'webp') {
+        contentType = MediaType('image', 'webp');
+      } else {
+        // Default to jpeg for camera photos (usually .jpg or .jpeg)
+        contentType = MediaType('image', 'jpeg');
+      }
+
+      request.files.add(await http.MultipartFile.fromPath(
+        'attachments',
+        file.path,
+        contentType: contentType,
+      ));
+    }
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return json.decode(response.body);
+    } else {
+      String message;
+      try {
+        final error = json.decode(response.body);
+        message = error['detail']?.toString() ?? 'Failed to save complaint';
+      } catch (_) {
+        message = 'Server error (${response.statusCode}): ${response.body}';
+      }
+      throw Exception(message);
+    }
+  }
+}

@@ -8,10 +8,12 @@ import 'viewmodels/favourite_view_model.dart';
 import 'viewmodels/optimization_view_model.dart';
 import 'viewmodels/navigation_view_model.dart';
 import 'viewmodels/location_view_model.dart';
+import 'viewmodels/complaint_view_model.dart';
 import 'services/grocery_service.dart';
 import 'services/auth_service.dart';
 import 'services/favourite_service.dart';
 import 'services/optimization_service.dart';
+import 'services/complaint_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +38,7 @@ void main() {
   final groceryService = GroceryService();
   final favouriteService = FavouriteService();
   final optimizationService = OptimizationService();
+  final complaintService = ComplaintService();
 
   // Initialize AuthViewModel first as it handles the global auth state
   final authViewModel = AuthViewModel(authService);
@@ -72,6 +75,9 @@ void main() {
         ),
         ChangeNotifierProvider<OptimizationViewModel>(
           create: (_) => OptimizationViewModel(optimizationService),
+        ),
+        ChangeNotifierProvider<ComplaintViewModel>(
+          create: (_) => ComplaintViewModel(complaintService),
         ),
       ],
       child: const GroceryApp(),

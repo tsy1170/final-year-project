@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../viewmodels/complaint_view_model.dart';
+import 'complaint_premise_coordinates.dart';
 
 class AddComplaintDescriptionView extends StatefulWidget {
   final double scale;
@@ -6,20 +9,14 @@ class AddComplaintDescriptionView extends StatefulWidget {
   const AddComplaintDescriptionView({super.key, required this.scale});
 
   @override
-  State<AddComplaintDescriptionView> createState() => _AddComplaintViewState();
+  State<AddComplaintDescriptionView> createState() => _AddComplaintDescriptionViewState();
 }
 
-class _AddComplaintViewState extends State<AddComplaintDescriptionView> {
-  final _descriptionController = TextEditingController();
-
-  @override
-  void dispose() {
-    _descriptionController.dispose();
-    super.dispose();
-  }
-
+class _AddComplaintDescriptionViewState extends State<AddComplaintDescriptionView> {
   @override
   Widget build(BuildContext context) {
+    final viewModel = Provider.of<ComplaintViewModel>(context);
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFFDFD),
       appBar: AppBar(
@@ -61,7 +58,7 @@ class _AddComplaintViewState extends State<AddComplaintDescriptionView> {
             _buildLabel("Descriptions"),
             SizedBox(height: 8 * widget.scale),
             TextField(
-              controller: _descriptionController,
+              controller: viewModel.descriptionController,
               maxLines: 12,
               textCapitalization: TextCapitalization.sentences,
               decoration: _inputDecoration("Provide more details..."),
@@ -85,8 +82,12 @@ class _AddComplaintViewState extends State<AddComplaintDescriptionView> {
               height: 50 * widget.scale,
               child: ElevatedButton(
                 onPressed: () {
-                  // Functionality coming soon
-                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ComplaintPremiseCoordinatesView(scale: widget.scale),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A1D1F),
@@ -95,7 +96,7 @@ class _AddComplaintViewState extends State<AddComplaintDescriptionView> {
                   ),
                 ),
                 child: Text(
-                  "SUBMIT",
+                  "NEXT",
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
