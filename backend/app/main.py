@@ -1278,7 +1278,7 @@ async def create_complaint(
                 ) from e
 
             # Relative path saved in database
-            relative_path = f"complaint_attachments/{complaint_id}/{file_name}"
+            relative_path = f"/complaint_attachments/{complaint_id}/{file_name}"
             saved_attachments.append(relative_path)
 
     # Saved attachment to database
@@ -1318,57 +1318,99 @@ async def create_complaint(
 
 # Get the complaints for user
 @app.get("/complaints")
-def get_complaints(current_user: Annotated[dict, Depends(get_current_user)]):
+async def get_complaints(request: Request, current_user: Annotated[dict, Depends(get_current_user)]):
     user_id = current_user["user_id"]
 
     try:
-        with engine.connect() as conn:
-            complaints = conn.execute(
+        with engine.begin() as conn:
+            rows = conn.execute(
                 text("""
                     SELECT
-                        complaint_id,
-                        category,
-                        product_name,
-                        product_price,
-                        loss_amount,
-                        date_issue,
-                        premise_type,
-                        premise_name,
-                        phone_no,
-                        email,
-                        premise_address,
-                        postal_code,
-                        district,
-                        state,
-                        description,
-                        created_at,
-                        longitude,
-                        latitude
-                    FROM complaints
-                    WHERE user_id = :user_id
-                    ORDER BY created_at DESC
-                """),{
+                        c.complaint_id,
+                        c.category,
+                        c.product_name,
+                        c.product_price,
+                        c.loss_amount,
+                        c.date_issue,
+                        c.premise_type,
+                        c.premise_name,
+                        c.phone_no,
+                        c.email,
+                        c.premise_address,
+                        c.postal_code,
+                        c.district,
+                        c.state,
+                        c.latitude,
+                        c.longitude,
+                        c.description,
+                        c.created_at,
+
+                        ca.attachment_id,
+                        ca.file_path
+
+                    FROM complaints c
+
+                    LEFT JOIN complaint_attachments ca
+                        ON c.complaint_id = ca.complaint_id
+
+                    WHERE c.user_id = :user_id
+
+                    ORDER BY c.created_at DESC
+                """), {
                     "user_id": user_id
                 }
             ).mappings().all()
 
-    except SQLAlchemyError as e:
+            complaints = {}
+
+            for row in rows:
+                complaint_id = row["complaint_id"]
+
+                if complaint_id not in complaints:
+                    complaints[complaint_id] = {
+                        "complaint_id": complaint_id,
+                        "category": row["category"],
+                        "product_name": row["product_name"],
+                        "product_price": row["product_price"],
+                        "loss_amount": row["loss_amount"],
+                        "date_issue": row["date_issue"],
+
+                        "premise_type": row["premise_type"],
+                        "premise_name": row["premise_name"],
+                        "phone_no": row["phone_no"],
+                        "email": row["email"],
+
+                        "premise_address": row["premise_address"],
+                        "postal_code": row["postal_code"],
+                        "district": row["district"],
+                        "state": row["state"],
+
+                        "latitude": row["latitude"],
+                        "longitude": row["longitude"],
+
+                        "description": row["description"],
+                        "created_at": row["created_at"],
+
+                        "attachments": []
+                    }
+
+                if row["attachment_id"] is not None:
+                    file_url = build_image_url(request, row["file_path"])
+
+                    complaints[complaint_id]["attachments"].append({
+                        "attachment_id": row["attachment_id"],
+                        "file_url": file_url
+                    })
+
+            return list(complaints.values())
+
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to retrieve complaints"
         ) from e
-
-    return {
-        "count": len(complaints),
-        "complaints": [
-            dict(complaint)
-            for complaint in complaints
-        ]
-    }
-
+    
 # print(
 #     app.openapi()["components"]["schemas"]["Body_create_complaint_complaints_post"]
 # )
-
-
 
