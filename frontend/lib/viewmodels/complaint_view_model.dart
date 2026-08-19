@@ -12,6 +12,13 @@ class ComplaintViewModel extends ChangeNotifier {
   bool _isAlreadySubmitted = false;
   bool get isAlreadySubmitted => _isAlreadySubmitted;
 
+  // Complaint List
+  List<Complaint> _userComplaints = [];
+  List<Complaint> get userComplaints => _userComplaints;
+
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+
   // Complaint Category Controllers & State
   String? selectedCategory;
   final productNameController = TextEditingController();
@@ -40,6 +47,7 @@ class ComplaintViewModel extends ChangeNotifier {
 
   // Attachments
   List<XFile> attachments = [];
+  List<String> attachmentUrls = [];
 
   DateTime selectedDate = DateTime.now();
 
@@ -49,10 +57,85 @@ class ComplaintViewModel extends ChangeNotifier {
   bool _isSaved = false;
   bool get isSaved => _isSaved;
 
+  // Flag to indicate if we are viewing an existing complaint from the list
+  bool _isViewingExisting = false;
+  bool get isViewingExisting => _isViewingExisting;
+
   ComplaintViewModel(this._complaintService);
+
+  Future<void> fetchUserComplaints(String token) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final data = await _complaintService.getComplaints(token);
+      _userComplaints = data.map((json) {
+        return Complaint(
+          complaintId: json['complaint_id'],
+          category: json['category'],
+          productName: json['product_name'],
+          productPrice: json['product_price'].toString(),
+          lossAmount: json['loss_amount'].toString(),
+          dateIssue: DateTime.parse(json['date_issue']),
+          phoneNo: json['phone_no'],
+          email: json['email'],
+          premiseType: json['premise_type'],
+          premiseName: json['premise_name'],
+          premiseAddress: json['premise_address'],
+          postalCode: json['postal_code'],
+          district: json['district'],
+          state: json['state'],
+          description: json['description'],
+          latitude: json['latitude'],
+          longitude: json['longitude'],
+          attachmentUrls: (json['attachments'] as List)
+              .map((a) => a['file_url'] as String)
+              .toList(),
+          idempotencyKey: '', // Not needed for viewing existing
+        );
+      }).toList();
+    } catch (e) {
+      _userComplaints = [];
+      // Silent error or handle appropriately
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void loadExistingComplaint(Complaint complaint) {
+    reset();
+    _isViewingExisting = true;
+    
+    selectedCategory = complaint.category;
+    productNameController.text = complaint.productName;
+    productPriceController.text = complaint.productPrice;
+    lossAmountController.text = complaint.lossAmount;
+    selectedDate = complaint.dateIssue;
+    dateIssueController.text = "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}";
+    
+    phoneNoController.text = complaint.phoneNo ?? '';
+    emailController.text = complaint.email ?? '';
+    
+    selectedPremiseType = complaint.premiseType;
+    premiseNameController.text = complaint.premiseName;
+    addressController.text = complaint.premiseAddress;
+    postalCodeController.text = complaint.postalCode;
+    districtController.text = complaint.district ?? '';
+    stateController.text = complaint.state ?? '';
+    
+    descriptionController.text = complaint.description ?? '';
+    latitude = complaint.latitude;
+    longitude = complaint.longitude;
+    attachmentUrls = complaint.attachmentUrls;
+    
+    _isSaved = true;
+    notifyListeners();
+  }
 
   void startNewComplaint() {
     reset();
+    _isViewingExisting = false;
     idempotencyKey = const Uuid().v4();
     notifyListeners();
   }
@@ -92,7 +175,6 @@ class ComplaintViewModel extends ChangeNotifier {
   }
 
   Complaint get complaint {
-    // Ensure idempotencyKey is never null when accessed
     idempotencyKey ??= const Uuid().v4();
     
     return Complaint(
@@ -113,6 +195,7 @@ class ComplaintViewModel extends ChangeNotifier {
       latitude: latitude,
       longitude: longitude,
       attachments: attachments,
+      attachmentUrls: attachmentUrls,
       idempotencyKey: idempotencyKey!,
     );
   }
@@ -156,11 +239,13 @@ class ComplaintViewModel extends ChangeNotifier {
     latitude = null;
     longitude = null;
     attachments = [];
+    attachmentUrls = [];
 
     idempotencyKey = null;
     _isAlreadySubmitted = false;
     _isSaved = false;
     _isSaving = false;
+    _isViewingExisting = false;
     notifyListeners();
   }
 

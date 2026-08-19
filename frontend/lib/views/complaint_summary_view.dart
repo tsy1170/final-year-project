@@ -18,7 +18,7 @@ class ComplaintSummaryView extends StatelessWidget {
   void _showConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           backgroundColor: const Color(0xFFFFFDFD),
           surfaceTintColor: Colors.transparent,
@@ -43,7 +43,7 @@ class ComplaintSummaryView extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: Text(
                 "CANCEL",
                 style: TextStyle(
@@ -55,7 +55,7 @@ class ComplaintSummaryView extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 _handleSave(context);
               },
               child: Text(
@@ -104,6 +104,8 @@ class ComplaintSummaryView extends StatelessWidget {
             true,
             scale,
           );
+          // Refresh list after saving
+          complaintVM.fetchUserComplaints(authVM.accessToken!);
         }
       }
     } catch (e) {
@@ -161,7 +163,7 @@ class ComplaintSummaryView extends StatelessWidget {
                     ),
                   ),
                 )
-              else if (complaintVM.isSaved)
+              else if (complaintVM.isSaved && !complaintVM.isViewingExisting)
                 IconButton(
                   onPressed: () {
                     Navigator.of(context).popUntil((route) => route.isFirst);
@@ -172,7 +174,7 @@ class ComplaintSummaryView extends StatelessWidget {
                     size: 23 * scale,
                   ),
                 )
-              else
+              else if (!complaintVM.isViewingExisting)
                 IconButton(
                   onPressed: () => _showConfirmationDialog(context),
                   icon: Icon(
@@ -293,7 +295,7 @@ class ComplaintSummaryView extends StatelessWidget {
                 ]),
                 SizedBox(height: 30 * scale),
                 _buildSection("ATTACHMENTS", [
-                  if (complaint.attachments.isEmpty)
+                  if (complaint.attachments.isEmpty && complaint.attachmentUrls.isEmpty)
                     Text(
                       "No attachments provided.",
                       style: TextStyle(
@@ -311,7 +313,9 @@ class ComplaintSummaryView extends StatelessWidget {
                         mainAxisSpacing: 20 * scale,
                         childAspectRatio: 0.85,
                       ),
-                      itemCount: complaint.attachments.length,
+                      itemCount: complaint.attachments.isNotEmpty 
+                          ? complaint.attachments.length 
+                          : complaint.attachmentUrls.length,
                       itemBuilder: (context, index) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -327,10 +331,16 @@ class ComplaintSummaryView extends StatelessWidget {
                                   ),
                                 ),
                                 clipBehavior: Clip.antiAlias,
-                                child: Image.file(
-                                  File(complaint.attachments[index].path),
-                                  fit: BoxFit.cover,
-                                ),
+                                child: complaint.attachments.isNotEmpty
+                                    ? Image.file(
+                                        File(complaint.attachments[index].path),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Image.network(
+                                        complaint.attachmentUrls[index],
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+                                      ),
                               ),
                             ),
                             SizedBox(height: 8 * scale),
@@ -350,7 +360,7 @@ class ComplaintSummaryView extends StatelessWidget {
                       },
                     ),
                 ]),
-                SizedBox(height: 20 * scale),
+                SizedBox(height: 30 * scale),
                 SizedBox(
                   width: double.infinity,
                   child: _buildButton(
@@ -381,17 +391,17 @@ class ComplaintSummaryView extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             border: Border(
-              right: BorderSide(color: Color(0xFF1A1D1F), width: 4 * scale),
-              bottom: BorderSide(color: Color(0xFF1A1D1F), width: 1 * scale),
+              right: BorderSide(color: Color(0xFF1A1D1F).withValues(alpha: 0.6), width: 4 * scale),
+              bottom: BorderSide(color: Color(0xFF1A1D1F).withValues(alpha: 0.6), width: 1 * scale),
             ),
           ),
           child: Text(
             title,
             textAlign: TextAlign.right,
             style: TextStyle(
-              fontSize: 16 * scale,
+              fontSize: 15 * scale,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1A1D1F),
+              color: const Color(0xFF1A1D1F).withValues(alpha: 0.6),
             ),
           ),
         ),
@@ -470,7 +480,7 @@ class ComplaintSummaryView extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(15 * scale)),
       ),
-      builder: (context) {
+      builder: (BuildContext modalContext) {
         return Padding(
           padding: EdgeInsets.all(20 * scale),
           child: Column(
@@ -493,7 +503,7 @@ class ComplaintSummaryView extends StatelessWidget {
                 ),
                 title: Text("Email", style: TextStyle(fontSize: 14 * scale)),
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(modalContext);
                   showTopNotification(
                     context,
                     "Sending via Email...",
@@ -510,7 +520,7 @@ class ComplaintSummaryView extends StatelessWidget {
                 ),
                 title: Text("WhatsApp", style: TextStyle(fontSize: 14 * scale)),
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(modalContext);
                   showTopNotification(
                     context,
                     "Sending via WhatsApp...",

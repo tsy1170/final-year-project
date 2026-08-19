@@ -2,6 +2,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 class Complaint {
+  final int? complaintId;
   final String category;
   final String productName;
   final String productPrice;
@@ -19,9 +20,11 @@ class Complaint {
   double? latitude;
   double? longitude;
   List<XFile> attachments;
+  List<String> attachmentUrls;
   final String idempotencyKey;
 
   Complaint({
+    this.complaintId,
     required this.category,
     required this.productName,
     required this.productPrice,
@@ -39,6 +42,7 @@ class Complaint {
     this.latitude,
     this.longitude,
     this.attachments = const [],
+    this.attachmentUrls = const [],
     required this.idempotencyKey,
   });
 

@@ -61,4 +61,20 @@ class ComplaintService {
       throw Exception(message);
     }
   }
+
+  Future<List<Map<String, dynamic>>> getComplaints(String token) async {
+    final response = await http.get(
+      Uri.parse('${ApiConstants.baseUrl}/complaints'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to fetch complaints');
+    }
+  }
 }
