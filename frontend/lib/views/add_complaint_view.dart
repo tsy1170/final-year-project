@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/complaint_view_model.dart';
 import 'add_complaint_description_view.dart';
+import 'price_tag_scanner_view.dart';
 import 'widgets/common/animated_notification.dart';
 
 class AddComplaintView extends StatefulWidget {
@@ -100,6 +101,9 @@ class _AddComplaintViewState extends State<AddComplaintView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildOCRScannerContainer(),
+                SizedBox(height: 35 * widget.scale),
+                
                 _buildSectionTitle("COMPLAINT CATEGORY"),
                 SizedBox(height: 20 * widget.scale),
                 _buildDropdownField("Category", viewModel.selectedCategory, _categories, (val) => viewModel.setCategory(val), isRequired: true),
@@ -111,7 +115,7 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                 SizedBox(height: 40 * widget.scale),
                 _buildSectionTitle("YOUR INFORMATION"),
                 SizedBox(height: 20 * widget.scale),
-                _buildTextField("Phone No", viewModel.phoneNoController),
+                _buildTextField("Phone No", viewModel.phoneNoController, isNumeric: true),
                 _buildTextField("Email", viewModel.emailController),
 
                 SizedBox(height: 40 * widget.scale),
@@ -120,7 +124,7 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                 _buildDropdownField("Premise Type", viewModel.selectedPremiseType, _premiseTypes, (val) => viewModel.setPremiseType(val), isRequired: true),
                 _buildTextField("Premise Name", viewModel.premiseNameController, isRequired: true),
                 _buildTextField("Premise Address", viewModel.addressController, isRequired: true),
-                _buildTextField("Postal Code", viewModel.postalCodeController),
+                _buildTextField("Postal Code", viewModel.postalCodeController, isNumeric: true),
                 _buildTextField("District", viewModel.districtController),
                 _buildTextField("State", viewModel.stateController),
 
@@ -155,6 +159,60 @@ class _AddComplaintViewState extends State<AddComplaintView> {
     );
   }
 
+  Widget _buildOCRScannerContainer() {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PriceTagScannerView(scale: widget.scale),
+          ),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 45 * widget.scale, horizontal: 20 * widget.scale),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF4F4F4),
+          borderRadius: BorderRadius.circular(1 * widget.scale),
+          border: Border.all(
+            color: const Color(0xFF1A1D1F).withValues(alpha: 0.1),
+            width: 1 * widget.scale,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.camera_alt_outlined,
+              size: 32 * widget.scale,
+              color: const Color(0xFF1A1D1F),
+            ),
+            SizedBox(height: 12 * widget.scale),
+            Text(
+              "SCAN PRICE TAG",
+              style: TextStyle(
+                fontSize: 12 * widget.scale,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1A1D1F),
+                letterSpacing: 1.2,
+              ),
+            ),
+            SizedBox(height: 6 * widget.scale),
+            Text(
+              "Automatically extract item name and price from a photo",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10 * widget.scale,
+                color: const Color(0xFF9A9FA5),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSectionTitle(String title) {
     return Container(
       width: double.infinity,
@@ -176,7 +234,7 @@ class _AddComplaintViewState extends State<AddComplaintView> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool isDate = false, bool isPrice = false, bool isRequired = false}) {
+  Widget _buildTextField(String label, TextEditingController controller, {bool isDate = false, bool isPrice = false, bool isRequired = false, bool isNumeric = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -204,16 +262,17 @@ class _AddComplaintViewState extends State<AddComplaintView> {
         SizedBox(height: 8 * widget.scale),
         TextField(
           controller: controller,
+          textCapitalization: TextCapitalization.sentences,
           readOnly: isDate,
           keyboardType: isPrice
               ? const TextInputType.numberWithOptions(decimal: true)
-              : TextInputType.text,
+              : (isNumeric ? const TextInputType.numberWithOptions(decimal: false) : TextInputType.text),
           inputFormatters: isPrice
               ? [
                   FilteringTextInputFormatter.deny(RegExp(r'[^\d.]')),
                   FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
                 ]
-              : null,
+              : (isNumeric ? [FilteringTextInputFormatter.digitsOnly] : null),
           onTap: isDate ? () => _selectDate(context) : null,
           style: TextStyle(fontSize: 12 * widget.scale, color: const Color(0xFF1A1D1F)),
           decoration: InputDecoration(

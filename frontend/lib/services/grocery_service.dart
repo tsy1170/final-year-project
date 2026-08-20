@@ -17,19 +17,6 @@ class GroceryService {
     }
   }
 
-  Future<List<GroceryProduct>> demoFetchProducts() async {
-    return const [
-      GroceryProduct(itemCode: 1, name: 'AYAM BERSIH - STANDARD', unit: '1 KG'),
-      GroceryProduct(itemCode: 2, name: '100 PLUS (ORIGINAL)', unit: '1.5 L'),
-      GroceryProduct(itemCode: 129, name: 'ANGGUR HIJAU BERBIJI', unit: '1 KG'),
-      GroceryProduct(itemCode: 1550, name: 'TIMUN', unit: '1 KG'),
-      GroceryProduct(itemCode: 5, name: 'AYAM BERSIH - STANDARD', unit: '1 KG'),
-      GroceryProduct(itemCode: 6, name: '100 PLUS (ORIGINAL)', unit: '1.5 L'),
-      GroceryProduct(itemCode: 7, name: 'ANGGUR HIJAU BERBIJI', unit: '1 KG'),
-      GroceryProduct(itemCode: 8, name: 'TIMUN', unit: '1 KG'),
-    ];
-  }
-
   Future<List<GroceryProduct>> fetchProducts({
     String? itemGroup,
     String? itemCategory,

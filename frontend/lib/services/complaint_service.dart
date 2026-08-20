@@ -77,4 +77,23 @@ class ComplaintService {
       throw Exception('Failed to fetch complaints');
     }
   }
+
+  Future<Map<String, dynamic>> deleteComplaints(String token, List<int> complaintIds) async {
+    final response = await http.delete(
+      Uri.parse('${ApiConstants.baseUrl}/complaints'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'complaint_ids': complaintIds,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to delete complaints');
+    }
+  }
 }

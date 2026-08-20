@@ -53,7 +53,7 @@ class BottomNavigation extends StatelessWidget {
             index: 2,
             selectedIndex: selectedIndex,
             label: 'COMPLAINT',
-            icon: Icons.assignment_late_outlined,
+            icon: Icons.assignment_outlined,
             onTap: onTap,
             scale: scale,
           ),

@@ -19,6 +19,13 @@ class ComplaintViewModel extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
+  // Selection Mode
+  bool _isSelectMode = false;
+  bool get isSelectMode => _isSelectMode;
+  
+  final Set<int> _selectedComplaintIds = {};
+  Set<int> get selectedComplaintIds => _selectedComplaintIds;
+
   // Complaint Category Controllers & State
   String? selectedCategory;
   final productNameController = TextEditingController();
@@ -96,7 +103,48 @@ class ComplaintViewModel extends ChangeNotifier {
       }).toList();
     } catch (e) {
       _userComplaints = [];
-      // Silent error or handle appropriately
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void toggleSelectMode() {
+    _isSelectMode = !_isSelectMode;
+    if (!_isSelectMode) {
+      _selectedComplaintIds.clear();
+    }
+    notifyListeners();
+  }
+
+  void toggleComplaintSelection(int complaintId) {
+    if (_selectedComplaintIds.contains(complaintId)) {
+      _selectedComplaintIds.remove(complaintId);
+      if (_selectedComplaintIds.isEmpty) {
+        _isSelectMode = false;
+      }
+    } else {
+      _selectedComplaintIds.add(complaintId);
+      _isSelectMode = true;
+    }
+    notifyListeners();
+  }
+
+  Future<void> deleteSelectedComplaints(String token) async {
+    if (_selectedComplaintIds.isEmpty) return;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _complaintService.deleteComplaints(token, _selectedComplaintIds.toList());
+      final List<int> deletedIds = (response['deleted_complaint_ids'] as List).cast<int>();
+      
+      _userComplaints.removeWhere((c) => deletedIds.contains(c.complaintId));
+      _selectedComplaintIds.clear();
+      _isSelectMode = false;
+    } catch (e) {
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -120,7 +168,7 @@ class ComplaintViewModel extends ChangeNotifier {
     selectedPremiseType = complaint.premiseType;
     premiseNameController.text = complaint.premiseName;
     addressController.text = complaint.premiseAddress;
-    postalCodeController.text = complaint.postalCode;
+    postalCodeController.text = complaint.postalCode ?? '';
     districtController.text = complaint.district ?? '';
     stateController.text = complaint.state ?? '';
     
@@ -129,7 +177,7 @@ class ComplaintViewModel extends ChangeNotifier {
     longitude = complaint.longitude;
     attachmentUrls = complaint.attachmentUrls;
     
-    _isSaved = true;
+    _isSaved = true; 
     notifyListeners();
   }
 
@@ -246,6 +294,8 @@ class ComplaintViewModel extends ChangeNotifier {
     _isSaved = false;
     _isSaving = false;
     _isViewingExisting = false;
+    _isSelectMode = false;
+    _selectedComplaintIds.clear();
     notifyListeners();
   }
 

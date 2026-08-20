@@ -13,7 +13,7 @@ class Complaint {
   final String premiseType;
   final String premiseName;
   final String premiseAddress;
-  final String postalCode;
+  final String? postalCode;
   final String? district;
   final String? state;
   String? description;
@@ -35,7 +35,7 @@ class Complaint {
     required this.premiseType,
     required this.premiseName,
     required this.premiseAddress,
-    required this.postalCode,
+    this.postalCode,
     this.district,
     this.state,
     this.description,

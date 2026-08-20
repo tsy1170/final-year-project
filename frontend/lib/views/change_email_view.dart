@@ -15,11 +15,26 @@ class _ChangeEmailViewState extends State<ChangeEmailView> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   void _showPasswordDialog() {
     _passwordController.clear();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(1 * widget.scale)),
@@ -56,12 +71,12 @@ class _ChangeEmailViewState extends State<ChangeEmailView> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text("CANCEL", style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               _submitChange();
             },
             child: const Text("CONFIRM", style: TextStyle(color: Color(0xFF1A1D1F), fontWeight: FontWeight.bold)),
@@ -145,7 +160,7 @@ class _ChangeEmailViewState extends State<ChangeEmailView> {
                   disabledBackgroundColor: const Color(0xFF1A1D1F).withValues(alpha: 0.5),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(1 * widget.scale)),
                 ),
-                child: Text("NEXT", style: TextStyle(color: Colors.white.withValues(alpha: _emailController.text.isNotEmpty ? 1.0 : 0.5), fontWeight: FontWeight.bold)),
+                child: Text("NEXT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ),
           ],

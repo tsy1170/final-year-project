@@ -56,86 +56,94 @@ class _GroceryViewState extends State<GroceryView> {
     return Stack(
       children: [
         Positioned.fill(
-          child: CustomScrollView(
-            controller: _scrollController,
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(child: SizedBox(height: 160 * widget.scale)),
-              SliverToBoxAdapter(
-                child: PromotionSection(scale: widget.scale, viewModel: viewModel, favouriteViewModel: favouriteViewModel,),
+          child: RefreshIndicator(
+            color: const Color(0xFFFFFDFD),
+            backgroundColor: const Color(0xFF1A1D1F),
+            edgeOffset: 140 * widget.scale,
+            onRefresh: () => viewModel.loadProducts(isRefresh: true),
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
               ),
-              SliverToBoxAdapter(
-                child: ShopByCategory(scale: widget.scale, viewModel: viewModel),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(20 * widget.scale, 40 * widget.scale, 20 * widget.scale, 10 * widget.scale),
-                  child: Center(
-                    child: Text(
-                      'ALL PRODUCTS',
-                      style: TextStyle(
-                        fontSize: 17 * widget.scale,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1A1D1F),
-                        letterSpacing: 0,
+              slivers: [
+                SliverToBoxAdapter(child: SizedBox(height: 160 * widget.scale)),
+                SliverToBoxAdapter(
+                  child: PromotionSection(scale: widget.scale, viewModel: viewModel, favouriteViewModel: favouriteViewModel,),
+                ),
+                SliverToBoxAdapter(
+                  child: ShopByCategory(scale: widget.scale, viewModel: viewModel),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(20 * widget.scale, 40 * widget.scale, 20 * widget.scale, 10 * widget.scale),
+                    child: Center(
+                      child: Text(
+                        'ALL PRODUCTS',
+                        style: TextStyle(
+                          fontSize: 17 * widget.scale,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1A1D1F),
+                          letterSpacing: 0,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(6 * widget.scale, 0, 6 * widget.scale, 10 * widget.scale),
-                sliver: SliverGrid(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 6 * widget.scale,
-                    mainAxisSpacing: 6 * widget.scale,
-                    mainAxisExtent: 310 * widget.scale,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final product = viewModel.allProducts[index];
-                      final isFavourite = favouriteViewModel.favourites.contains(product.itemCode);
-                      return GroceryCard(
-                        product: product,
-                        scale: widget.scale,
-                        isFavourite: isFavourite,
-                        onFavourite: () {
-                          if (authViewModel.isLoggedIn) {
-                            favouriteViewModel.toggleFavourite(product.itemCode, authViewModel.accessToken!);
-                            if (!isFavourite) {
-                              showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(6 * widget.scale, 0, 6 * widget.scale, 10 * widget.scale),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 6 * widget.scale,
+                      mainAxisSpacing: 6 * widget.scale,
+                      mainAxisExtent: 310 * widget.scale,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final product = viewModel.allProducts[index];
+                        final isFavourite = favouriteViewModel.favourites.contains(product.itemCode);
+                        return GroceryCard(
+                          product: product,
+                          scale: widget.scale,
+                          isFavourite: isFavourite,
+                          onFavourite: () {
+                            if (authViewModel.isLoggedIn) {
+                              favouriteViewModel.toggleFavourite(product.itemCode, authViewModel.accessToken!);
+                              if (!isFavourite) {
+                                showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
+                              }
+                            } else {
+                              showTopNotification(context, "Please login to add favourites", false, widget.scale);
                             }
-                          } else {
-                            showTopNotification(context, "Please login to add favourites", false, widget.scale);
-                          }
-                        },
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ProductDetailsView(
-                                itemCode: product.itemCode,
-                                scale: widget.scale,
+                          },
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProductDetailsView(
+                                  itemCode: product.itemCode,
+                                  scale: widget.scale,
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    childCount: viewModel.allProducts.length,
+                            );
+                          },
+                        );
+                      },
+                      childCount: viewModel.allProducts.length,
+                    ),
                   ),
                 ),
-              ),
-              if (viewModel.isLoading && viewModel.allProducts.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20 * widget.scale),
-                    child: const Center(child: CircularProgressIndicator(color: Color(0xFF1A1D1F))),
+                if (viewModel.isLoading && viewModel.allProducts.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20 * widget.scale),
+                      child: const Center(child: CircularProgressIndicator(color: Color(0xFF1A1D1F))),
+                    ),
                   ),
-                ),
-              SliverToBoxAdapter(child: SizedBox(height: (80 + 25) * widget.scale + navBarHeight)),
-            ],
+                SliverToBoxAdapter(child: SizedBox(height: (80 + 25) * widget.scale + navBarHeight)),
+              ],
+            ),
           ),
         ),
         Positioned(

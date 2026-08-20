@@ -189,7 +189,7 @@ class ComplaintSummaryView extends StatelessWidget {
               preferredSize: Size.fromHeight(1 * scale),
               child: Divider(
                 height: 1 * scale,
-                color: Colors.grey.withValues(alpha: 0.2),
+                color: Colors.grey.withValues(alpha: 0.3),
               ),
             ),
           ),
@@ -211,12 +211,12 @@ class ComplaintSummaryView extends StatelessWidget {
                     DateFormat('dd/MM/yyyy').format(complaint.dateIssue),
                   ),
                 ]),
-                SizedBox(height: 40 * scale),
+                SizedBox(height: 45 * scale),
                 _buildSection("YOUR INFORMATION", [
                   _buildInfoRow("Phone No", complaint.phoneNo ?? "-"),
                   _buildInfoRow("Email", complaint.email ?? "-"),
                 ]),
-                SizedBox(height: 40 * scale),
+                SizedBox(height: 45 * scale),
                 _buildSection("PREMISE INFORMATION", [
                   _buildInfoRow("Premise Type", complaint.premiseType),
                   _buildInfoRow("Premise Name", complaint.premiseName),
@@ -225,7 +225,7 @@ class ComplaintSummaryView extends StatelessWidget {
                   _buildInfoRow("District", complaint.district ?? "-"),
                   _buildInfoRow("State", complaint.state ?? "-"),
                 ]),
-                SizedBox(height: 40 * scale),
+                SizedBox(height: 45 * scale),
                 _buildSection("PREMISE LOCATION", [
                   if (complaint.latitude != null &&
                       complaint.longitude != null) ...[
@@ -262,7 +262,7 @@ class ComplaintSummaryView extends StatelessWidget {
                         myLocationButtonEnabled: false,
                       ),
                     ),
-                    SizedBox(height: 15 * scale),
+                    SizedBox(height: 12 * scale),
                     _buildInfoRow(
                       "Latitude",
                       complaint.latitude!.toStringAsFixed(8),
@@ -280,7 +280,7 @@ class ComplaintSummaryView extends StatelessWidget {
                       ),
                     ),
                 ]),
-                SizedBox(height: 40 * scale),
+                SizedBox(height: 45 * scale),
                 _buildSection("DESCRIPTIONS", [
                   Text(
                     complaint.description == null ||
@@ -293,7 +293,7 @@ class ComplaintSummaryView extends StatelessWidget {
                     ),
                   ),
                 ]),
-                SizedBox(height: 30 * scale),
+                SizedBox(height: 45 * scale),
                 _buildSection("ATTACHMENTS", [
                   if (complaint.attachments.isEmpty && complaint.attachmentUrls.isEmpty)
                     Text(
@@ -386,22 +386,21 @@ class ComplaintSummaryView extends StatelessWidget {
         Container(
           width: double.infinity,
           padding: EdgeInsets.symmetric(
-            vertical: 5 * scale,
             horizontal: 10 * scale,
+            vertical: 3 * scale,
           ),
           decoration: BoxDecoration(
             border: Border(
-              right: BorderSide(color: Color(0xFF1A1D1F).withValues(alpha: 0.6), width: 4 * scale),
-              bottom: BorderSide(color: Color(0xFF1A1D1F).withValues(alpha: 0.6), width: 1 * scale),
+              bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.3), width: 1 * scale),
             ),
           ),
           child: Text(
             title,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.left,
             style: TextStyle(
-              fontSize: 15 * scale,
+              fontSize: 16 * scale,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1A1D1F).withValues(alpha: 0.6),
+              color: const Color(0xFF1A1D1F),
             ),
           ),
         ),
@@ -415,6 +414,7 @@ class ComplaintSummaryView extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: 8 * scale),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
@@ -423,7 +423,6 @@ class ComplaintSummaryView extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 13 * scale,
-                fontWeight: FontWeight.w700,
                 color: const Color(0xFF1A1D1F),
               ),
             ),
@@ -431,8 +430,10 @@ class ComplaintSummaryView extends StatelessWidget {
           Expanded(
             child: Text(
               value,
+              textAlign: TextAlign.end,
               style: TextStyle(
                 fontSize: 13 * scale,
+                fontWeight: FontWeight.w600,
                 color: const Color(0xFF1A1D1F),
               ),
             ),

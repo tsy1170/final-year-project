@@ -4,12 +4,16 @@ class ComplaintHeader extends StatelessWidget {
   final double scale;
   final bool isLoggedIn;
   final VoidCallback onAddPressed;
+  final bool isSelectMode;
+  final VoidCallback onClosePressed;
 
   const ComplaintHeader({
     super.key,
     required this.scale,
     required this.isLoggedIn,
     required this.onAddPressed,
+    this.isSelectMode = false,
+    required this.onClosePressed,
   });
 
   @override
@@ -36,7 +40,7 @@ class ComplaintHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'COMPLAINTS',
+            isSelectMode ? 'SELECT ITEMS' : 'COMPLAINTS',
             style: TextStyle(
               color: const Color(0xFF1A1D1F),
               fontSize: 21 * scale,
@@ -47,9 +51,9 @@ class ComplaintHeader extends StatelessWidget {
             IconButton(
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
-              onPressed: onAddPressed,
+              onPressed: isSelectMode ? onClosePressed : onAddPressed,
               icon: Icon(
-                Icons.add_circle_outline_rounded,
+                isSelectMode ? Icons.close_rounded : Icons.add_circle_outline_rounded,
                 size: 26 * scale,
                 color: const Color(0xFF1A1D1F),
               ),
