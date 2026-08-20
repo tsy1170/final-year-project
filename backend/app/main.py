@@ -1,4 +1,5 @@
 from datetime import date
+import shutil
 import uuid
 from uuid import UUID
 from fastapi import FastAPI, File, Query, Request, HTTPException, status, Depends, UploadFile, Form
@@ -12,7 +13,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from pathlib import Path
 from typing import Annotated
 from .schemas import AccessTokenResponse, UserRegister, BasketOptimizationInput, FavouriteItem
-from .schemas import UpdateUsernameInput, UpdateEmailInput, UpdatePasswordInput, CreateComplaintInput
+from .schemas import UpdateUsernameInput, UpdateEmailInput, UpdatePasswordInput, CreateComplaintInput, DeleteComplaintInput
 from .database import engine
 from .image_url_builder import build_image_url
 from .basket_helpers import load_basket_data, calculate_single_store_recommendation, calculate_multi_store_recommendation
@@ -53,14 +54,14 @@ async def validation_exception_handler(
 ):
     errors = exc.errors()
 
-    # print("=== VALIDATION ERROR ===")
-    # print(exc.errors())  # prints to your server terminal
+    print("=== VALIDATION ERROR ===")
+    print(exc.errors())  # prints to your server terminal
     
-    # # still return a readable response to Flutter
-    # return JSONResponse(
-    #     status_code=422,
-    #     content={"detail": exc.errors()}
-    # )
+    # still return a readable response to Flutter
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()}
+    )
 
     for error in errors:
         location = error["loc"]
@@ -1409,7 +1410,70 @@ async def get_complaints(request: Request, current_user: Annotated[dict, Depends
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to retrieve complaints"
         ) from e
-    
+
+
+# Delete complaints
+@app.delete("/complaints")
+def delete_complaints(request_data: DeleteComplaintInput,
+                      current_user: Annotated[dict, Depends(get_current_user)]):
+    user_id = current_user["user_id"]
+    complaints_ids = list(set(request_data.complaint_ids))
+
+    try:
+        with engine.begin() as conn:
+            results = conn.execute(
+                text("""
+                    SELECT complaint_id
+                    FROM complaints
+                    WHERE complaint_id = ANY(:complaint_ids)
+                    AND user_id = :user_id
+                """), {
+                    "complaint_ids": complaints_ids,
+                    "user_id": user_id
+                }
+            )
+
+            existing_ids = [row[0] for row in results]
+
+            if not existing_ids:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="No matching complaints found"
+                )
+
+            conn.execute(
+                text("""
+                    DELETE FROM complaints
+                    WHERE complaint_id = ANY(:complaint_ids)
+                    AND user_id = :user_id
+                """), {
+                    "complaint_ids": complaints_ids,
+                    "user_id": user_id
+                }
+            )
+
+            # Delete the local attachments (images)
+        for complaint_id in existing_ids:
+            complaint_directory = COMPLAINT_ATTACHMENT_DIRECTORY / str(complaint_id)
+
+            if complaint_directory.exists():
+                shutil.rmtree(complaint_directory)
+
+        return {
+            "message": "Complaints deleted successfully",
+            "deleted_complaint_ids": existing_ids
+        }
+
+    except HTTPException:
+        raise
+
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to delete complaints"
+        ) from e
+
+
 # print(
 #     app.openapi()["components"]["schemas"]["Body_create_complaint_complaints_post"]
 # )

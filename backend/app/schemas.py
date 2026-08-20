@@ -52,7 +52,7 @@ class BasketOptimizationInput(BaseModel):
 
 # ------------------------Pydantic model for complaints----------------------------
 class CreateComplaintInput(BaseModel):
-    category: str = Field(..., min_length=1, max_length=100)
+    category: str = Field(..., min_length=1, max_length=100, description="Item category")
     product_name: str = Field(..., min_length=1, max_length=255)
     product_price: float = Field(default=None, ge=0)
     loss_amount: float = Field(default=None, ge=0)
@@ -68,7 +68,11 @@ class CreateComplaintInput(BaseModel):
     district: str | None = Field(default=None, max_length=100)
     state: str | None = Field(default=None, max_length=100)
 
-    description: str | None = None
+    description: str | None = Field(default=None, description="Description about the complaint")
 
-    longitude: float | None = Field(default=None, ge=-180, le=180)
-    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180, description="Premise longitude on maps")
+    latitude: float | None = Field(default=None, ge=-90, le=90, description="Premise latitude on maps")
+
+
+class DeleteComplaintInput(BaseModel):
+    complaint_ids: list[int] = Field(description="A list of complaint_id for bulk delete")
