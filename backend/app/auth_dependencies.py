@@ -24,7 +24,9 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> dict:
                 SELECT
                     user_id,
                     user_name,
-                    email
+                    email,
+                    phone_number,
+                    dob
                 FROM users
                 WHERE user_id = :user_id
             """), {

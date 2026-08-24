@@ -7,11 +7,19 @@ class UserRegister(BaseModel):
     user_name: str = Field(min_length=2, max_length=100, description="User's name")
     email: EmailStr = Field(description="User's email address")
     password: str = Field(min_length=8, max_length=128, description="User's password")
+    phone_number: str = Field(min_length=1, max_length=30, description="User's phone number")
+    dob: date = Field(description="User's date of birth")
 # -----------------------------------------------------------------------------------------
 
 #  ------------------------Pydantic model for user information editing----------------------------
 class UpdateUsernameInput(BaseModel):
     user_name: str = Field(min_length=2, max_length=128, description="New Username input")
+
+class UpdatePhoneNumberInput(BaseModel):
+    phone_number: str = Field(min_length=1, max_length=30, description="New Username input")
+
+class UpdateDobInput(BaseModel):
+    dob: date = Field(description="Date of birth")
 
 class UpdateEmailInput(BaseModel):
     new_email: EmailStr = Field(description="New Email Input")
@@ -56,7 +64,7 @@ class CreateComplaintInput(BaseModel):
     product_name: str = Field(..., min_length=1, max_length=255)
     product_price: float = Field(default=None, ge=0)
     loss_amount: float = Field(default=None, ge=0)
-    date_issue: date
+    date_issue: date = Field(description="Date of Issue")
 
     phone_no: str | None = Field(default=None, max_length=30)
     email: EmailStr | None = Field(default=None, max_length=255)

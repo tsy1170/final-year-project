@@ -13,7 +13,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from pathlib import Path
 from typing import Annotated
 from .schemas import AccessTokenResponse, UserRegister, BasketOptimizationInput, FavouriteItem
-from .schemas import UpdateUsernameInput, UpdateEmailInput, UpdatePasswordInput, CreateComplaintInput, DeleteComplaintInput
+from .schemas import UpdateUsernameInput, UpdatePhoneNumberInput, UpdateDobInput, UpdateEmailInput, UpdatePasswordInput, CreateComplaintInput, DeleteComplaintInput
 from .database import engine
 from .image_url_builder import build_image_url
 from .basket_helpers import load_basket_data, calculate_single_store_recommendation, calculate_multi_store_recommendation
@@ -56,12 +56,6 @@ async def validation_exception_handler(
 
     print("=== VALIDATION ERROR ===")
     print(exc.errors())  # prints to your server terminal
-    
-    # still return a readable response to Flutter
-    return JSONResponse(
-        status_code=422,
-        content={"detail": exc.errors()}
-    )
 
     for error in errors:
         location = error["loc"]
@@ -93,10 +87,10 @@ async def validation_exception_handler(
 
             
 
-    # Fallback for everything else (e.g. /complaints, or any other endpoint)
+    # still return a readable response to Flutter
     return JSONResponse(
         status_code=422,
-        content={"detail": "An error occured"}  # or a friendlier generic message
+        content={"detail": exc.errors()}
     )
 
     
@@ -106,6 +100,129 @@ async def validation_exception_handler(
 def root():
     return {
         "message": "PriceCatcher backend is running"
+    }
+
+
+# get premises within the user's road-distance radius
+@app.get("/premises/nearby")
+def get_nearby_premises(
+    latitude: float = Query(..., ge=-90, le=90),
+    longitude: float = Query(..., ge=-180, le=180),
+    radius_km: float = Query(default=10, gt=0, le=50)
+):
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text("""
+                WITH user_location AS (
+                    SELECT ST_SetSRID(
+                        ST_MakePoint(
+                            :user_longitude,
+                            :user_latitude
+                        ),
+                        4326
+                    )::geography AS location
+                )
+
+                SELECT
+                    p.premise_code,
+                    p.premise_name,
+                    p.premise_type,
+                    p.address,
+                    p.district,
+                    p.state,
+                    p.latitude,
+                    p.longitude,
+                    ST_Distance(
+                        p.location,
+                        ul.location
+                    ) / 1000.0 AS straight_line_distance_km
+
+                FROM premises p
+                CROSS JOIN user_location ul
+
+                WHERE p.location IS NOT NULL
+                  AND p.latitude IS NOT NULL
+                  AND p.longitude IS NOT NULL
+                  AND ST_DWithin(
+                      p.location,
+                      ul.location,
+                      :radius_metres
+                  )
+
+                ORDER BY straight_line_distance_km
+            """), {
+                "user_latitude": latitude,
+                "user_longitude": longitude,
+                "radius_metres": radius_km * 1000
+            }).mappings().all()
+
+    except SQLAlchemyError as e:
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to retrieve nearby premises"
+        ) from e
+
+    if not rows:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No premises were found within the selected radius"
+        )
+
+    candidate_premises = [
+        {
+            "premise_code": row["premise_code"],
+            "premise_name": row["premise_name"],
+            "premise_type": row["premise_type"],
+            "address": row["address"],
+            "district": row["district"],
+            "state": row["state"],
+            "latitude": float(row["latitude"]),
+            "longitude": float(row["longitude"]),
+            "straight_line_distance_km": round(
+                float(row["straight_line_distance_km"]),
+                3
+            )
+        }
+        for row in rows
+    ]
+
+    premises_with_road_distance = get_road_distance(
+        user_latitude=latitude,
+        user_longitude=longitude,
+        stores=candidate_premises
+    )
+
+    nearby_premises = [
+        premise for premise in premises_with_road_distance
+        if premise["road_distance_km"] <= radius_km
+    ]
+
+    nearby_premises.sort(key=lambda premise: premise["road_distance_km"])
+
+    if not nearby_premises:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                "Premises were found within the straight-line radius, but "
+                "none are within the selected road-distance radius"
+            )
+        )
+
+    for premise in nearby_premises:
+        premise["road_distance_km"] = round(
+            float(premise["road_distance_km"]),
+            3
+        )
+        premise["driving_duration_minutes"] = round(
+            float(premise["driving_duration_minutes"]),
+            1
+        )
+
+    return {
+        "count": len(nearby_premises),
+        "radius_km": radius_km,
+        "premises": nearby_premises
     }
 
 
@@ -501,8 +618,9 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
 def register_user(user: UserRegister):
     normalized_email = str(user.email).lower().strip()
     normalized_user_name = str(user.user_name).strip()
+    normalized_phone_number = user.phone_number.strip()
     hashed_password = hash_password(user.password)
-
+    
     try:
         with engine.begin() as conn:
             existing_user = conn.execute(text("""
@@ -519,13 +637,27 @@ def register_user(user: UserRegister):
                 )
             
             result = conn.execute(text("""
-                INSERT INTO users (user_name, email, password_hash)
-                VALUES (:user_name, :email, :password_hash)  
-                RETURNING user_id, user_name, email;               
+                INSERT INTO users (
+                    user_name,
+                    email,
+                    password_hash,
+                    phone_number,
+                    dob
+                )
+                VALUES (
+                    :user_name,
+                    :email,
+                    :password_hash,
+                    :phone_number,
+                    :dob
+                )
+                RETURNING user_id, user_name, email, phone_number, dob;
             """), {
                 "user_name": normalized_user_name,
                 "email": normalized_email,
-                "password_hash": hashed_password
+                "password_hash": hashed_password,
+                "phone_number": normalized_phone_number,
+                "dob": user.dob
             })
 
             new_user = result.mappings().first()
@@ -647,7 +779,7 @@ def update_username(request_data: UpdateUsernameInput,
                 UPDATE users
                     SET user_name = :user_name
                     WHERE user_id = :user_id
-                RETURNING user_id, user_name, email
+                RETURNING user_id, user_name, email, phone_number, dob
             """), {
                 "user_name": normalized_user_name,
                 "user_id": user_id
@@ -668,6 +800,88 @@ def update_username(request_data: UpdateUsernameInput,
     return {
         "message": "Username updated successfully",
         "user": dict(updated_user_name)
+    }
+
+
+@app.patch("/users/me/phone-number")
+async def update_phone_number(request_data: UpdatePhoneNumberInput,
+                              current_user: Annotated[dict, Depends(get_current_user)]):
+    try:
+        user_id = current_user["user_id"]
+
+        with engine.begin() as conn:
+            updated_phone_number = conn.execute(
+                text("""
+                    UPDATE users
+                    SET phone_number = :phone_number
+                    WHERE user_id = :user_id
+                    RETURNING user_id, user_name, email, phone_number, dob
+                """),
+                {
+                    "phone_number": request_data.phone_number,
+                    "user_id": user_id
+                }
+            ).mappings().first()
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to update phone number"
+        ) from e
+
+    if updated_phone_number is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    return {
+        "message": "Phone number updated successfully",
+        "user": dict(updated_phone_number)
+    }
+    
+
+@app.patch("/users/me/dob")
+async def update_dob(request_data: UpdateDobInput,
+                     current_user: Annotated[dict, Depends(get_current_user)]):
+    try:
+        user_id = current_user["user_id"]
+
+        with engine.begin() as conn:
+            updated_dob = conn.execute(
+                text("""
+                    UPDATE users
+                    SET dob = :dob
+                    WHERE user_id = :user_id
+                    RETURNING user_id, user_name, email, phone_number, dob
+                """),
+                {
+                    "dob": request_data.dob,
+                    "user_id": user_id
+                }
+            ).mappings().first()
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to update date of birth"
+        ) from e
+
+    if updated_dob is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    return {
+        "message": "Date of birth updated successfully",
+        "user": dict(updated_dob)
     }
 
 
