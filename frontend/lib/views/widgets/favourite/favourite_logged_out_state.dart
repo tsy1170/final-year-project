@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../login_view.dart';
+import '../../auth/login_view.dart';
 
 class FavouriteLoggedOutState extends StatelessWidget {
   final double scale;

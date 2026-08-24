@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../viewmodels/favourite_view_model.dart';
 import '../../../viewmodels/auth_view_model.dart';
 import 'favourite_item_card.dart';
-import '../../product_details_view.dart';
+import '../../grocery/product_details_view.dart';
 
 class FavouriteList extends StatelessWidget {
   final FavouriteViewModel viewModel;

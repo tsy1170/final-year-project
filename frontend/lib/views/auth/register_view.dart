@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/auth_view_model.dart';
-import 'widgets/common/animated_notification.dart';
+import 'package:intl/intl.dart';
+import '../../viewmodels/auth_view_model.dart';
+import '../widgets/common/animated_notification.dart';
 import 'login_view.dart';
 
 class RegisterView extends StatefulWidget {
@@ -17,18 +19,59 @@ class _RegisterViewState extends State<RegisterView> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _dobController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  DateTime? _selectedDob;
 
   @override
   void dispose() {
     _usernameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
+    _dobController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _selectDob(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDob ?? DateTime(2000),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            datePickerTheme: DatePickerThemeData(
+              dividerColor: Colors.grey.withValues(alpha: 0.3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(1 * widget.scale),
+              ),
+            ),
+            dialogTheme: const DialogThemeData(backgroundColor: Color(0xFFFFFDFD)),
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF1A1D1F),
+              onPrimary: Color(0xFFFFFDFD),
+              onSurface: Color(0xFF1A1D1F),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && picked != _selectedDob) {
+      setState(() {
+        _selectedDob = picked;
+        _dobController.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
   }
 
   Future<void> _handleRegister() async {
@@ -39,6 +82,8 @@ class _RegisterViewState extends State<RegisterView> {
           name: _usernameController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text,
+          phoneNumber: _phoneController.text.trim(),
+          dob: _dobController.text.trim(),
         );
 
         if (mounted) {
@@ -113,6 +158,31 @@ class _RegisterViewState extends State<RegisterView> {
                 validator: (value) {
                   if (value == null || value.isEmpty) return "Please enter email";
                   if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) return "Enter a valid email";
+                  return null;
+                },
+              ),
+              SizedBox(height: 20 * widget.scale),
+              _buildLabel("Phone Number"),
+              _buildTextField(
+                controller: _phoneController,
+                hint: "Enter your phone number",
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (value) {
+                  if (value == null || value.isEmpty) return "Please enter phone number";
+                  return null;
+                },
+              ),
+              SizedBox(height: 20 * widget.scale),
+              _buildLabel("Date of Birth"),
+              _buildTextField(
+                controller: _dobController,
+                hint: "Select your date of birth",
+                readOnly: true,
+                suffixIcon: Icon(Icons.calendar_today, size: 18 * widget.scale, color: const Color(0xFF1A1D1F)),
+                onTap: () => _selectDob(context),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return "Please select date of birth";
                   return null;
                 },
               ),
@@ -196,6 +266,7 @@ class _RegisterViewState extends State<RegisterView> {
                   ),
                 ),
               ),
+              SizedBox(height: 30 * widget.scale),
             ],
           ),
         ),
@@ -221,14 +292,20 @@ class _RegisterViewState extends State<RegisterView> {
     required TextEditingController controller,
     required String hint,
     bool obscureText = false,
+    bool readOnly = false,
+    VoidCallback? onTap,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
     Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
+      readOnly: readOnly,
+      onTap: onTap,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       validator: validator,
       style: TextStyle(fontSize: 14 * widget.scale, color: const Color(0xFF1A1D1F)),
       decoration: InputDecoration(
@@ -236,6 +313,10 @@ class _RegisterViewState extends State<RegisterView> {
         hintStyle: TextStyle(color: const Color(0xFF9A9FA5), fontSize: 12 * widget.scale),
         filled: true,
         fillColor: const Color(0xFFF4F4F4),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(1 * widget.scale),
+          borderSide: BorderSide(color: const Color(0xFF1A1D1F), width: 1 * widget.scale),
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(1 * widget.scale),
           borderSide: BorderSide.none,

@@ -15,8 +15,14 @@ import 'services/favourite_service.dart';
 import 'services/optimization_service.dart';
 import 'services/complaint_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Lock orientation to portrait
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   // Set the system UI mode to edge-to-edge
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -94,7 +100,11 @@ class GroceryApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Grocery',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFFC83A)),
+        textSelectionTheme: TextSelectionThemeData(
+          selectionColor: Color(0xFF1A1D1F).withValues(alpha: 0.4), // Global highlight
+          selectionHandleColor: const Color(0xFF1A1D1F), // Global selection handles
+          cursorColor: const Color(0xFF1A1D1F),
+        ),
         scaffoldBackgroundColor: Colors.white,
         fontFamily: 'Montserrat',
         useMaterial3: true,

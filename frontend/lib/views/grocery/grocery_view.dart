@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/grocery_view_model.dart';
-import '../viewmodels/auth_view_model.dart';
-import '../viewmodels/favourite_view_model.dart';
-import 'widgets/grocery/promotion_section.dart';
-import 'widgets/grocery/shop_by_category.dart';
-import 'widgets/common/grocery_card.dart';
-import 'widgets/grocery/grocery_header.dart';
-import 'widgets/common/animated_notification.dart';
+import '../../viewmodels/grocery_view_model.dart';
+import '../../viewmodels/auth_view_model.dart';
+import '../../viewmodels/favourite_view_model.dart';
+import '../widgets/grocery/promotion_section.dart';
+import '../widgets/grocery/shop_by_category.dart';
+import '../widgets/common/grocery_card.dart';
+import '../widgets/grocery/grocery_header.dart';
+import '../widgets/common/animated_notification.dart';
 import 'product_details_view.dart';
 
 class GroceryView extends StatefulWidget {

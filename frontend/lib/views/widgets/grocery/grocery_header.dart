@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../viewmodels/grocery_view_model.dart';
-import '../../search_page_view.dart';
-import '../../item_groups_view.dart';
+import '../../grocery/search_page_view.dart';
+import '../../grocery/item_groups_view.dart';
 
 class GroceryHeader extends StatelessWidget {
   const GroceryHeader({super.key, required this.scale, required this.viewModel});

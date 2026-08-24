@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../services/ocr_service.dart';
-import '../viewmodels/complaint_view_model.dart';
-import 'widgets/common/animated_notification.dart';
+import '../../services/ocr_service.dart';
+import '../../viewmodels/complaint_view_model.dart';
+import '../widgets/common/animated_notification.dart';
 
 class OCRResultConfirmationView extends StatefulWidget {
   final String imagePath;

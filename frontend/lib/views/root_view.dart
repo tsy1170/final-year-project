@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/navigation_view_model.dart';
-import 'grocery_view.dart';
-import 'favourite_view.dart';
-import 'profile_view.dart';
-import 'complaint_view.dart';
+import 'grocery/grocery_view.dart';
+import 'favourite/favourite_view.dart';
+import 'auth/profile_view.dart';
+import 'complaint/complaint_view.dart';
 import 'widgets/common/bottom_navigation.dart';
 
 class RootView extends StatefulWidget {

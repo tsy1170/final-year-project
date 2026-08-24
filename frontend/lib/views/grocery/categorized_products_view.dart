@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/grocery_view_model.dart';
-import '../viewmodels/auth_view_model.dart';
-import '../viewmodels/favourite_view_model.dart';
+import '../../viewmodels/grocery_view_model.dart';
+import '../../viewmodels/auth_view_model.dart';
+import '../../viewmodels/favourite_view_model.dart';
 import 'product_details_view.dart';
-import 'widgets/common/grocery_card.dart';
-import 'widgets/common/animated_notification.dart';
+import '../widgets/common/grocery_card.dart';
+import '../widgets/common/animated_notification.dart';
 
 class CategorizedProductsView extends StatefulWidget {
   final String group;

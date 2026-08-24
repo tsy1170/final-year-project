@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../viewmodels/grocery_view_model.dart';
-import '../viewmodels/auth_view_model.dart';
-import '../viewmodels/favourite_view_model.dart';
-import '../viewmodels/location_view_model.dart';
-import '../models/store_price.dart';
+import '../../viewmodels/grocery_view_model.dart';
+import '../../viewmodels/auth_view_model.dart';
+import '../../viewmodels/favourite_view_model.dart';
+import '../../viewmodels/location_view_model.dart';
+import '../../models/store_price.dart';
 import 'product_map_view.dart';
-import 'widgets/common/animated_notification.dart';
+import '../widgets/common/animated_notification.dart';
 
 class ProductDetailsView extends StatefulWidget {
   final int itemCode;

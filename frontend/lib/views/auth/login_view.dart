@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/auth_view_model.dart';
-import 'widgets/common/animated_notification.dart';
+import '../../viewmodels/auth_view_model.dart';
+import '../widgets/common/animated_notification.dart';
 import 'register_view.dart';
 
 class LoginView extends StatefulWidget {
@@ -191,6 +191,10 @@ class _LoginViewState extends State<LoginView> {
         hintStyle: TextStyle(color: const Color(0xFF9A9FA5), fontSize: 12 * widget.scale),
         filled: true,
         fillColor: const Color(0xFFF4F4F4),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(1 * widget.scale),
+          borderSide: BorderSide(color: const Color(0xFF1A1D1F), width: 1 * widget.scale),
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(1 * widget.scale),
           borderSide: BorderSide.none,

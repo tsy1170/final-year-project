@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../viewmodels/auth_view_model.dart';
-import '../viewmodels/complaint_view_model.dart';
-import '../models/complaint.dart';
-import 'widgets/complaint/complaint_header.dart';
-import 'widgets/complaint/complaint_empty_state.dart';
-import 'widgets/complaint/complaint_logged_out.dart';
-import 'widgets/complaint/complaint_delete_button.dart';
+import '../../viewmodels/auth_view_model.dart';
+import '../../viewmodels/complaint_view_model.dart';
+import '../widgets/complaint/complaint_header.dart';
+import '../widgets/complaint/complaint_empty_state.dart';
+import '../widgets/complaint/complaint_logged_out.dart';
+import '../widgets/complaint/complaint_delete_button.dart';
+import '../widgets/complaint/complaint_tile.dart';
 import 'add_complaint_view.dart';
-import 'complaint_summary_view.dart';
-import 'widgets/common/animated_notification.dart';
+import '../widgets/common/animated_notification.dart';
 
 class ComplaintView extends StatefulWidget {
   final double scale;
@@ -36,19 +35,6 @@ class _ComplaintViewState extends State<ComplaintView> {
     } else if (!authViewModel.isLoggedIn) {
       _hasFetched = false;
     }
-  }
-
-  Map<DateTime, List<Complaint>> _groupComplaintsByDate(List<Complaint> complaints) {
-    final grouped = <DateTime, List<Complaint>>{};
-    for (final complaint in complaints) {
-      final date = DateTime(
-        complaint.dateIssue.year,
-        complaint.dateIssue.month,
-        complaint.dateIssue.day,
-      );
-      grouped.putIfAbsent(date, () => []).add(complaint);
-    }
-    return grouped;
   }
 
   void _showDeleteConfirmationDialog(ComplaintViewModel viewModel, String token) {
@@ -182,7 +168,7 @@ class _ComplaintViewState extends State<ComplaintView> {
   }
 
   Widget _buildGroupedComplaintList(ComplaintViewModel viewModel) {
-    final groupedComplaints = _groupComplaintsByDate(viewModel.userComplaints);
+    final groupedComplaints = viewModel.groupedComplaints;
     final sortedDates = groupedComplaints.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return ListView.builder(
@@ -227,150 +213,17 @@ class _ComplaintViewState extends State<ComplaintView> {
               ),
               itemCount: complaints.length,
               itemBuilder: (context, i) {
-                return _buildComplaintTile(complaints[i], viewModel);
+                return ComplaintTile(
+                  complaint: complaints[i],
+                  viewModel: viewModel,
+                  scale: widget.scale,
+                );
               },
             ),
             SizedBox(height: 30 * widget.scale),
           ],
         );
       },
-    );
-  }
-
-  Widget _buildComplaintTile(Complaint complaint, ComplaintViewModel viewModel) {
-    final isSelected = viewModel.selectedComplaintIds.contains(complaint.complaintId);
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(1 * widget.scale),
-        border: Border(
-          bottom: BorderSide(
-            color: isSelected ? const Color(0xFFED1A4B) : const Color(0xFF1A1D1F),
-            width: 1 * widget.scale,
-          ),
-          top: BorderSide(
-            color: isSelected ? const Color(0xFFED1A4B) : const Color(0xFF1A1D1F),
-            width: 1 * widget.scale,
-          ),
-          right: BorderSide(
-            color: isSelected ? const Color(0xFFED1A4B) : const Color(0xFF1A1D1F),
-            width: 1 * widget.scale,
-          ),
-          left: BorderSide(
-            color: isSelected ? const Color(0xFFED1A4B) : const Color(0xFF1A1D1F),
-            width: 4 * widget.scale,
-          ),
-        ),
-      ),
-      child: Material(
-        color: isSelected ? const Color(0xFFED1A4B).withValues(alpha: 0.05) : const Color(0xFFFFFDFD),
-        borderRadius: BorderRadius.circular(1 * widget.scale),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () {
-            if (viewModel.isSelectMode) {
-              viewModel.toggleComplaintSelection(complaint.complaintId!);
-            } else {
-              viewModel.loadExistingComplaint(complaint);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ComplaintSummaryView(scale: widget.scale),
-                ),
-              );
-            }
-          },
-          onLongPress: () {
-            viewModel.toggleComplaintSelection(complaint.complaintId!);
-          },
-          child: Stack(
-            children: [
-              Padding(
-                padding: EdgeInsets.all(12 * widget.scale),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      complaint.category.toUpperCase(),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13 * widget.scale,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1A1D1F),
-                      ),
-                    ),
-                    const Spacer(),
-                    _buildGridInfoRow("Item", complaint.productName),
-                    SizedBox(height: 10 * widget.scale),
-                    _buildGridInfoRow("Premise", complaint.premiseName),
-                    const Spacer(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 12 * widget.scale,
-                          color: const Color(0xFF1A1D1F),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              if (viewModel.isSelectMode)
-                Positioned(
-                  top: 8 * widget.scale,
-                  right: 8 * widget.scale,
-                  child: Container(
-                    width: 18 * widget.scale,
-                    height: 18 * widget.scale,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected ? const Color(0xFFED1A4B) : const Color(0xFF1A1D1F).withValues(alpha: 0.3),
-                        width: 1.5 * widget.scale,
-                      ),
-                      color: isSelected ? const Color(0xFFED1A4B) : Colors.transparent,
-                    ),
-                    child: isSelected
-                        ? Icon(
-                            Icons.check,
-                            size: 12 * widget.scale,
-                            color: Colors.white,
-                          )
-                        : null,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGridInfoRow(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label.toUpperCase(),
-          style: TextStyle(
-            fontSize: 9 * widget.scale,
-            fontWeight: FontWeight.w800,
-            color: const Color(0xFF9A9FA5),
-          ),
-        ),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 11 * widget.scale,
-            color: const Color(0xFF1A1D1F),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
     );
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../optimization_view.dart';
+import '../../favourite/optimization_view.dart';
 
 class FavouriteCompareButton extends StatelessWidget {
   final double scale;

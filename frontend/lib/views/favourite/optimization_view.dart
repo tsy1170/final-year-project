@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/optimization_view_model.dart';
-import '../viewmodels/favourite_view_model.dart';
-import '../viewmodels/location_view_model.dart';
-import '../viewmodels/auth_view_model.dart';
-import 'widgets/optimization/optimization_header.dart';
-import 'widgets/optimization/optimization_sub_header.dart';
-import 'widgets/optimization/optimization_single_store_content.dart';
-import 'widgets/optimization/optimization_multi_store_content.dart';
+import '../../viewmodels/optimization_view_model.dart';
+import '../../viewmodels/favourite_view_model.dart';
+import '../../viewmodels/location_view_model.dart';
+import '../../viewmodels/auth_view_model.dart';
+import '../widgets/optimization/optimization_header.dart';
+import '../widgets/optimization/optimization_sub_header.dart';
+import '../widgets/optimization/optimization_single_store_content.dart';
+import '../widgets/optimization/optimization_multi_store_content.dart';
 
 class OptimizationView extends StatefulWidget {
   final double scale;

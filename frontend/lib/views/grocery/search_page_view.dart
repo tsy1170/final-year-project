@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../models/grocery_product.dart';
-import '../services/grocery_service.dart';
+import '../../models/grocery_product.dart';
+import '../../services/grocery_service.dart';
 import 'product_details_view.dart';
 
 class SearchPageView extends StatefulWidget {

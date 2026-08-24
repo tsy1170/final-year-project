@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../item_groups_view.dart';
+import '../../grocery/item_groups_view.dart';
 
 class FavouriteHeader extends StatelessWidget {
   final double scale;

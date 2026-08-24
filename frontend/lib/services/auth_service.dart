@@ -18,6 +18,8 @@ class AuthService {
     required String userName,
     required String email,
     required String password,
+    required String phoneNumber,
+    required String dob,
   }) async {
     final url = Uri.parse('$baseUrl/users/register');
     final response = await http.post(
@@ -27,6 +29,8 @@ class AuthService {
         'user_name': userName,
         'email': email,
         'password': password,
+        'phone_number': phoneNumber,
+        'dob': dob,
       }),
     );
     _handleResponse(response);
@@ -111,6 +115,44 @@ class AuthService {
       return json.decode(response.body);
     } else {
       throw Exception(_parseError(response.body, 'Failed to update username'));
+    }
+  }
+
+  Future<Map<String, dynamic>> updatePhoneNumber(String token, String newPhoneNumber) async {
+    final url = Uri.parse('$baseUrl/users/me/phone-number');
+    final response = await http.patch(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'phone_number': newPhoneNumber}),
+    );
+    _handleResponse(response);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception(_parseError(response.body, 'Failed to update phone number'));
+    }
+  }
+
+  Future<Map<String, dynamic>> updateDob(String token, String newDob) async {
+    final url = Uri.parse('$baseUrl/users/me/dob');
+    final response = await http.patch(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'dob': newDob}),
+    );
+    _handleResponse(response);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception(_parseError(response.body, 'Failed to update date of birth'));
     }
   }
 

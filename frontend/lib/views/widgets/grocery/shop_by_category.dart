@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../viewmodels/grocery_view_model.dart';
-import '../../item_groups_view.dart';
+import '../../grocery/item_groups_view.dart';
 
 class ShopByCategory extends StatelessWidget {
   final double scale;

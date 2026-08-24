@@ -15,6 +15,12 @@ class AuthViewModel extends ChangeNotifier {
   String? _userEmail;
   String? get userEmail => _userEmail;
 
+  String? _userPhoneNumber;
+  String? get userPhoneNumber => _userPhoneNumber;
+
+  String? _userDob;
+  String? get userDob => _userDob;
+
   String? _accessToken;
   String? get accessToken => _accessToken;
 
@@ -31,7 +37,6 @@ class AuthViewModel extends ChangeNotifier {
     _checkLoginStatus();
   }
 
-  // This is the global callback for all services to trigger a logout
   void handleServiceResponse(int statusCode) {
     if (statusCode == 401) {
       logout();
@@ -41,11 +46,9 @@ class AuthViewModel extends ChangeNotifier {
   Future<void> _checkLoginStatus() async {
     final token = await _storage.read(key: 'access_token');
     if (token != null) {
+      _accessToken = token;
       try {
-        final userData = await _authService.getCurrentUser(token);
-        _userName = userData['user_name'];
-        _userEmail = userData['email'];
-        _accessToken = token;
+        await _fetchAndSetUserInfo(token);
         _isLoggedIn = true;
       } catch (e) {
         debugPrint('Auto-login check failed: $e');
@@ -55,10 +58,25 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> _fetchAndSetUserInfo(String token) async {
+    final userData = await _authService.getCurrentUser(token);
+    _userName = userData['user_name'];
+    _userEmail = userData['email'];
+    _userPhoneNumber = userData['phone_number'];
+    _userDob = userData['dob'];
+
+    await _storage.write(key: 'user_name', value: _userName ?? '');
+    await _storage.write(key: 'user_email', value: _userEmail ?? '');
+    await _storage.write(key: 'user_phone', value: _userPhoneNumber ?? '');
+    await _storage.write(key: 'user_dob', value: _userDob ?? '');
+  }
+
   Future<bool> register({
     required String name,
     required String email,
     required String password,
+    required String phoneNumber,
+    required String dob,
   }) async {
     _isRegistering = true;
     notifyListeners();
@@ -67,6 +85,8 @@ class AuthViewModel extends ChangeNotifier {
         userName: name,
         email: email,
         password: password,
+        phoneNumber: phoneNumber,
+        dob: dob,
       );
       return success;
     } catch (e) {
@@ -90,17 +110,13 @@ class AuthViewModel extends ChangeNotifier {
       );
 
       final token = response['access_token'];
-      final userData = response['user'];
-
-      await _storage.write(key: 'access_token', value: token);
-      await _storage.write(key: 'user_name', value: userData['user_name']);
-      await _storage.write(key: 'user_email', value: userData['email']);
-
-      _userName = userData['user_name'];
-      _userEmail = userData['email'];
       _accessToken = token;
-      _isLoggedIn = true;
+      await _storage.write(key: 'access_token', value: token);
 
+      // Fetch full user info right after login
+      await _fetchAndSetUserInfo(token);
+
+      _isLoggedIn = true;
       return true;
     } catch (e) {
       rethrow;
@@ -115,6 +131,8 @@ class AuthViewModel extends ChangeNotifier {
     _isLoggedIn = false;
     _userName = null;
     _userEmail = null;
+    _userPhoneNumber = null;
+    _userDob = null;
     _accessToken = null;
     notifyListeners();
   }
@@ -128,8 +146,46 @@ class AuthViewModel extends ChangeNotifier {
     try {
       final response = await _authService.updateUsername(_accessToken!, newUsername);
       final userData = response['user'];
-      _userName = userData['user_name'];
-      await _storage.write(key: 'user_name', value: _userName);
+      _userName = userData != null ? userData['user_name'] : newUsername;
+      await _storage.write(key: 'user_name', value: _userName ?? '');
+    } catch (e) {
+      rethrow;
+    } finally {
+      _isUpdating = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updatePhoneNumber(String newPhoneNumber) async {
+    if (_accessToken == null) {
+      throw Exception('Session expired. Please login again.');
+    }
+    _isUpdating = true;
+    notifyListeners();
+    try {
+      final response = await _authService.updatePhoneNumber(_accessToken!, newPhoneNumber);
+      final userData = response['user'];
+      _userPhoneNumber = userData != null ? userData['phone_number'] : newPhoneNumber;
+      await _storage.write(key: 'user_phone', value: _userPhoneNumber ?? '');
+    } catch (e) {
+      rethrow;
+    } finally {
+      _isUpdating = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateDob(String newDob) async {
+    if (_accessToken == null) {
+      throw Exception('Session expired. Please login again.');
+    }
+    _isUpdating = true;
+    notifyListeners();
+    try {
+      final response = await _authService.updateDob(_accessToken!, newDob);
+      final userData = response['user'];
+      _userDob = userData != null ? userData['dob'] : newDob;
+      await _storage.write(key: 'user_dob', value: _userDob ?? '');
     } catch (e) {
       rethrow;
     } finally {

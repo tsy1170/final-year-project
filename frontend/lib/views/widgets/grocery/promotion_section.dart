@@ -4,7 +4,7 @@ import '../../../models/grocery_product.dart';
 import '../../../viewmodels/grocery_view_model.dart';
 import '../../../viewmodels/auth_view_model.dart';
 import '../../../viewmodels/favourite_view_model.dart';
-import '../../product_details_view.dart';
+import '../../grocery/product_details_view.dart';
 import '../common/animated_notification.dart';
 
 class PromotionSection extends StatefulWidget {
@@ -176,8 +176,9 @@ class _PromotionCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border.all(
-              color: Colors.black.withValues(alpha: 0.3),
-              width: 0.5 * scale,
+              // color: const Color(0xFFED1A4B),
+              color: Colors.grey.withValues(alpha: 0.3),
+              width: 1 * scale,
             ),
             borderRadius: BorderRadius.circular(1 * scale),
           ),

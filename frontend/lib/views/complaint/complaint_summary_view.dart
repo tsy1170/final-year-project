@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../viewmodels/auth_view_model.dart';
-import '../viewmodels/complaint_view_model.dart';
-import 'widgets/common/animated_notification.dart';
+import '../../viewmodels/auth_view_model.dart';
+import '../../viewmodels/complaint_view_model.dart';
+import '../widgets/common/animated_notification.dart';
 
 class ComplaintSummaryView extends StatelessWidget {
   final double scale;
@@ -290,6 +290,7 @@ class ComplaintSummaryView extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13 * scale,
                       color: const Color(0xFF1A1D1F),
+                        fontWeight: FontWeight.w500
                     ),
                   ),
                 ]),

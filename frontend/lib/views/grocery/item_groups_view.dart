@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/grocery_view_model.dart';
-import '../models/item_group.dart';
+import '../../viewmodels/grocery_view_model.dart';
+import '../../models/item_group.dart';
 import 'categorized_products_view.dart';
 
 class ItemGroupsView extends StatefulWidget {

@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/complaint_view_model.dart';
+import '../../viewmodels/complaint_view_model.dart';
 import 'complaint_summary_view.dart';
-import 'widgets/common/animated_notification.dart';
+import '../widgets/common/animated_notification.dart';
 
 class ComplaintAddAttachmentsView extends StatefulWidget {
   final double scale;

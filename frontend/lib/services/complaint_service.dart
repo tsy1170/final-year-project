@@ -96,4 +96,17 @@ class ComplaintService {
       throw Exception('Failed to delete complaints');
     }
   }
+
+  Future<List<Map<String, dynamic>>> getNearbyPremises(double lat, double lng) async {
+    final response = await http.get(
+      Uri.parse('${ApiConstants.baseUrl}/premises/nearby?latitude=$lat&longitude=$lng'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return (data['premises'] as List).cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to fetch nearby premises');
+    }
+  }
 }

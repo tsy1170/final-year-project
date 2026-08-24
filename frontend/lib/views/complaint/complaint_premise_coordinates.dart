@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/location_view_model.dart';
-import '../viewmodels/complaint_view_model.dart';
-import 'complaint_add_attachments.dart';
-import 'widgets/common/animated_notification.dart';
+import '../../viewmodels/location_view_model.dart';
+import '../../viewmodels/complaint_view_model.dart';
+import 'add_complaint_attachments.dart';
+import '../widgets/common/animated_notification.dart';
 
 class ComplaintPremiseCoordinatesView extends StatefulWidget {
   final double scale;

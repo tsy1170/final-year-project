@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/favourite_view_model.dart';
-import '../viewmodels/auth_view_model.dart';
-import 'widgets/favourite/favourite_header.dart';
-import 'widgets/favourite/favourite_compare_button.dart';
-import 'widgets/favourite/favourite_empty_state.dart';
-import 'widgets/favourite/favourite_logged_out_state.dart';
-import 'widgets/favourite/favourite_list.dart';
+import '../../viewmodels/favourite_view_model.dart';
+import '../../viewmodels/auth_view_model.dart';
+import '../widgets/favourite/favourite_header.dart';
+import '../widgets/favourite/favourite_compare_button.dart';
+import '../widgets/favourite/favourite_empty_state.dart';
+import '../widgets/favourite/favourite_logged_out_state.dart';
+import '../widgets/favourite/favourite_list.dart';
 
 class FavouriteView extends StatelessWidget {
   final double scale;

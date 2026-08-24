@@ -39,6 +39,7 @@ class ComplaintViewModel extends ChangeNotifier {
 
   // Premise Information Controllers & State
   String? selectedPremiseType;
+  String? selectedState;
   final premiseNameController = TextEditingController();
   final addressController = TextEditingController();
   final postalCodeController = TextEditingController();
@@ -64,11 +65,31 @@ class ComplaintViewModel extends ChangeNotifier {
   bool _isSaved = false;
   bool get isSaved => _isSaved;
 
+  // Nearby Premises
+  List<Map<String, dynamic>> _nearbyPremises = [];
+  List<Map<String, dynamic>> get nearbyPremises => _nearbyPremises;
+  bool _isFetchingNearby = false;
+  bool get isFetchingNearby => _isFetchingNearby;
+
   // Flag to indicate if we are viewing an existing complaint from the list
   bool _isViewingExisting = false;
   bool get isViewingExisting => _isViewingExisting;
 
   ComplaintViewModel(this._complaintService);
+
+  // Getter for grouped complaints
+  Map<DateTime, List<Complaint>> get groupedComplaints {
+    final grouped = <DateTime, List<Complaint>>{};
+    for (final complaint in _userComplaints) {
+      final date = DateTime(
+        complaint.dateIssue.year,
+        complaint.dateIssue.month,
+        complaint.dateIssue.day,
+      );
+      grouped.putIfAbsent(date, () => []).add(complaint);
+    }
+    return grouped;
+  }
 
   Future<void> fetchUserComplaints(String token) async {
     _isLoading = true;
@@ -86,7 +107,7 @@ class ComplaintViewModel extends ChangeNotifier {
           dateIssue: DateTime.parse(json['date_issue']),
           phoneNo: json['phone_no'],
           email: json['email'],
-          premiseType: json['premise_type'],
+          premiseType: json['premise_type'].trim(), // Trimmed here
           premiseName: json['premise_name'],
           premiseAddress: json['premise_address'],
           postalCode: json['postal_code'],
@@ -107,6 +128,33 @@ class ComplaintViewModel extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> fetchNearbyPremises(double lat, double lng) async {
+    _isFetchingNearby = true;
+    notifyListeners();
+    try {
+      _nearbyPremises = await _complaintService.getNearbyPremises(lat, lng);
+    } catch (e) {
+      _nearbyPremises = [];
+      rethrow;
+    } finally {
+      _isFetchingNearby = false;
+      notifyListeners();
+    }
+  }
+
+  void selectPremise(Map<String, dynamic> premise) {
+    premiseNameController.text = premise['premise_name'] ?? '';
+    addressController.text = premise['address'] ?? '';
+    districtController.text = premise['district'] ?? '';
+    stateController.text = premise['state'] ?? '';
+    selectedState = premise['state'];
+    selectedPremiseType = premise['premise_type'].trim(); // Trimmed here
+
+    latitude = premise['latitude'];
+    longitude = premise['longitude'];
+    notifyListeners();
   }
 
   void toggleSelectMode() {
@@ -166,12 +214,13 @@ class ComplaintViewModel extends ChangeNotifier {
     emailController.text = complaint.email ?? '';
     
     selectedPremiseType = complaint.premiseType;
+    selectedState = complaint.state;
     premiseNameController.text = complaint.premiseName;
     addressController.text = complaint.premiseAddress;
     postalCodeController.text = complaint.postalCode ?? '';
     districtController.text = complaint.district ?? '';
     stateController.text = complaint.state ?? '';
-    
+
     descriptionController.text = complaint.description ?? '';
     latitude = complaint.latitude;
     longitude = complaint.longitude;
@@ -201,6 +250,12 @@ class ComplaintViewModel extends ChangeNotifier {
 
   void setPremiseType(String? type) {
     selectedPremiseType = type;
+    notifyListeners();
+  }
+
+  void setSelectedState(String? state) {
+    selectedState = state;
+    stateController.text = state ?? '';
     notifyListeners();
   }
 
@@ -238,7 +293,7 @@ class ComplaintViewModel extends ChangeNotifier {
       premiseAddress: addressController.text,
       postalCode: postalCodeController.text,
       district: districtController.text.isEmpty ? null : districtController.text,
-      state: stateController.text.isEmpty ? null : stateController.text,
+      state: selectedState ?? stateController.text,
       description: descriptionController.text.isEmpty ? null : descriptionController.text,
       latitude: latitude,
       longitude: longitude,
@@ -283,6 +338,7 @@ class ComplaintViewModel extends ChangeNotifier {
 
     selectedCategory = null;
     selectedPremiseType = null;
+    selectedState = null;
     selectedDate = DateTime.now();
     latitude = null;
     longitude = null;
@@ -296,6 +352,8 @@ class ComplaintViewModel extends ChangeNotifier {
     _isViewingExisting = false;
     _isSelectMode = false;
     _selectedComplaintIds.clear();
+    _nearbyPremises = [];
+    _isFetchingNearby = false;
     notifyListeners();
   }
 

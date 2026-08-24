@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/complaint_view_model.dart';
+import '../../viewmodels/complaint_view_model.dart';
 import 'complaint_premise_coordinates.dart';
 
 class AddComplaintDescriptionView extends StatefulWidget {
@@ -65,6 +65,7 @@ class _AddComplaintDescriptionViewState extends State<AddComplaintDescriptionVie
               style: TextStyle(
                 fontSize: 12 * widget.scale,
                 color: const Color(0xFF1A1D1F),
+                fontWeight: FontWeight.w500
               ),
             ),
             SizedBox(height: 8 * widget.scale),
@@ -131,6 +132,10 @@ class _AddComplaintDescriptionViewState extends State<AddComplaintDescriptionVie
       ),
       filled: true,
       fillColor: const Color(0xFFF4F4F4),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(1 * widget.scale),
+        borderSide: BorderSide(color: const Color(0xFF1A1D1F), width: 1 * widget.scale),
+      ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(1 * widget.scale),
         borderSide: BorderSide.none,
