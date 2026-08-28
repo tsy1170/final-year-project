@@ -1,5 +1,5 @@
 from datetime import date
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 #  ------------------------Pydantic model for user registration----------------------------
@@ -9,6 +9,17 @@ class UserRegister(BaseModel):
     password: str = Field(min_length=8, max_length=128, description="User's password")
     phone_number: str = Field(min_length=1, max_length=30, description="User's phone number")
     dob: date = Field(description="User's date of birth")
+    nric: str = Field(min_length=12, max_length=12, description="Malaysian NRIC — 12 digits, no dashes")
+
+    @field_validator('nric')
+    @classmethod
+    def validate_nric(cls, v: str) -> str:
+        cleaned = v.replace('-', '').strip()
+        if not cleaned.isdigit():
+            raise ValueError("NRIC must contain only digits")
+        if len(cleaned) != 12:
+            raise ValueError("NRIC must be exactly 12 digits")
+        return cleaned
 # -----------------------------------------------------------------------------------------
 
 #  ------------------------Pydantic model for user information editing----------------------------
@@ -16,10 +27,23 @@ class UpdateUsernameInput(BaseModel):
     user_name: str = Field(min_length=2, max_length=128, description="New Username input")
 
 class UpdatePhoneNumberInput(BaseModel):
-    phone_number: str = Field(min_length=1, max_length=30, description="New Username input")
+    phone_number: str = Field(min_length=1, max_length=30, description="New phone number input")
 
 class UpdateDobInput(BaseModel):
-    dob: date = Field(description="Date of birth")
+    dob: date = Field(description="New date of birth input")
+
+class UpdateNricInput(BaseModel):
+    nric: str = Field(min_length=12, max_length=12, description="New user's NRIC")
+
+    @field_validator('nric')
+    @classmethod
+    def validate_nric(cls, v: str) -> str:
+        cleaned = v.replace('-', '').strip()
+        if not cleaned.isdigit():
+            raise ValueError("NRIC must contain only digits")
+        if len(cleaned) != 12:
+            raise ValueError("NRIC must be exactly 12 digits")
+        return cleaned
 
 class UpdateEmailInput(BaseModel):
     new_email: EmailStr = Field(description="New Email Input")
@@ -66,6 +90,8 @@ class CreateComplaintInput(BaseModel):
     loss_amount: float = Field(default=None, ge=0)
     date_issue: date = Field(description="Date of Issue")
 
+    full_name: str | None = Field(default=None, description="User's name")
+    nric: str | None = Field(default=None, description="User's name")
     phone_no: str | None = Field(default=None, max_length=30)
     email: EmailStr | None = Field(default=None, max_length=255)
 

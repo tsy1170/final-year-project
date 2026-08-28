@@ -13,7 +13,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from pathlib import Path
 from typing import Annotated
 from .schemas import AccessTokenResponse, UserRegister, BasketOptimizationInput, FavouriteItem
-from .schemas import UpdateUsernameInput, UpdatePhoneNumberInput, UpdateDobInput, UpdateEmailInput, UpdatePasswordInput, CreateComplaintInput, DeleteComplaintInput
+from .schemas import UpdateUsernameInput, UpdatePhoneNumberInput, UpdateDobInput, UpdateEmailInput, UpdateNricInput, UpdatePasswordInput, CreateComplaintInput, DeleteComplaintInput
 from .database import engine
 from .image_url_builder import build_image_url
 from .basket_helpers import load_basket_data, calculate_single_store_recommendation, calculate_multi_store_recommendation
@@ -619,53 +619,40 @@ def register_user(user: UserRegister):
     normalized_email = str(user.email).lower().strip()
     normalized_user_name = str(user.user_name).strip()
     normalized_phone_number = user.phone_number.strip()
+    normalized_nric = user.nric.strip()
     hashed_password = hash_password(user.password)
     
     try:
         with engine.begin() as conn:
-            existing_user = conn.execute(text("""
-                SELECT user_id FROM users
-                WHERE email = :email
-            """), {
-                "email": normalized_email
-            }).first()
-
-            if existing_user is not None:
-                raise HTTPException(
-                    status_code = status.HTTP_409_CONFLICT,
-                    detail = "An account with this email already exists."
-                )
-            
             result = conn.execute(text("""
                 INSERT INTO users (
                     user_name,
                     email,
                     password_hash,
                     phone_number,
-                    dob
+                    dob,
+                    nric
                 )
                 VALUES (
                     :user_name,
                     :email,
                     :password_hash,
                     :phone_number,
-                    :dob
+                    :dob,
+                    :nric
                 )
-                RETURNING user_id, user_name, email, phone_number, dob;
+                ON CONFLICT DO NOTHING
+                RETURNING user_id, user_name, email, phone_number, dob, nric
             """), {
                 "user_name": normalized_user_name,
                 "email": normalized_email,
                 "password_hash": hashed_password,
                 "phone_number": normalized_phone_number,
-                "dob": user.dob
+                "dob": user.dob,
+                "nric": normalized_nric,
             })
 
             new_user = result.mappings().first()
-
-            return {
-                "message": "User registered successfully",
-                "user": dict(new_user)
-            }
 
     except HTTPException:
         raise
@@ -681,6 +668,17 @@ def register_user(user: UserRegister):
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail = f"Failed to register user"
         )
+
+    if new_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This email already exists."
+        )
+
+    return {
+        "message": "User registered successfully",
+        "user": dict(new_user)
+    }
 
 
 # User login endpoint
@@ -779,7 +777,7 @@ def update_username(request_data: UpdateUsernameInput,
                 UPDATE users
                     SET user_name = :user_name
                     WHERE user_id = :user_id
-                RETURNING user_id, user_name, email, phone_number, dob
+                RETURNING user_id, user_name, email, phone_number, dob, nric
             """), {
                 "user_name": normalized_user_name,
                 "user_id": user_id
@@ -815,7 +813,7 @@ async def update_phone_number(request_data: UpdatePhoneNumberInput,
                     UPDATE users
                     SET phone_number = :phone_number
                     WHERE user_id = :user_id
-                    RETURNING user_id, user_name, email, phone_number, dob
+                    RETURNING user_id, user_name, email, phone_number, dob, nric
                 """),
                 {
                     "phone_number": request_data.phone_number,
@@ -856,7 +854,7 @@ async def update_dob(request_data: UpdateDobInput,
                     UPDATE users
                     SET dob = :dob
                     WHERE user_id = :user_id
-                    RETURNING user_id, user_name, email, phone_number, dob
+                    RETURNING user_id, user_name, email, phone_number, dob, nric
                 """),
                 {
                     "dob": request_data.dob,
@@ -882,6 +880,48 @@ async def update_dob(request_data: UpdateDobInput,
     return {
         "message": "Date of birth updated successfully",
         "user": dict(updated_dob)
+    }
+
+
+# Edit user's NRIC
+@app.patch("/users/me/nric")
+async def update_nric(request_data: UpdateNricInput,
+                      current_user: Annotated[dict, Depends(get_current_user)]):
+    try:
+        user_id = current_user["user_id"]
+
+        with engine.begin() as conn:
+            updated_nric = conn.execute(
+                text("""
+                    UPDATE users
+                    SET nric = :nric
+                    WHERE user_id = :user_id
+                    RETURNING user_id, user_name, email, phone_number, dob, nric
+                """),
+                {
+                    "nric": request_data.nric.strip(),
+                    "user_id": user_id
+                }
+            ).mappings().first()
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to update NRIC"
+        ) from e
+
+    if updated_nric is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    return {
+        "message": "NRIC updated successfully",
+        "user": dict(updated_nric)
     }
 
 
@@ -1297,7 +1337,9 @@ async def create_complaint(
     premise_type: Annotated[str, Form()],
     premise_name: Annotated[str, Form()],
     premise_address: Annotated[str, Form()],
-    postal_code: Annotated[str, Form()],
+    full_name: Annotated[str, Form()],
+    nric: Annotated[str, Form()],
+    postal_code: Annotated[str | None, Form()] = None,
     phone_no: Annotated[str | None, Form()] = None,
     email: Annotated[EmailStr | None, Form()] = None,
     district: Annotated[str | None, Form()] = None,
@@ -1313,6 +1355,8 @@ async def create_complaint(
         product_price=product_price,
         loss_amount=loss_amount, 
         date_issue=date_issue, 
+        full_name=full_name,
+        nric=nric,
         phone_no=phone_no, 
         email=email,
         premise_type=premise_type, 
@@ -1369,6 +1413,8 @@ async def create_complaint(
                         date_issue,
                         premise_type,
                         premise_name,
+                        full_name,
+                        nric,
                         phone_no,
                         email,
                         premise_address,
@@ -1389,6 +1435,8 @@ async def create_complaint(
                         :date_issue,
                         :premise_type,
                         :premise_name,
+                        :full_name,
+                        :nric,
                         :phone_no,
                         :email,
                         :premise_address,
@@ -1410,12 +1458,10 @@ async def create_complaint(
                     "date_issue": request_data.date_issue,
                     "premise_type": request_data.premise_type,
                     "premise_name": request_data.premise_name,
+                    "full_name": request_data.full_name,
+                    "nric": request_data.nric,
                     "phone_no": request_data.phone_no,
-                    "email": (
-                        str(request_data.email)
-                        if request_data.email is not None
-                        else None
-                    ),
+                    "email": request_data.email,
                     "premise_address": request_data.premise_address,
                     "postal_code": request_data.postal_code,
                     "district": request_data.district,
@@ -1549,6 +1595,8 @@ async def get_complaints(request: Request, current_user: Annotated[dict, Depends
                         c.date_issue,
                         c.premise_type,
                         c.premise_name,
+                        c.full_name,
+                        c.nric,
                         c.phone_no,
                         c.email,
                         c.premise_address,
@@ -1590,11 +1638,13 @@ async def get_complaints(request: Request, current_user: Annotated[dict, Depends
                         "loss_amount": row["loss_amount"],
                         "date_issue": row["date_issue"],
 
-                        "premise_type": row["premise_type"],
-                        "premise_name": row["premise_name"],
+                        "full_name": row["full_name"],
+                        "nric": row["nric"],
                         "phone_no": row["phone_no"],
                         "email": row["email"],
 
+                        "premise_type": row["premise_type"],
+                        "premise_name": row["premise_name"],
                         "premise_address": row["premise_address"],
                         "postal_code": row["postal_code"],
                         "district": row["district"],
