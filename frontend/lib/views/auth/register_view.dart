@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../viewmodels/auth_view_model.dart';
 import '../widgets/common/animated_notification.dart';
+import '../widgets/common/custom_button.dart';
 import 'login_view.dart';
 
 class RegisterView extends StatefulWidget {
@@ -18,6 +19,7 @@ class RegisterView extends StatefulWidget {
 class _RegisterViewState extends State<RegisterView> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
+  final _nricController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _dobController = TextEditingController();
@@ -31,6 +33,7 @@ class _RegisterViewState extends State<RegisterView> {
   @override
   void dispose() {
     _usernameController.dispose();
+    _nricController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _dobController.dispose();
@@ -80,6 +83,7 @@ class _RegisterViewState extends State<RegisterView> {
       try {
         final success = await authViewModel.register(
           name: _usernameController.text.trim(),
+          nric: _nricController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text,
           phoneNumber: _phoneController.text.trim(),
@@ -123,7 +127,7 @@ class _RegisterViewState extends State<RegisterView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Register',
+          'REGISTER',
           style: TextStyle(
             color: const Color(0xFF1A1D1F),
             fontSize: 18 * widget.scale,
@@ -146,6 +150,22 @@ class _RegisterViewState extends State<RegisterView> {
                 validator: (value) {
                   if (value == null || value.isEmpty) return "Please enter username";
                   if (value.length < 2) return "Username too short";
+                  return null;
+                },
+              ),
+              SizedBox(height: 20 * widget.scale),
+              _buildLabel("NRIC"),
+              _buildTextField(
+                controller: _nricController,
+                hint: "Enter 12-digit NRIC",
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(12),
+                ],
+                validator: (value) {
+                  if (value == null || value.isEmpty) return "Please enter NRIC";
+                  if (value.length != 12) return "NRIC must be exactly 12 digits";
                   return null;
                 },
               ),
@@ -220,21 +240,12 @@ class _RegisterViewState extends State<RegisterView> {
               SizedBox(height: 40 * widget.scale),
               authViewModel.isRegistering
                   ? const Center(child: CircularProgressIndicator(color: Color(0xFF1A1D1F)))
-                  : SizedBox(
-                      width: double.infinity,
-                      height: 55 * widget.scale,
-                      child: ElevatedButton(
-                        onPressed: _handleRegister,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1A1D1F),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(1 * widget.scale)),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          "Register",
-                          style: TextStyle(color: Colors.white, fontSize: 16 * widget.scale, fontWeight: FontWeight.w600),
-                        ),
-                      ),
+                  : CustomButton(
+                      label: "REGISTER",
+                      onTap: _handleRegister,
+                      bg: const Color(0xFF1A1D1F),
+                      text: Colors.white,
+                      scale: widget.scale,
                     ),
               SizedBox(height: 20 * widget.scale),
               Center(

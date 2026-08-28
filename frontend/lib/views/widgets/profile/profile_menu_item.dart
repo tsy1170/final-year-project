@@ -26,11 +26,19 @@ class ProfileMenuItem extends StatelessWidget {
           padding: EdgeInsets.all(16 * scale),
           decoration: BoxDecoration(
             color: const Color(0xFFFFFDFD),
-            borderRadius: BorderRadius.circular(1 * scale),
+            borderRadius: BorderRadius.circular(12 * scale),
             border: Border.all(
               color: Colors.grey.withValues(alpha: 0.3),
               width: 1 * scale,
             ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2), // Shadow color
+                  spreadRadius: -6,                     // How far the shadow extends
+                  blurRadius: 8,                      // Softness of the shadow
+                  offset: const Offset(3, 7),        // Offset of the shadow, 2),
+                )
+              ]
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

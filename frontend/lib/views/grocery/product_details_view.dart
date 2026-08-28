@@ -311,7 +311,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                               : Icons.favorite_border,
                           size: 24 * widget.scale,
                           color: favouriteViewModel.favourites.contains(details['item'].itemCode)
-                              ? const Color(0xFFED1A4B)
+                              ? const Color(0xFF325E6A)
                               : const Color(0xFF1A1D1F),
                         ),
                         SizedBox(width: 8 * widget.scale),

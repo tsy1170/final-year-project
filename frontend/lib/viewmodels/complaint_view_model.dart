@@ -1,6 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as p;
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../models/complaint.dart';
 import '../services/complaint_service.dart';
 
@@ -34,6 +40,8 @@ class ComplaintViewModel extends ChangeNotifier {
   final dateIssueController = TextEditingController();
 
   // Your Information Controllers
+  final fullNameController = TextEditingController();
+  final nricController = TextEditingController();
   final phoneNoController = TextEditingController();
   final emailController = TextEditingController();
 
@@ -45,6 +53,8 @@ class ComplaintViewModel extends ChangeNotifier {
   final postalCodeController = TextEditingController();
   final districtController = TextEditingController();
   final stateController = TextEditingController();
+  final latitudeController = TextEditingController();
+  final longitudeController = TextEditingController();
 
   // Descriptions
   final descriptionController = TextEditingController();
@@ -105,9 +115,11 @@ class ComplaintViewModel extends ChangeNotifier {
           productPrice: json['product_price'].toString(),
           lossAmount: json['loss_amount'].toString(),
           dateIssue: DateTime.parse(json['date_issue']),
+          fullName: json['full_name'],
+          nric: json['nric'],
           phoneNo: json['phone_no'],
           email: json['email'],
-          premiseType: json['premise_type'].trim(), // Trimmed here
+          premiseType: json['premise_type'].trim(),
           premiseName: json['premise_name'],
           premiseAddress: json['premise_address'],
           postalCode: json['postal_code'],
@@ -119,7 +131,7 @@ class ComplaintViewModel extends ChangeNotifier {
           attachmentUrls: (json['attachments'] as List)
               .map((a) => a['file_url'] as String)
               .toList(),
-          idempotencyKey: '', // Not needed for viewing existing
+          idempotencyKey: '',
         );
       }).toList();
     } catch (e) {
@@ -150,10 +162,12 @@ class ComplaintViewModel extends ChangeNotifier {
     districtController.text = premise['district'] ?? '';
     stateController.text = premise['state'] ?? '';
     selectedState = premise['state'];
-    selectedPremiseType = premise['premise_type'].trim(); // Trimmed here
+    selectedPremiseType = premise['premise_type'].trim();
 
     latitude = premise['latitude'];
     longitude = premise['longitude'];
+    latitudeController.text = latitude?.toString() ?? '';
+    longitudeController.text = longitude?.toString() ?? '';
     notifyListeners();
   }
 
@@ -210,6 +224,8 @@ class ComplaintViewModel extends ChangeNotifier {
     selectedDate = complaint.dateIssue;
     dateIssueController.text = "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}";
     
+    fullNameController.text = complaint.fullName ?? '';
+    nricController.text = complaint.nric ?? '';
     phoneNoController.text = complaint.phoneNo ?? '';
     emailController.text = complaint.email ?? '';
     
@@ -224,6 +240,8 @@ class ComplaintViewModel extends ChangeNotifier {
     descriptionController.text = complaint.description ?? '';
     latitude = complaint.latitude;
     longitude = complaint.longitude;
+    latitudeController.text = latitude?.toString() ?? '';
+    longitudeController.text = longitude?.toString() ?? '';
     attachmentUrls = complaint.attachmentUrls;
     
     _isSaved = true; 
@@ -262,6 +280,8 @@ class ComplaintViewModel extends ChangeNotifier {
   void setLocation(double? lat, double? lng) {
     latitude = lat;
     longitude = lng;
+    latitudeController.text = lat?.toString() ?? '';
+    longitudeController.text = lng?.toString() ?? '';
     notifyListeners();
   }
 
@@ -286,6 +306,8 @@ class ComplaintViewModel extends ChangeNotifier {
       productPrice: productPriceController.text,
       lossAmount: lossAmountController.text,
       dateIssue: selectedDate,
+      fullName: fullNameController.text.isEmpty ? null : fullNameController.text,
+      nric: nricController.text.isEmpty ? null : nricController.text,
       phoneNo: phoneNoController.text.isEmpty ? null : phoneNoController.text,
       email: emailController.text.isEmpty ? null : emailController.text,
       premiseType: selectedPremiseType ?? '',
@@ -295,8 +317,8 @@ class ComplaintViewModel extends ChangeNotifier {
       district: districtController.text.isEmpty ? null : districtController.text,
       state: selectedState ?? stateController.text,
       description: descriptionController.text.isEmpty ? null : descriptionController.text,
-      latitude: latitude,
-      longitude: longitude,
+      latitude: double.tryParse(latitudeController.text) ?? latitude,
+      longitude: double.tryParse(longitudeController.text) ?? longitude,
       attachments: attachments,
       attachmentUrls: attachmentUrls,
       idempotencyKey: idempotencyKey!,
@@ -322,11 +344,80 @@ class ComplaintViewModel extends ChangeNotifier {
     }
   }
 
+  /// Downloads attachments from [attachmentUrls] if [attachments] is empty.
+  /// Returns a list of local file paths.
+  Future<List<String>> getLocalAttachmentPaths() async {
+    if (attachments.isNotEmpty) {
+      return attachments.map((file) => file.path).toList();
+    }
+
+    if (attachmentUrls.isNotEmpty) {
+      List<String> downloadedPaths = [];
+      final tempDir = await getTemporaryDirectory();
+      
+      for (int i = 0; i < attachmentUrls.length; i++) {
+        final url = attachmentUrls[i];
+        try {
+          final response = await http.get(Uri.parse(url));
+          if (response.statusCode == 200) {
+            final extension = p.extension(url).isEmpty ? '.jpg' : p.extension(url);
+            final fileName = "complaint_img_${i}_${DateTime.now().millisecondsSinceEpoch}$extension";
+            final file = File(p.join(tempDir.path, fileName));
+            await file.writeAsBytes(response.bodyBytes);
+            downloadedPaths.add(file.path);
+          }
+        } catch (e) {
+          debugPrint("Error downloading attachment: $e");
+        }
+      }
+      return downloadedPaths;
+    }
+
+    return [];
+  }
+
+  /// Saves current attachments (local or from URLs) to the device Gallery.
+  Future<void> saveAttachmentsToGallery() async {
+    // Request permissions based on platform
+    bool granted = false;
+    
+    if (Platform.isAndroid) {
+      // Android 13+ (SDK 33) uses granular media permissions
+      // Permission.photos handles READ_MEDIA_IMAGES and related access
+      if (await Permission.photos.request().isGranted) {
+        granted = true;
+      } 
+      // Fallback for older Android versions
+      else if (await Permission.storage.request().isGranted) {
+        granted = true;
+      }
+    } else if (Platform.isIOS) {
+      granted = await Permission.photos.request().isGranted;
+    }
+
+    if (!granted) {
+      throw Exception("Gallery permission denied. Please enable it in settings to save images.");
+    }
+
+    final paths = await getLocalAttachmentPaths();
+    for (String path in paths) {
+      try {
+        // saveFile is supported by image_gallery_saver_plus and is efficient for existing local paths
+        final result = await ImageGallerySaverPlus.saveFile(path);
+        debugPrint("Image saved to gallery result: $result");
+      } catch (e) {
+        debugPrint("Error saving image to gallery: $e");
+      }
+    }
+  }
+
   void reset() {
     productNameController.clear();
     productPriceController.clear();
     lossAmountController.clear();
     dateIssueController.clear();
+    fullNameController.clear();
+    nricController.clear();
     phoneNoController.clear();
     emailController.clear();
     premiseNameController.clear();
@@ -335,6 +426,8 @@ class ComplaintViewModel extends ChangeNotifier {
     districtController.clear();
     stateController.clear();
     descriptionController.clear();
+    latitudeController.clear();
+    longitudeController.clear();
 
     selectedCategory = null;
     selectedPremiseType = null;
@@ -369,6 +462,8 @@ class ComplaintViewModel extends ChangeNotifier {
     productPriceController.dispose();
     lossAmountController.dispose();
     dateIssueController.dispose();
+    fullNameController.dispose();
+    nricController.dispose();
     phoneNoController.dispose();
     emailController.dispose();
     premiseNameController.dispose();
@@ -377,6 +472,8 @@ class ComplaintViewModel extends ChangeNotifier {
     districtController.dispose();
     stateController.dispose();
     descriptionController.dispose();
+    latitudeController.dispose();
+    longitudeController.dispose();
     super.dispose();
   }
 }

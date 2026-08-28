@@ -16,7 +16,9 @@ class EditProfileView extends StatefulWidget {
 }
 
 class _EditProfileViewState extends State<EditProfileView> {
+  final _formKey = GlobalKey<FormState>();
   late TextEditingController _usernameController;
+  late TextEditingController _nricController;
   late TextEditingController _phoneController;
   late TextEditingController _dobController;
   bool _hasChanges = false;
@@ -26,10 +28,12 @@ class _EditProfileViewState extends State<EditProfileView> {
     super.initState();
     final authViewModel = context.read<AuthViewModel>();
     _usernameController = TextEditingController(text: authViewModel.userName ?? '');
+    _nricController = TextEditingController(text: authViewModel.userNric ?? '');
     _phoneController = TextEditingController(text: authViewModel.userPhoneNumber ?? '');
     _dobController = TextEditingController(text: authViewModel.userDob ?? '');
     
     _usernameController.addListener(_onProfileChanged);
+    _nricController.addListener(_onProfileChanged);
     _phoneController.addListener(_onProfileChanged);
     _dobController.addListener(_onProfileChanged);
   }
@@ -38,6 +42,7 @@ class _EditProfileViewState extends State<EditProfileView> {
     final authViewModel = context.read<AuthViewModel>();
     setState(() {
       _hasChanges = _usernameController.text != (authViewModel.userName ?? '') ||
+          _nricController.text != (authViewModel.userNric ?? '') ||
           _phoneController.text != (authViewModel.userPhoneNumber ?? '') ||
           _dobController.text != (authViewModel.userDob ?? '');
     });
@@ -46,6 +51,7 @@ class _EditProfileViewState extends State<EditProfileView> {
   @override
   void dispose() {
     _usernameController.dispose();
+    _nricController.dispose();
     _phoneController.dispose();
     _dobController.dispose();
     super.dispose();
@@ -67,9 +73,16 @@ class _EditProfileViewState extends State<EditProfileView> {
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: Theme.of(context).copyWith(
+            datePickerTheme: DatePickerThemeData(
+              dividerColor: Colors.grey.withValues(alpha: 0.3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(1 * widget.scale),
+              ),
+            ),
+            dialogTheme: const DialogThemeData(backgroundColor: Color(0xFFFFFDFD)),
             colorScheme: const ColorScheme.light(
               primary: Color(0xFF1A1D1F),
-              onPrimary: Colors.white,
+              onPrimary: Color(0xFFFFFDFD),
               onSurface: Color(0xFF1A1D1F),
             ),
           ),
@@ -86,16 +99,24 @@ class _EditProfileViewState extends State<EditProfileView> {
   }
 
   Future<void> _saveProfile() async {
+    if (!_formKey.currentState!.validate()) return;
+
     final authViewModel = context.read<AuthViewModel>();
     try {
       // Update Username if changed
       if (_usernameController.text != (authViewModel.userName ?? '')) {
-        await authViewModel.updateUsername(_usernameController.text);
+        await authViewModel.updateUsername(_usernameController.text.trim());
+      }
+
+      // Update NRIC if changed
+      if (_nricController.text != (authViewModel.userNric ?? '')) {
+        final cleanedNric = _nricController.text.replaceAll('-', '').trim();
+        await authViewModel.updateNric(cleanedNric);
       }
       
       // Update Phone Number if changed
       if (_phoneController.text != (authViewModel.userPhoneNumber ?? '')) {
-        await authViewModel.updatePhoneNumber(_phoneController.text);
+        await authViewModel.updatePhoneNumber(_phoneController.text.trim());
       }
       
       // Update DOB if changed
@@ -159,55 +180,90 @@ class _EditProfileViewState extends State<EditProfileView> {
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20 * widget.scale),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionTitle('Username'),
-            _buildTextField(
-              controller: _usernameController,
-              hint: 'Enter username',
-              icon: Icons.person_outline_rounded,
-            ),
-            SizedBox(height: 20 * widget.scale),
-            _buildSectionTitle('Phone Number'),
-            _buildTextField(
-              controller: _phoneController,
-              hint: 'Enter phone number',
-              icon: Icons.phone_outlined,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            ),
-            SizedBox(height: 20 * widget.scale),
-            _buildSectionTitle('Date of Birth'),
-            _buildTextField(
-              controller: _dobController,
-              hint: 'Select date of birth',
-              icon: Icons.calendar_today_outlined,
-              readOnly: true,
-              onTap: () => _selectDob(context),
-            ),
-            SizedBox(height: 20 * widget.scale),
-            _buildSectionTitle('Email'),
-            _buildRedirectBox(
-              label: authViewModel.userEmail ?? '',
-              icon: Icons.email_outlined,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ChangeEmailView(scale: widget.scale)),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle('Username'),
+              _buildTextField(
+                controller: _usernameController,
+                hint: 'Enter username',
+                icon: Icons.person_outline_rounded,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) return "Username is required";
+                  if (value.trim().length < 2) return "Username must be at least 2 characters";
+                  if (value.trim().length > 128) return "Username is too long";
+                  return null;
+                },
               ),
-            ),
-            SizedBox(height: 20 * widget.scale),
-            _buildSectionTitle('Password'),
-            _buildRedirectBox(
-              label: '********',
-              icon: Icons.lock_outline_rounded,
-              isPassword: true,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ChangePasswordView(scale: widget.scale)),
+              SizedBox(height: 20 * widget.scale),
+              _buildSectionTitle('NRIC'),
+              _buildTextField(
+                controller: _nricController,
+                hint: 'Enter 12-digit NRIC',
+                icon: Icons.badge_outlined,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(12),
+                ],
+                validator: (value) {
+                  if (value == null || value.isEmpty) return "NRIC is required";
+                  final cleaned = value.replaceAll('-', '');
+                  if (cleaned.length != 12) return "NRIC must be exactly 12 digits";
+                  return null;
+                },
               ),
-            ),
-          ],
+              SizedBox(height: 20 * widget.scale),
+              _buildSectionTitle('Phone Number'),
+              _buildTextField(
+                controller: _phoneController,
+                hint: 'Enter phone number',
+                icon: Icons.phone_outlined,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) return "Phone number is required";
+                  if (value.trim().length > 30) return "Phone number is too long";
+                  return null;
+                },
+              ),
+              SizedBox(height: 20 * widget.scale),
+              _buildSectionTitle('Date of Birth'),
+              _buildTextField(
+                controller: _dobController,
+                hint: 'Select date of birth',
+                icon: Icons.calendar_today_outlined,
+                readOnly: true,
+                onTap: () => _selectDob(context),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return "Date of birth is required";
+                  return null;
+                },
+              ),
+              SizedBox(height: 20 * widget.scale),
+              _buildSectionTitle('Email'),
+              _buildRedirectBox(
+                label: authViewModel.userEmail ?? '',
+                icon: Icons.email_outlined,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ChangeEmailView(scale: widget.scale)),
+                ),
+              ),
+              SizedBox(height: 20 * widget.scale),
+              _buildSectionTitle('Password'),
+              _buildRedirectBox(
+                label: '********',
+                icon: Icons.lock_outline_rounded,
+                isPassword: true,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ChangePasswordView(scale: widget.scale)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -235,32 +291,43 @@ class _EditProfileViewState extends State<EditProfileView> {
     List<TextInputFormatter>? inputFormatters,
     bool readOnly = false,
     VoidCallback? onTap,
+    String? Function(String?)? validator,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4F4F4),
-        borderRadius: BorderRadius.circular(1 * widget.scale),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        inputFormatters: inputFormatters,
-        readOnly: readOnly,
-        onTap: onTap,
-        style: TextStyle(fontSize: 14 * widget.scale, fontWeight: FontWeight.w400),
-        decoration: InputDecoration(
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(1 * widget.scale),
-            borderSide: BorderSide(color: const Color(0xFF1A1D1F), width: 1 * widget.scale),
-          ),
-          prefixIcon: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 15 * widget.scale),
-            child: Icon(icon, color: const Color(0xFF1A1D1F), size: 18 * widget.scale),
-          ),
-          hintText: hint,
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 15 * widget.scale),
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      readOnly: readOnly,
+      onTap: onTap,
+      validator: validator,
+      style: TextStyle(fontSize: 14 * widget.scale, fontWeight: FontWeight.w400, color: const Color(0xFF1A1D1F)),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: const Color(0xFFF4F4F4),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(1 * widget.scale),
+          borderSide: BorderSide(color: const Color(0xFF1A1D1F), width: 1 * widget.scale),
         ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(1 * widget.scale),
+          borderSide: BorderSide.none,
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(1 * widget.scale),
+          borderSide: BorderSide(color: Colors.red.shade700, width: 1 * widget.scale),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(1 * widget.scale),
+          borderSide: BorderSide(color: Colors.red.shade700, width: 1 * widget.scale),
+        ),
+        prefixIcon: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 15 * widget.scale),
+          child: Icon(icon, color: const Color(0xFF1A1D1F), size: 18 * widget.scale),
+        ),
+        hintText: hint,
+        hintStyle: TextStyle(color: const Color(0xFF9A9FA5), fontSize: 13 * widget.scale),
+        contentPadding: EdgeInsets.symmetric(vertical: 15 * widget.scale),
+        errorStyle: TextStyle(fontSize: 11 * widget.scale, color: Colors.red.shade700),
       ),
     );
   }
@@ -268,7 +335,7 @@ class _EditProfileViewState extends State<EditProfileView> {
   Widget _buildRedirectBox({required String label, required IconData icon, bool isPassword = false, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: SizedBox(
         width: double.infinity,
         child: InputDecorator(
           decoration: InputDecoration(

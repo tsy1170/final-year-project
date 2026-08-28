@@ -56,7 +56,7 @@ class _PromotionSectionState extends State<PromotionSection> {
         Padding(
           padding: EdgeInsets.fromLTRB(
             20 * widget.scale,
-            5 * widget.scale,
+            10 * widget.scale,
             20 * widget.scale,
             15 * widget.scale,
           ),
@@ -122,7 +122,7 @@ class _PromotionSectionState extends State<PromotionSection> {
           children: List.generate(
             promoProducts.length,
             (index) => AnimatedContainer(
-              duration: const Duration(milliseconds: 130),
+              duration: const Duration(milliseconds: 200),
               margin: EdgeInsets.symmetric(horizontal: 2 * widget.scale),
               height: 3 * widget.scale,
               width: _currentPage == index
@@ -131,7 +131,7 @@ class _PromotionSectionState extends State<PromotionSection> {
               decoration: BoxDecoration(
                 color: _currentPage == index
                     ? const Color(0xFF1A1D1F)
-                    : const Color(0xFF1A1D1F).withValues(alpha: 0.2),
+                    : const Color(0xFF1A1D1F).withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(0 * widget.scale),
               ),
             ),
@@ -176,11 +176,18 @@ class _PromotionCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border.all(
-              // color: const Color(0xFFED1A4B),
               color: Colors.grey.withValues(alpha: 0.3),
               width: 1 * scale,
             ),
-            borderRadius: BorderRadius.circular(1 * scale),
+            borderRadius: BorderRadius.circular(12 * scale),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2), // Shadow color
+                  spreadRadius: -6,                     // How far the shadow extends
+                  blurRadius: 6,                      // Softness of the shadow
+                  offset: const Offset(0, 10),        // Offset of the shadow, 2),
+                )
+              ]
           ),
           child: Stack(
             children: [
@@ -190,10 +197,10 @@ class _PromotionCard extends StatelessWidget {
                     width: 130 * scale,
                     height: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: const Color(0xFFFFFDFD),
                       borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(1 * scale),
-                        bottomLeft: Radius.circular(1 * scale),
+                        topLeft: Radius.circular(12 * scale),
+                        bottomLeft: Radius.circular(12 * scale),
                       ),
                     ),
                     padding: EdgeInsets.all(2 * scale),
@@ -254,7 +261,7 @@ class _PromotionCard extends StatelessWidget {
                                         : Icons.favorite_border,
                                     size: 24 * scale,
                                     color: isFavourite
-                                        ? const Color(0xFFED1A4B)
+                                        ? const Color(0xFF325E6A)
                                         : const Color(0xFF1A1D1F),
                                   ),
                                 ),
@@ -310,7 +317,14 @@ class _PromotionCard extends StatelessWidget {
                 left: 0,
                 child: Container(
                   width: 50 * scale,
-                  color: const Color(0xFFED1A4B),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF325E6A),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(11 * scale),
+                      bottomRight: Radius.circular(11 * scale),
+                    ),
+                  ),
+
                   padding: EdgeInsets.symmetric(vertical: 1 * scale),
                   child: Text(
                     'Deals',

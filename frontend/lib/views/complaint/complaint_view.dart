@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../viewmodels/auth_view_model.dart';
 import '../../viewmodels/complaint_view_model.dart';
-import '../widgets/complaint/complaint_header.dart';
 import '../widgets/complaint/complaint_empty_state.dart';
 import '../widgets/complaint/complaint_logged_out.dart';
 import '../widgets/complaint/complaint_delete_button.dart';
@@ -113,49 +112,61 @@ class _ComplaintViewState extends State<ComplaintView> {
     final authViewModel = context.watch<AuthViewModel>();
     final complaintViewModel = context.watch<ComplaintViewModel>();
 
-    return Container(
-      color: const Color(0xFFFFFDFD),
-      child: Stack(
-        children: [
-          Column(
-            children: [
-              ComplaintHeader(
-                scale: widget.scale,
-                isLoggedIn: authViewModel.isLoggedIn,
-                isSelectMode: complaintViewModel.isSelectMode,
-                onAddPressed: () {
-                  complaintViewModel.startNewComplaint();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddComplaintView(scale: widget.scale),
-                    ),
-                  );
-                },
-                onClosePressed: () {
-                  complaintViewModel.toggleSelectMode();
-                },
-              ),
-              Expanded(
-                child: !authViewModel.isLoggedIn
-                    ? ComplaintLoggedOutState(scale: widget.scale)
-                    : complaintViewModel.isLoading && complaintViewModel.userComplaints.isEmpty
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0xFF1A1D1F),
-                            ),
-                          )
-                        : complaintViewModel.userComplaints.isEmpty
-                            ? ComplaintEmptyState(scale: widget.scale)
-                            : RefreshIndicator(
-                                onRefresh: () => complaintViewModel.fetchUserComplaints(authViewModel.accessToken!),
-                                color: const Color(0xFFFFFDFD),
-                                backgroundColor: const Color(0xFF1A1D1F),
-                                child: _buildGroupedComplaintList(complaintViewModel),
-                              ),
-              ),
-            ],
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFFAF3),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFFFFAF3),
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        title: Text(
+          complaintViewModel.isSelectMode ? 'SELECT ITEMS' : 'COMPLAINTS',
+          style: TextStyle(
+            color: const Color(0xFF1A1D1F),
+            fontSize: 18 * widget.scale,
+            fontWeight: FontWeight.w700,
           ),
+        ),
+        actions: [
+          if (authViewModel.isLoggedIn)
+            IconButton(
+              onPressed: complaintViewModel.isSelectMode
+                  ? () => complaintViewModel.toggleSelectMode()
+                  : () {
+                      complaintViewModel.startNewComplaint();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AddComplaintView(scale: widget.scale),
+                        ),
+                      );
+                    },
+              icon: Icon(
+                complaintViewModel.isSelectMode ? Icons.close_rounded : Icons.add_circle_outline_rounded,
+                size: 26 * widget.scale,
+                color: const Color(0xFF325E6A),
+              ),
+            ),
+          SizedBox(width: 10 * widget.scale),
+        ],
+      ),
+      body: Stack(
+        children: [
+          !authViewModel.isLoggedIn
+              ? ComplaintLoggedOutState(scale: widget.scale)
+              : complaintViewModel.isLoading && complaintViewModel.userComplaints.isEmpty
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF1A1D1F),
+                      ),
+                    )
+                  : complaintViewModel.userComplaints.isEmpty
+                      ? ComplaintEmptyState(scale: widget.scale)
+                      : RefreshIndicator(
+                          onRefresh: () => complaintViewModel.fetchUserComplaints(authViewModel.accessToken!),
+                          color: const Color(0xFFFFFDFD),
+                          backgroundColor: const Color(0xFF1A1D1F),
+                          child: _buildGroupedComplaintList(complaintViewModel),
+                        ),
           if (complaintViewModel.isSelectMode && complaintViewModel.selectedComplaintIds.isNotEmpty)
             ComplaintDeleteButton(
               scale: widget.scale,
@@ -196,7 +207,7 @@ class _ComplaintViewState extends State<ComplaintView> {
                 style: TextStyle(
                   fontSize: 14 * widget.scale,
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF1A1D1F).withValues(alpha: 0.6),
+                  color: const Color(0xFF325E6A),
                   letterSpacing: 1 * widget.scale,
                 ),
               ),

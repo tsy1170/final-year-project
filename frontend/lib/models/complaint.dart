@@ -8,6 +8,8 @@ class Complaint {
   final String productPrice;
   final String lossAmount;
   final DateTime dateIssue;
+  final String? fullName;
+  final String? nric;
   final String? phoneNo;
   final String? email;
   final String premiseType;
@@ -30,6 +32,8 @@ class Complaint {
     required this.productPrice,
     required this.lossAmount,
     required this.dateIssue,
+    this.fullName,
+    this.nric,
     this.phoneNo,
     this.email,
     required this.premiseType,
@@ -53,6 +57,8 @@ class Complaint {
       'product_price': num.tryParse(productPrice),
       'loss_amount': num.tryParse(lossAmount),
       'date_issue': DateFormat('yyyy-MM-dd').format(dateIssue),
+      'full_name': (fullName == null || fullName!.isEmpty) ? null : fullName,
+      'nric': (nric == null || nric!.isEmpty) ? null : nric,
       'phone_no': (phoneNo == null || phoneNo!.isEmpty) ? null : phoneNo,
       'email': (email == null || email!.isEmpty) ? null : email,
       'premise_type': premiseType,

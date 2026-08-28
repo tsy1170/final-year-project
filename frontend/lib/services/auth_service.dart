@@ -16,6 +16,7 @@ class AuthService {
 
   Future<bool> register({
     required String userName,
+    required String nric,
     required String email,
     required String password,
     required String phoneNumber,
@@ -27,6 +28,7 @@ class AuthService {
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
         'user_name': userName,
+        'nric': nric,
         'email': email,
         'password': password,
         'phone_number': phoneNumber,
@@ -115,6 +117,25 @@ class AuthService {
       return json.decode(response.body);
     } else {
       throw Exception(_parseError(response.body, 'Failed to update username'));
+    }
+  }
+
+  Future<Map<String, dynamic>> updateNric(String token, String newNric) async {
+    final url = Uri.parse('$baseUrl/users/me/nric');
+    final response = await http.patch(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'nric': newNric}),
+    );
+    _handleResponse(response);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception(_parseError(response.body, 'Failed to update NRIC'));
     }
   }
 

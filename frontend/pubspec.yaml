@@ -47,6 +47,10 @@ dependencies:
   google_mlkit_text_recognition: ^0.17.1
   camera: ^0.12.0+2
   image: ^4.9.2
+  flutter_email_sender: ^10.0.1
+  path_provider: ^2.1.2
+  image_gallery_saver_plus: ^5.1.1
+  permission_handler: ^13.0.1
 
 dev_dependencies:
   flutter_test:

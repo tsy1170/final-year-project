@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../auth/login_view.dart';
+import '../common/custom_button.dart';
 
 class FavouriteLoggedOutState extends StatelessWidget {
   final double scale;
@@ -30,26 +31,17 @@ class FavouriteLoggedOutState extends StatelessWidget {
               ),
             ),
             SizedBox(height: 25 * scale),
-            SizedBox(
-              width: double.infinity,
-              height: 50 * scale,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => LoginView(scale: scale)),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A1D1F),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(1 * scale),
-                  ),
-                ),
-                child: const Text('LOGIN', style: TextStyle(fontWeight: FontWeight.w600)),
-              ),
+            CustomButton(
+              label: 'LOGIN',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginView(scale: scale)),
+                );
+              },
+              bg: const Color(0xFF1A1D1F),
+              text: Colors.white,
+              scale: scale,
             ),
           ],
         ),

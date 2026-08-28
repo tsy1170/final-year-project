@@ -83,10 +83,10 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
                             border: Border(
                               bottom: BorderSide(
                                 color: Colors.black.withValues(alpha: 0.1),
-                                width: 0.5 * widget.scale,
+                                width: 1 * widget.scale,
                               ),
                               top: index == 0
-                                ? BorderSide(color: Colors.black.withValues(alpha: 0.1), width: 0.5 * widget.scale)
+                                ? BorderSide(color: Colors.black.withValues(alpha: 0.1), width: 1 * widget.scale)
                                 : BorderSide.none,
                             ),
                           ),

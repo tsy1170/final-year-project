@@ -29,7 +29,7 @@ class ShopByCategory extends StatelessWidget {
               style: TextStyle(
                 fontSize: 17 * scale,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1A1D1F),
+                color: const Color(0xFF325E6A),
                 letterSpacing: 0,
               ),
             ),
@@ -56,14 +56,14 @@ class ShopByCategory extends StatelessWidget {
               vertical: 10 * scale,
             ),
             decoration: BoxDecoration(
-              color: Colors.transparent,
+              color: const Color(0xFFFFFDFD),
               border: Border(
                 top: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   width: 1 * scale,
                 ),
                 bottom: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   width: 1 * scale,
                 ),
               ),
@@ -110,10 +110,10 @@ class ShopByCategory extends StatelessWidget {
               vertical: 15 * scale,
             ),
             decoration: BoxDecoration(
-              color: Colors.transparent,
+              color: const Color(0xFFFFFDFD),
               border: Border(
                 bottom: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   width: 1 * scale,
                 ),
               ),
@@ -160,10 +160,10 @@ class ShopByCategory extends StatelessWidget {
               vertical: 15 * scale,
             ),
             decoration: BoxDecoration(
-              color: Colors.transparent,
+              color: const Color(0xFFFFFDFD),
               border: Border(
                 bottom: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   width: 1 * scale,
                 ),
               ),

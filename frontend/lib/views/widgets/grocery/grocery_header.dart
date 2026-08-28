@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../viewmodels/grocery_view_model.dart';
+import '../../../viewmodels/navigation_view_model.dart';
 import '../../grocery/search_page_view.dart';
 import '../../grocery/item_groups_view.dart';
 
 class GroceryHeader extends StatelessWidget {
-  const GroceryHeader({super.key, required this.scale, required this.viewModel});
+  const GroceryHeader({
+    super.key,
+    required this.scale,
+    required this.viewModel,
+  });
 
   final double scale;
   final GroceryViewModel viewModel;
@@ -13,16 +19,19 @@ class GroceryHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 140 * scale,
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFDFD)
+      height: 160 * scale,
+      decoration: const BoxDecoration(
+          color: Color(0xFFFFFAF3),
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(15),
+        )
       ),
       child: Stack(
         children: [
           Positioned(
             left: 20 * scale,
             right: 20 * scale,
-            top: 40 * scale,
+            top: 50 * scale,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -34,94 +43,115 @@ class GroceryHeader extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {},
-                      constraints: const BoxConstraints(),
-                      alignment: Alignment.center,
-                      icon: Icon(
-                        Icons.notifications_none_rounded,
-                        size: 24 * scale,
-                        color: const Color(0xFF1A1D1F),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ItemGroupsView(scale: scale),
-                          ),
-                        );
-                      },
-                      constraints: const BoxConstraints(),
-                      visualDensity: VisualDensity.compact, // Removes the internal padding
-                      alignment: Alignment.center,
-                      icon: Icon(
-                        Icons.menu_rounded,
-                        size: 24 * scale,
-                        color: const Color(0xFF1A1D1F),
-                      ),
-                    ),
-                  ],
-                )
               ],
-            )
+            ),
           ),
           Positioned(
-            left: 0 * scale,
-            right: 0 * scale,
+            left: 20 * scale,
+            right: 20 * scale,
             top: 95 * scale,
             height: 45 * scale,
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SearchPageView(scale: scale),
-                  ),
-                );
-              },
-              child: AbsorbPointer(
-                child: TextField(
-                  readOnly: true,
-                  style: TextStyle(
-                    fontSize: 12 * scale,
-                    color: const Color(0xFF1A1D1F),
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Search Items',
-                    hintStyle: TextStyle(
-                      fontSize: 12 * scale,
-                      color: const Color(0xFF1A1D1F),
-                      letterSpacing: 0
-                    ),
-                    prefixIcon: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        20 * scale,
-                        10 * scale,
-                        10 * scale,
-                        10 * scale,
-                      ),
+            child: Row(
+              children: [
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      context.read<NavigationViewModel>().setSelectedIndex(4);
+                    },
+                    borderRadius: BorderRadius.circular(20 * scale),
+                    child: Padding(
+                      padding: EdgeInsets.all(4 * scale),
                       child: Icon(
-                        Icons.search,
-                        size: 20 * scale,
+                        Icons.account_circle,
+                        size: 26 * scale,
                         color: const Color(0xFF1A1D1F),
                       ),
                     ),
-                    prefixIconConstraints: BoxConstraints(
-                      minWidth: 52 * scale,
-                      minHeight: 37 * scale,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(vertical: 9 * scale),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.8),
-                    enabledBorder: searchBorder(scale),
-                    focusedBorder: searchBorder(scale, width: 1.5),
                   ),
                 ),
-              ),
+                SizedBox(width: 10 * scale),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SearchPageView(scale: scale),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFDFD),
+                        borderRadius: BorderRadius.circular(12 * scale),
+                        border: Border.all(
+                          color: Colors.grey.withValues(alpha: 0.3),
+                          width: 1 * scale,
+                        )
+                      ),
+                      child: AbsorbPointer(
+                        child: TextField(
+                          textAlignVertical: TextAlignVertical.center,
+                          readOnly: true,
+                          style: TextStyle(
+                            fontSize: 12 * scale,
+                            color: const Color(0xFF1A1D1F),
+                          ),
+                          decoration: InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 10 * scale,
+                              vertical: 10 * scale
+                            ),
+                            hintText: 'Search Items',
+                            hintStyle: TextStyle(
+                                fontSize: 12 * scale,
+                                color: const Color(0xFF1A1D1F).withValues(alpha: 0.6),
+                                letterSpacing: 0),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              size: 20 * scale,
+                              color: const Color(0xFF1A1D1F),
+                            ),
+                            prefixIconConstraints: BoxConstraints(
+                              minWidth: 45 * scale,
+                              minHeight: 20 * scale
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10 * scale),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ItemGroupsView(scale: scale),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(20 * scale),
+                    child: Padding(
+                      padding: EdgeInsets.all(4 * scale),
+                      child: Icon(
+                        Icons.menu_rounded,
+                        size: 26 * scale,
+                        color: const Color(0xFF1A1D1F),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -129,12 +159,3 @@ class GroceryHeader extends StatelessWidget {
     );
   }
 }
-
-OutlineInputBorder searchBorder(double scale, {double width = 1.0}) =>
-    OutlineInputBorder(
-      borderRadius: BorderRadius.circular(1 * scale),
-      borderSide: BorderSide(
-        color: Colors.grey.withValues(alpha: 0.3), 
-        width: width * scale,
-      ),
-    );

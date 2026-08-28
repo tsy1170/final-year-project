@@ -67,7 +67,7 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
       backgroundColor: const Color(0xFFFFFDFD),
       appBar: AppBar(
         elevation: 2,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFFFFDFD),
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFF1A1D1F), size: 20 * widget.scale),

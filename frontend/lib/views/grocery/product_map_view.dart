@@ -295,7 +295,7 @@ class _ProductMapViewState extends State<ProductMapView> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1A1D1F),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(1 * widget.scale),
+                          borderRadius: BorderRadius.circular(12 * widget.scale),
                         ),
                         padding: EdgeInsets.symmetric(vertical: 12 * widget.scale),
                       ),

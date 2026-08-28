@@ -25,14 +25,19 @@ class FavouriteItemCard extends StatelessWidget {
         padding: EdgeInsets.all(12 * scale),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border(
-            bottom: BorderSide(
-              color: Colors.grey.withValues(alpha: 0.3),
-              width: 1 * scale,
-            ),
-
+          border: Border.all(
+            color: Colors.grey.withValues(alpha: 0.3),
+            width: 1 * scale,
           ),
-          borderRadius: BorderRadius.circular(1 * scale),
+          borderRadius: BorderRadius.circular(12 * scale),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2), // Shadow color
+                spreadRadius: -6,                     // How far the shadow extends
+                blurRadius: 8,                      // Softness of the shadow
+                offset: const Offset(4, 6),        // Offset of the shadow, 2),
+              )
+            ]
         ),
         child: Row(
           children: [
@@ -86,7 +91,7 @@ class FavouriteItemCard extends StatelessWidget {
               icon: Icon(
                 isFavourite ? Icons.favorite : Icons.favorite_border,
                 size: 24 * scale,
-                color: isFavourite ? const Color(0xFFED1A4B) : const Color(0xFF1A1D1F),
+                color: isFavourite ? const Color(0xFF325E6A) : const Color(0xFF1A1D1F),
               ),
             ),
           ],

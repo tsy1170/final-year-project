@@ -70,10 +70,23 @@ class OptimizationSingleStoreContent extends StatelessWidget {
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               onPressed: () async {
-                final query = Uri.encodeComponent(store['premise_name'] ?? store['address'] ?? 'Store');
-                final url = Uri.parse("https://www.google.com/maps/search/?api=1&query=$query");
-                if (await canLaunchUrl(url)) {
-                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                final String query = Uri.encodeComponent(store['premise_name'] ?? store['address'] ?? 'Store');
+                final Uri geoUrl = Uri.parse("geo:0,0?q=$query");
+                final Uri httpsUrl = Uri.parse("https://www.google.com/maps/search/?api=1&query=$query");
+
+                try {
+                  if (await canLaunchUrl(geoUrl)) {
+                    await launchUrl(geoUrl);
+                  } else {
+                    await launchUrl(httpsUrl, mode: LaunchMode.externalApplication);
+                  }
+                } catch (e) {
+                  debugPrint("Could not launch maps: $e");
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Could not open Google Maps")),
+                    );
+                  }
                 }
               },
               icon: Icon(

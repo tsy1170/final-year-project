@@ -24,18 +24,26 @@ class GroceryCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(1 * scale),
+          borderRadius: BorderRadius.circular(10 * scale),
           border: Border.all(
             color: Colors.grey.withValues(alpha: 0.3),
             width: 1 * scale
-          )
+          ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2), // Shadow color
+                spreadRadius: -6,                     // How far the shadow extends
+                blurRadius: 6,                      // Softness of the shadow
+                offset: const Offset(3, 6),        // Offset of the shadow, 2),
+              )
+            ]
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.vertical(
-                top: Radius.circular(1 * scale),
+                top: Radius.circular(10 * scale),
               ),
               child: Container(
                 height: 210 * scale,
@@ -98,7 +106,7 @@ class GroceryCard extends StatelessWidget {
                                 isFavourite ? Icons.favorite : Icons.favorite_border,
                                 size: 20 * scale,
                                 color: isFavourite
-                                    ? const Color(0xFFED1A4B)
+                                    ? const Color(0xFF325E6A)
                                     : const Color(0xFF1A1D1F),
                               ),
                             ),

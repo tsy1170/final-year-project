@@ -48,7 +48,7 @@ class OptimizationMultiStoreContent extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (!isFirst) SizedBox(height: 40 * scale),
+              if (!isFirst) SizedBox(height: 20 * scale),
               // Premise Name, Address and Location Button
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,10 +80,23 @@ class OptimizationMultiStoreContent extends StatelessWidget {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     onPressed: () async {
-                      final query = Uri.encodeComponent(store['premise_name'] ?? store['address'] ?? 'Store');
-                      final url = Uri.parse("https://www.google.com/maps/search/?api=1&query=$query");
-                      if (await canLaunchUrl(url)) {
-                        await launchUrl(url, mode: LaunchMode.externalApplication);
+                      final String query = Uri.encodeComponent(store['premise_name'] ?? store['address'] ?? 'Store');
+                      final Uri geoUrl = Uri.parse("geo:0,0?q=$query");
+                      final Uri httpsUrl = Uri.parse("https://www.google.com/maps/search/?api=1&query=$query");
+
+                      try {
+                        if (await canLaunchUrl(geoUrl)) {
+                          await launchUrl(geoUrl);
+                        } else {
+                          await launchUrl(httpsUrl, mode: LaunchMode.externalApplication);
+                        }
+                      } catch (e) {
+                        debugPrint("Could not launch maps: $e");
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Could not open Google Maps")),
+                          );
+                        }
                       }
                     },
                     icon: Icon(
@@ -146,6 +159,19 @@ class OptimizationMultiStoreContent extends StatelessWidget {
                   ),
                 ],
               ),
+
+              if (isFirst)
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 30 * scale),
+                child: Center(
+                  child: Icon(
+                    Icons.arrow_downward_outlined,
+                    color: const Color(0xFF1A1D1F),
+                    size: 25 * scale,
+                  ),
+                )
+              )
+
             ],
           );
         }).toList(),

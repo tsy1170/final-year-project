@@ -12,6 +12,9 @@ class AuthViewModel extends ChangeNotifier {
   String? _userName;
   String? get userName => _userName;
 
+  String? _userNric;
+  String? get userNric => _userNric;
+
   String? _userEmail;
   String? get userEmail => _userEmail;
 
@@ -61,11 +64,13 @@ class AuthViewModel extends ChangeNotifier {
   Future<void> _fetchAndSetUserInfo(String token) async {
     final userData = await _authService.getCurrentUser(token);
     _userName = userData['user_name'];
+    _userNric = userData['nric'];
     _userEmail = userData['email'];
     _userPhoneNumber = userData['phone_number'];
     _userDob = userData['dob'];
 
     await _storage.write(key: 'user_name', value: _userName ?? '');
+    await _storage.write(key: 'user_nric', value: _userNric ?? '');
     await _storage.write(key: 'user_email', value: _userEmail ?? '');
     await _storage.write(key: 'user_phone', value: _userPhoneNumber ?? '');
     await _storage.write(key: 'user_dob', value: _userDob ?? '');
@@ -73,6 +78,7 @@ class AuthViewModel extends ChangeNotifier {
 
   Future<bool> register({
     required String name,
+    required String nric,
     required String email,
     required String password,
     required String phoneNumber,
@@ -83,6 +89,7 @@ class AuthViewModel extends ChangeNotifier {
     try {
       final success = await _authService.register(
         userName: name,
+        nric: nric,
         email: email,
         password: password,
         phoneNumber: phoneNumber,
@@ -130,6 +137,7 @@ class AuthViewModel extends ChangeNotifier {
     await _storage.deleteAll();
     _isLoggedIn = false;
     _userName = null;
+    _userNric = null;
     _userEmail = null;
     _userPhoneNumber = null;
     _userDob = null;
@@ -148,6 +156,25 @@ class AuthViewModel extends ChangeNotifier {
       final userData = response['user'];
       _userName = userData != null ? userData['user_name'] : newUsername;
       await _storage.write(key: 'user_name', value: _userName ?? '');
+    } catch (e) {
+      rethrow;
+    } finally {
+      _isUpdating = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateNric(String newNric) async {
+    if (_accessToken == null) {
+      throw Exception('Session expired. Please login again.');
+    }
+    _isUpdating = true;
+    notifyListeners();
+    try {
+      final response = await _authService.updateNric(_accessToken!, newNric);
+      final userData = response['user'];
+      _userNric = userData != null ? userData['nric'] : newNric;
+      await _storage.write(key: 'user_nric', value: _userNric ?? '');
     } catch (e) {
       rethrow;
     } finally {

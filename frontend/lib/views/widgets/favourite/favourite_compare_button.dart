@@ -18,19 +18,18 @@ class FavouriteCompareButton extends StatelessWidget {
     return Positioned(
       left: 0,
       right: 0,
-      bottom: 70 * scale + navBarHeight,
+      bottom: 60 * scale + navBarHeight,
       child: Container(
         width: double.infinity,
         height: 60 * scale,
         decoration: BoxDecoration(
-          color: const Color(0xFFED1A4B),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10 * scale,
-              offset: Offset(0, -5 * scale),
-            ),
-          ],
+          color: const Color(0xFF325E6A),
+          border: Border(
+            top: BorderSide(
+              color: Colors.grey.withValues(alpha: 0.3),
+              width: 1 * scale
+            )
+          )
         ),
         child: Material(
           color: Colors.transparent,

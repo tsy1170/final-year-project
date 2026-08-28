@@ -20,29 +20,37 @@ class ComplaintTile extends StatelessWidget {
     final isSelected = viewModel.selectedComplaintIds.contains(complaint.complaintId);
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(1 * scale),
+        borderRadius: BorderRadius.circular(12 * scale),
         border: Border(
           bottom: BorderSide(
-            color: isSelected ? const Color(0xFFED1A4B) : const Color(0xFF1A1D1F),
+            color: isSelected ? const Color(0xFF325E6A) : Colors.grey.withValues(alpha: 0.3),
             width: 1 * scale,
           ),
           top: BorderSide(
-            color: isSelected ? const Color(0xFFED1A4B) : const Color(0xFF1A1D1F),
+            color: isSelected ? const Color(0xFF325E6A) : Colors.grey.withValues(alpha: 0.3),
             width: 1 * scale,
           ),
           right: BorderSide(
-            color: isSelected ? const Color(0xFFED1A4B) : const Color(0xFF1A1D1F),
+            color: isSelected ? const Color(0xFF325E6A) : Colors.grey.withValues(alpha: 0.3),
             width: 1 * scale,
           ),
           left: BorderSide(
-            color: isSelected ? const Color(0xFFED1A4B) : const Color(0xFF1A1D1F),
+            color: isSelected ? const Color(0xFF325E6A) : Colors.grey.withValues(alpha: 0.3),
             width: 4 * scale,
           ),
         ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2), // Shadow color
+              spreadRadius: -6,                     // How far the shadow extends
+              blurRadius: 10,                      // Softness of the shadow
+              offset: const Offset(4, 8),        // Offset of the shadow, 2),
+            )
+          ]
       ),
       child: Material(
-        color: isSelected ? const Color(0xFFED1A4B).withValues(alpha: 0.05) : const Color(0xFFFFFDFD),
-        borderRadius: BorderRadius.circular(1 * scale),
+        color: isSelected ? const Color(0xFF325E6A).withValues(alpha: 0.05) : const Color(0xFFFFFDFD),
+        borderRadius: BorderRadius.circular(12 * scale),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {
@@ -106,16 +114,16 @@ class ComplaintTile extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected ? const Color(0xFFED1A4B) : const Color(0xFF1A1D1F).withValues(alpha: 0.3),
-                        width: 1.5 * scale,
+                        color: isSelected ? const Color(0xFF1A1D1F) : const Color(0xFF1A1D1F).withValues(alpha: 0.3),
+                        width: 1 * scale,
                       ),
-                      color: isSelected ? const Color(0xFFED1A4B) : Colors.transparent,
+                      color: isSelected ? const Color(0xFF325E6A) : Colors.transparent,
                     ),
                     child: isSelected
                         ? Icon(
                             Icons.check,
                             size: 12 * scale,
-                            color: Colors.white,
+                            color: const Color(0xFFFFFDFD),
                           )
                         : null,
                   ),

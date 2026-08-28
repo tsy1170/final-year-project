@@ -73,6 +73,12 @@ class _AddComplaintViewState extends State<AddComplaintView> {
       locationViewModel.initLocation();
 
       // Prefill user information from AuthViewModel
+      if (authViewModel.userNric != null) {
+        complaintViewModel.nricController.text = authViewModel.userNric!;
+      }
+      if (authViewModel.userName != null) {
+        complaintViewModel.fullNameController.text = authViewModel.userName!;
+      }
       if (authViewModel.userPhoneNumber != null) {
         complaintViewModel.phoneNoController.text = authViewModel.userPhoneNumber!;
       }
@@ -88,6 +94,8 @@ class _AddComplaintViewState extends State<AddComplaintView> {
         viewModel.productPriceController.text.isEmpty ||
         viewModel.lossAmountController.text.isEmpty ||
         viewModel.dateIssueController.text.isEmpty ||
+        viewModel.fullNameController.text.isEmpty ||
+        viewModel.nricController.text.isEmpty ||
         viewModel.selectedPremiseType == null ||
         viewModel.premiseNameController.text.isEmpty ||
         viewModel.addressController.text.isEmpty) {
@@ -283,8 +291,10 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                 SizedBox(height: 40 * widget.scale),
                 _buildSectionTitle("YOUR INFORMATION"),
                 SizedBox(height: 20 * widget.scale),
-                _buildTextField("Phone No", viewModel.phoneNoController, isNumeric: true),
-                _buildTextField("Email", viewModel.emailController),
+                _buildTextField("Full Name", viewModel.fullNameController, isRequired: true),
+                _buildTextField("NRIC", viewModel.nricController, isNumeric: true, isRequired: true),
+                _buildTextField("Phone No", viewModel.phoneNoController, isNumeric: true, isRequired: true),
+                _buildTextField("Email", viewModel.emailController, isRequired: true),
 
                 SizedBox(height: 40 * widget.scale),
                 _buildSectionTitle("PREMISE INFORMATION"),
@@ -326,6 +336,8 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                 _buildTextField("Postal Code", viewModel.postalCodeController, isNumeric: true),
                 _buildDropdownField("State", viewModel.selectedState, _states, (val) => viewModel.setSelectedState(val)),
                 _buildTextField("District", viewModel.districtController),
+                _buildTextField("Latitude", viewModel.latitudeController, isCoordinate: true),
+                _buildTextField("Longitude", viewModel.longitudeController, isCoordinate: true),
 
                 SizedBox(height: 30 * widget.scale),
                 SizedBox(
@@ -433,7 +445,7 @@ class _AddComplaintViewState extends State<AddComplaintView> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool isDate = false, bool isPrice = false, bool isRequired = false, bool isNumeric = false}) {
+  Widget _buildTextField(String label, TextEditingController controller, {bool isDate = false, bool isPrice = false, bool isRequired = false, bool isNumeric = false, bool isCoordinate = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -465,7 +477,7 @@ class _AddComplaintViewState extends State<AddComplaintView> {
             controller: controller,
             textCapitalization: TextCapitalization.sentences,
             readOnly: isDate,
-            keyboardType: isPrice
+            keyboardType: (isPrice || isCoordinate)
                 ? const TextInputType.numberWithOptions(decimal: true)
                 : (isNumeric ? const TextInputType.numberWithOptions(decimal: false) : TextInputType.text),
             inputFormatters: isPrice
@@ -473,9 +485,11 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                     FilteringTextInputFormatter.deny(RegExp(r'[^\d.]')),
                     FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
                   ]
-                : (isNumeric ? [FilteringTextInputFormatter.digitsOnly] : null),
+                : isCoordinate 
+                  ? [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,10}'))]
+                  : (isNumeric ? [FilteringTextInputFormatter.digitsOnly] : null),
             onTap: isDate ? () => _selectDate(context) : null,
-            style: TextStyle(fontSize: 12 * widget.scale, color: const Color(0xFF1A1D1F), fontWeight: FontWeight.w500),
+            style: TextStyle(fontSize: 12 * widget.scale, color: const Color(0xFF1A1D1F)),
             decoration: InputDecoration(
               hintText: "Enter $label",
               hintStyle: TextStyle(
@@ -568,7 +582,6 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                   fontSize: 12 * widget.scale,
                   color: const Color(0xFF1A1D1F),
                   fontFamily: "Montserrat",
-                  fontWeight: FontWeight.w500
                 ),
                 inputDecorationTheme: InputDecorationTheme(
                   isDense: true,

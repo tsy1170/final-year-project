@@ -77,38 +77,6 @@ class _ComplaintPremiseCoordinatesViewState extends State<ComplaintPremiseCoordi
               preferredSize: Size.fromHeight(1 * widget.scale),
               child: Divider(height: 1 * widget.scale, color: Colors.grey.withValues(alpha: 0.2)),
             ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  viewModel.setLocation(null, null);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ComplaintAddAttachmentsView(scale: widget.scale),
-                    ),
-                  );
-                },
-                child: Row(
-                  children: [
-                    Text(
-                      "Skip",
-                      style: TextStyle(
-                        color: const Color(0xFFED1A4B),
-                        fontSize: 14 * widget.scale,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(width: 4 * widget.scale),
-                    Icon(
-                      Icons.arrow_forward_ios_outlined,
-                      color: const Color(0xFFED1A4B),
-                      size: 14 * widget.scale,
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: 10 * widget.scale),
-            ],
           ),
           body: Column(
             children: [

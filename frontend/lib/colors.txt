@@ -13,3 +13,8 @@ Section Indent: 0xFFF9F9F9
 Low Price: Colors.green (0xFF4CAF50)
 Medium Price: Colors.orange (0xFFFF9800)
 High Price: Colors.red (0xFFF44336)
+green: 0xFFD5FA2B
+red: 0xFFED1A4B
+
+
+0xFFFFFAEC

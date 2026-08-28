@@ -16,6 +16,7 @@ class _PriceTagScannerViewState extends State<PriceTagScannerView> {
   CameraController? _controller;
   bool _isInitializing = true;
   bool _isProcessing = false;
+  bool _isFlashOn = false;
 
   final GlobalKey _stackKey = GlobalKey();
   final GlobalKey _frameKey = GlobalKey();
@@ -54,6 +55,20 @@ class _PriceTagScannerViewState extends State<PriceTagScannerView> {
     super.dispose();
   }
 
+  Future<void> _toggleFlash() async {
+    if (_controller == null || !_controller!.value.isInitialized) return;
+
+    try {
+      final newMode = _isFlashOn ? FlashMode.off : FlashMode.torch;
+      await _controller!.setFlashMode(newMode);
+      setState(() {
+        _isFlashOn = !_isFlashOn;
+      });
+    } catch (e) {
+      debugPrint("Error toggling flash: $e");
+    }
+  }
+
   Future<void> _takePicture() async {
     if (_controller == null ||
         !_controller!.value.isInitialized ||
@@ -86,6 +101,16 @@ class _PriceTagScannerViewState extends State<PriceTagScannerView> {
 
       final XFile image = await _controller!.takePicture();
 
+      // Turn off flash if it was on
+      if (_isFlashOn) {
+        try {
+          await _controller!.setFlashMode(FlashMode.off);
+          if (mounted) setState(() => _isFlashOn = false);
+        } catch (e) {
+          debugPrint("Error turning off flash after capture");
+        }
+      }
+
       // Load the image
       final bytes = await File(image.path).readAsBytes();
       img.Image? capturedImage = img.decodeImage(bytes);
@@ -94,82 +119,50 @@ class _PriceTagScannerViewState extends State<PriceTagScannerView> {
         // Handle orientation to ensure we work with upright coordinates
         capturedImage = img.bakeOrientation(capturedImage);
 
-        // Camera Preview characteristics (hardware level)
-        final previewSize = _controller!.value.previewSize!;
-        // previewSize width/height are swapped in portrait mode for Android
-        final double previewW = previewSize.height; 
-        final double previewH = previewSize.width;
-        final double previewRatio = previewW / previewH;
-
-        // Captured Image dimensions
         final double imageW = capturedImage.width.toDouble();
         final double imageH = capturedImage.height.toDouble();
+
+        // Single step: map screen (body) coordinates directly to image
+        // using BoxFit.cover logic
+        final double screenRatio = bodySize.width / bodySize.height;
         final double imageRatio = imageW / imageH;
 
-        // STEP 1: Map the Preview sensor area to the full sensor image
-        // Usually, the preview is a center-cropped version of the full sensor output.
-        double previewWidthOnImage, previewHeightOnImage, previewXOffsetOnImage = 0, previewYOffsetOnImage = 0;
+        double mappingScale, offsetX = 0, offsetY = 0;
 
-        if (imageRatio > previewRatio) {
-          // Image is wider than preview - preview is a side-crop of the sensor
-          previewWidthOnImage = imageH * previewRatio;
-          previewHeightOnImage = imageH;
-          previewXOffsetOnImage = (imageW - previewWidthOnImage) / 2;
+        if (imageRatio > screenRatio) {
+          // Image is wider than screen — cropped left/right by BoxFit.cover
+          mappingScale = imageH / bodySize.height;
+          offsetX = (imageW - bodySize.width * mappingScale) / 2;
         } else {
-          // Image is taller than preview - preview is a top/bottom crop of the sensor
-          previewWidthOnImage = imageW;
-          previewHeightOnImage = imageW / previewRatio;
-          previewYOffsetOnImage = (imageH - previewHeightOnImage) / 2;
+          // Image is taller than screen — cropped top/bottom by BoxFit.cover
+          mappingScale = imageW / bodySize.width;
+          offsetY = (imageH - bodySize.height * mappingScale) / 2;
         }
 
-        // STEP 2: Map the Screen (body) coordinates to the Preview area (handling BoxFit.cover)
-        final double screenRatio = bodySize.width / bodySize.height;
-        double mappingScale, viewOffsetX = 0, viewOffsetY = 0;
-
-        if (previewRatio > screenRatio) {
-          // Preview area is wider than screen - screen is a side-crop of the preview
-          mappingScale = previewHeightOnImage / bodySize.height;
-          viewOffsetX = (previewWidthOnImage - bodySize.width * mappingScale) / 2;
-        } else {
-          // Preview area is taller than screen - screen is a top/bottom crop of the preview
-          mappingScale = previewWidthOnImage / bodySize.width;
-          viewOffsetY = (previewHeightOnImage - bodySize.height * mappingScale) / 2;
-        }
-
-        // COORDINATE MAPPING (Center-Relative)
-        // We find the center of the frame in UI and map it to the center of the image area.
-        final double centerX_UI = leftUI + frameW_UI / 2;
-        final double centerY_UI = topUI + frameH_UI / 2;
-
-        final double imageCenterX = previewWidthOnImage / 2 + previewXOffsetOnImage;
-        final double imageCenterY = previewHeightOnImage / 2 + previewYOffsetOnImage;
-
-        final double dx_Sensor = (centerX_UI - bodySize.width / 2) * mappingScale;
-        final double dy_Sensor = (centerY_UI - bodySize.height / 2) * mappingScale;
-
-        final double finalCenterX = imageCenterX + dx_Sensor;
-        final double finalCenterY = imageCenterY + dy_Sensor;
-
-        final int cropWidth = (frameW_UI * mappingScale).toInt();
-        final int cropHeight = (frameH_UI * mappingScale).toInt();
-
-        final int cropX = (finalCenterX - cropWidth / 2).toInt();
-        final int cropY = (finalCenterY - cropHeight / 2).toInt();
+        final double cropX = leftUI * mappingScale + offsetX;
+        final double cropY = topUI * mappingScale + offsetY;
+        final double cropW = frameW_UI * mappingScale;
+        final double cropH = frameH_UI * mappingScale;
 
         // Perform the crop
         final croppedImage = img.copyCrop(
           capturedImage,
-          x: cropX.clamp(0, capturedImage.width - 1),
-          y: cropY.clamp(0, capturedImage.height - 1),
-          width: cropWidth.clamp(1, capturedImage.width - cropX),
-          height: cropHeight.clamp(1, capturedImage.height - cropY),
+          x: cropX.toInt().clamp(0, capturedImage.width - 1),
+          y: cropY.toInt().clamp(0, capturedImage.height - 1),
+          width: cropW.toInt().clamp(1, capturedImage.width - cropX.toInt()),
+          height: cropH.toInt().clamp(1, capturedImage.height - cropY.toInt()),
+        );
+
+        final colorCropPath = '${image.path}_display.jpg';
+        await File(colorCropPath).writeAsBytes(
+          img.encodeJpg(croppedImage, quality: 100),
         );
 
         img.Image processedImage = croppedImage;
 
         // Enhance for OCR
         processedImage = img.grayscale(processedImage);
-        processedImage = img.adjustColor(processedImage, contrast: 1.5);
+        processedImage = img.adjustColor(processedImage, contrast: 1.3);
         processedImage = img.convolution(
           processedImage,
           filter: [0, -1, 0, -1, 5, -1, 0, -1, 0],
@@ -190,7 +183,8 @@ class _PriceTagScannerViewState extends State<PriceTagScannerView> {
             context,
             MaterialPageRoute(
               builder: (context) => OCRResultConfirmationView(
-                imagePath: croppedPath,
+                imagePath: colorCropPath,
+                ocrPath: croppedPath,
                 scale: widget.scale,
               ),
             ),
@@ -310,37 +304,54 @@ class _PriceTagScannerViewState extends State<PriceTagScannerView> {
               ),
             ),
 
-          // Capture Button
+          // Bottom Controls (Capture and Flash)
           if (!_isProcessing)
             Positioned(
               bottom: 50 * widget.scale,
               left: 0,
               right: 0,
-              child: Center(
-                child: GestureDetector(
-                  onTap: _takePicture,
-                  child: Container(
-                    width: 70 * widget.scale,
-                    height: 70 * widget.scale,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 4 * widget.scale,
-                      ),
-                    ),
-                    child: Center(
-                      child: Container(
-                        width: 55 * widget.scale,
-                        height: 55 * widget.scale,
-                        decoration: const BoxDecoration(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Capture Button
+                  GestureDetector(
+                    onTap: _takePicture,
+                    child: Container(
+                      width: 70 * widget.scale,
+                      height: 70 * widget.scale,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
                           color: Colors.white,
-                          shape: BoxShape.circle,
+                          width: 4 * widget.scale,
+                        ),
+                      ),
+                      child: Center(
+                        child: Container(
+                          width: 55 * widget.scale,
+                          height: 55 * widget.scale,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
+
+                  // Flash Toggle Button
+                  Positioned(
+                    right: 40 * widget.scale,
+                    child: IconButton(
+                      icon: Icon(
+                        _isFlashOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+                        color: Colors.white,
+                        size: 28 * widget.scale,
+                      ),
+                      onPressed: _toggleFlash,
+                    ),
+                  ),
+                ],
               ),
             ),
         ],
@@ -361,7 +372,6 @@ class CornerFramePainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final cornerLength = 24.0 * scale;
-    final r = Radius.circular(4 * scale);
 
     // Top-left
     canvas.drawPath(Path()

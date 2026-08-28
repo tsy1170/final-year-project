@@ -4,15 +4,18 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../services/ocr_service.dart';
 import '../../viewmodels/complaint_view_model.dart';
+import '../../viewmodels/location_view_model.dart';
 import '../widgets/common/animated_notification.dart';
 
 class OCRResultConfirmationView extends StatefulWidget {
-  final String imagePath;
+  final String imagePath;  // for display
+  final String ocrPath;  // for ocr processing
   final double scale;
 
   const OCRResultConfirmationView({
     super.key,
     required this.imagePath,
+    required this.ocrPath,
     required this.scale,
   });
 
@@ -26,6 +29,7 @@ class _OCRResultConfirmationViewState extends State<OCRResultConfirmationView> {
   final _priceController = TextEditingController();
   final _ocrService = OCRService();
   bool _isLoading = true;
+  bool _isConfirming = false;
 
   @override
   void initState() {
@@ -35,7 +39,7 @@ class _OCRResultConfirmationViewState extends State<OCRResultConfirmationView> {
 
   Future<void> _processImage() async {
     try {
-      final results = await _ocrService.processPriceTag(widget.imagePath);
+      final results = await _ocrService.processPriceTag(widget.ocrPath);
       setState(() {
         _itemNameController.text = results['itemName'] ?? '';
         _priceController.text = results['price'] ?? '';
@@ -62,13 +66,57 @@ class _OCRResultConfirmationViewState extends State<OCRResultConfirmationView> {
     super.dispose();
   }
 
-  void _confirmSelection() {
+  Future<void> _confirmSelection() async {
+    if (_isConfirming) return;
+
+    setState(() {
+      _isConfirming = true;
+    });
+
     final viewModel = Provider.of<ComplaintViewModel>(context, listen: false);
+    final locationViewModel = Provider.of<LocationViewModel>(context, listen: false);
+    
+    // 1. Fill product info into the form controllers
     viewModel.productNameController.text = _itemNameController.text;
     viewModel.productPriceController.text = _priceController.text;
 
-    Navigator.of(context).pop(); // Pop confirmation
-    Navigator.of(context).pop(); // Pop scanner
+    // 2. Try to auto-fill premise info based on current location
+    try {
+      // Ensure we have current coordinates
+      if (locationViewModel.currentPosition == null) {
+        await locationViewModel.initLocation();
+      }
+
+      if (locationViewModel.currentPosition != null) {
+        // Fetch nearby premises
+        await viewModel.fetchNearbyPremises(
+          locationViewModel.currentPosition!.latitude,
+          locationViewModel.currentPosition!.longitude,
+        );
+        
+        if (viewModel.nearbyPremises.isNotEmpty) {
+          // Automatically select the closest premise (the first item)
+          viewModel.selectPremise(viewModel.nearbyPremises.first);
+          
+          if (mounted) {
+            showTopNotification(
+              context, 
+              "Information and closest premise filled",
+              true, 
+              widget.scale
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Auto-filling premise information failed: $e");
+      // We don't block the confirmation flow if location/nearby fetch fails
+    }
+
+    if (mounted) {
+      Navigator.of(context).pop(); // Pop confirmation
+      Navigator.of(context).pop(); // Pop scanner
+    }
   }
 
   @override
@@ -103,9 +151,25 @@ class _OCRResultConfirmationViewState extends State<OCRResultConfirmationView> {
           ),
         ),
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF1A1D1F)),
+      body: (_isLoading || _isConfirming)
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(color: Color(0xFF1A1D1F)),
+                  if (_isConfirming) ...[
+                    SizedBox(height: 20 * widget.scale),
+                    Text(
+                      "Finding nearby premises...",
+                      style: TextStyle(
+                        fontSize: 14 * widget.scale,
+                        color: const Color(0xFF1A1D1F),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ]
+                ],
+              ),
             )
           : SingleChildScrollView(
               padding: EdgeInsets.all(20 * widget.scale),
@@ -116,9 +180,8 @@ class _OCRResultConfirmationViewState extends State<OCRResultConfirmationView> {
                     borderRadius: BorderRadius.circular(8 * widget.scale),
                     child: Image.file(
                       File(widget.imagePath),
-                      height: 200 * widget.scale,
                       width: double.infinity,
-                      fit: BoxFit.cover,
+                      fit: BoxFit.fitWidth,
                     ),
                   ),
                   SizedBox(height: 30 * widget.scale),
@@ -184,10 +247,12 @@ class _OCRResultConfirmationViewState extends State<OCRResultConfirmationView> {
         TextField(
           controller: controller,
           keyboardType: isNumeric
-              ? const TextInputType.numberWithOptions(decimal: false)
+              ? const TextInputType.numberWithOptions(decimal: true)
               : TextInputType.text,
           inputFormatters: isNumeric
-              ? [FilteringTextInputFormatter.digitsOnly]
+              ? [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                ]
               : null,
           style: TextStyle(
             fontSize: 13 * widget.scale,
@@ -199,6 +264,10 @@ class _OCRResultConfirmationViewState extends State<OCRResultConfirmationView> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(1 * widget.scale),
               borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(1 * widget.scale),
+              borderSide: BorderSide(color: const Color(0xFF1A1D1F), width: 1 * widget.scale),
             ),
             contentPadding: EdgeInsets.all(15 * widget.scale),
           ),

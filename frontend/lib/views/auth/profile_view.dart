@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/navigation_view_model.dart';
 import '../../viewmodels/auth_view_model.dart';
-import '../widgets/profile/profile_header.dart';
 import '../widgets/profile/profile_user_card.dart';
 import '../widgets/profile/profile_menu_item.dart';
 import '../widgets/profile/profile_logged_out.dart';
 import '../widgets/profile/logout_dialog.dart';
 import '../widgets/common/custom_button.dart';
 import 'change_password_view.dart';
+import 'edit_profile_view.dart';
 
 class ProfileView extends StatelessWidget {
   final double scale;
@@ -19,21 +19,50 @@ class ProfileView extends StatelessWidget {
   Widget build(BuildContext context) {
     final authViewModel = context.watch<AuthViewModel>();
 
-    return Container(
-      color: const Color(0xFFFFFDFD),
-      child: Column(
-        children: [
-          ProfileHeader(
-            scale: scale,
-            isLoggedIn: authViewModel.isLoggedIn,
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFFAF3),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFFFFAF3),
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        title: Text(
+          'PROFILE',
+          style: TextStyle(
+            color: const Color(0xFF1A1D1F),
+            fontSize: 18 * scale,
+            fontWeight: FontWeight.w700,
           ),
-          Expanded(
-            child: authViewModel.isLoggedIn
-                ? _buildLoggedInUI(context, authViewModel)
-                : ProfileLoggedOut(scale: scale),
-          ),
+        ),
+        actions: [
+          if (authViewModel.isLoggedIn)
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditProfileView(scale: scale),
+                  ),
+                );
+              },
+              icon: Icon(
+                Icons.settings_outlined,
+                size: 24 * scale,
+                color: const Color(0xFF325E6A),
+              ),
+            ),
+          SizedBox(width: 10 * scale),
         ],
+        // bottom: PreferredSize(
+        //   preferredSize: Size.fromHeight(1 * scale),
+        //   child: Divider(
+        //     height: 1 * scale,
+        //     color: const Color(0xFF1A1D1F),
+        //   ),
+        // ),
       ),
+      body: authViewModel.isLoggedIn
+          ? _buildLoggedInUI(context, authViewModel)
+          : ProfileLoggedOut(scale: scale),
     );
   }
 
@@ -107,19 +136,16 @@ class ProfileView extends StatelessWidget {
               ),
             ],
           ),
-
           SizedBox(height: 70 * scale),
-
           CustomButton(
             label: 'LOGOUT',
             onTap: () => _showLogoutConfirmation(context, viewModel),
-            bg: Colors.white,
-            text: const Color(0xFFED1A4B),
-            isOutlined: true,
+            bg: const Color(0xFF1A1D1F),
+            text: const Color(0xFFFFFDFD),
+            isOutlined: false,
             icon: Icons.logout_rounded,
             scale: scale,
           ),
-
           SizedBox(height: 100 * scale), // Padding for bottom nav
         ],
       ),

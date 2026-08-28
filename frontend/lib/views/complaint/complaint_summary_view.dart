@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../viewmodels/auth_view_model.dart';
 import '../../viewmodels/complaint_view_model.dart';
+import '../../models/complaint.dart';
 import '../widgets/common/animated_notification.dart';
 
 class ComplaintSummaryView extends StatelessWidget {
@@ -120,6 +123,192 @@ class ComplaintSummaryView extends StatelessWidget {
     }
   }
 
+  Future<void> _sendEmail(BuildContext context, Complaint complaint) async {
+    final complaintVM = Provider.of<ComplaintViewModel>(context, listen: false);
+    final String subject = 'ADUAN: ${complaint.category} - ${complaint.premiseName} - ${complaint.state ?? "-"}';
+
+    showTopNotification(context, "Preparing attachments...", true, scale);
+
+    // Get local paths — works for both local files and downloaded URLs
+    final List<String> attachmentPaths = await complaintVM.getLocalAttachmentPaths();
+    
+    final StringBuffer body = StringBuffer();
+    body.writeln('Notes');
+    body.writeln(complaint.description?.isEmpty ?? true ? "No description provided." : complaint.description);
+
+    body.writeln('COMPLAINT CATEGORY');
+    body.writeln('Category: ${complaint.category}');
+    body.writeln('Product Name: ${complaint.productName}');
+    body.writeln('Product Price: RM ${complaint.productPrice}');
+    body.writeln('Loss Amount: RM ${complaint.lossAmount}');
+    body.writeln('Date Issue: ${DateFormat('dd/MM/yyyy').format(complaint.dateIssue)}');
+    body.writeln();
+    
+    body.writeln('PERSONAL INFORMATION');
+    body.writeln('Full Name: ${complaint.fullName ?? "-"}');
+    body.writeln('NRIC: ${complaint.nric ?? "-"}');
+    body.writeln('Phone No: ${complaint.phoneNo ?? "-"}');
+    body.writeln('Email: ${complaint.email ?? "-"}');
+    body.writeln();
+    
+    body.writeln('PREMISE INFORMATION');
+    body.writeln('Premise Type: ${complaint.premiseType}');
+    body.writeln('Premise Name: ${complaint.premiseName}');
+    body.writeln('Address: ${complaint.premiseAddress}');
+    body.writeln('Postal Code: ${complaint.postalCode ?? "-"}');
+    body.writeln('District: ${complaint.district ?? "-"}');
+    body.writeln('State: ${complaint.state ?? "-"}');
+    body.writeln();
+    
+    if (complaint.latitude != null && complaint.longitude != null) {
+      body.writeln('LOCATION');
+      body.writeln('Latitude: ${complaint.latitude}');
+      body.writeln('Longitude: ${complaint.longitude}');
+      body.writeln('Map Link: https://www.google.com/maps/search/?api=1&query=${complaint.latitude},${complaint.longitude}');
+      body.writeln();
+    }
+
+    final Email email = Email(
+      body: body.toString(),
+      subject: subject,
+      recipients: ['e-aduan@kpdn.gov.my'],
+      attachmentPaths: attachmentPaths,
+      isHTML: false,
+    );
+
+    try {
+      await FlutterEmailSender.send(email);
+    } catch (e) {
+      if (context.mounted) {
+        showTopNotification(context, "Error opening email app: $e", false, scale);
+      }
+    }
+  }
+
+  Future<void> _sendWhatsApp(BuildContext context, Complaint complaint) async {
+    final complaintVM = Provider.of<ComplaintViewModel>(context, listen: false);
+    
+    // Save images to gallery so user can see them in their phone's Gallery
+    if (complaint.attachments.isNotEmpty || complaint.attachmentUrls.isNotEmpty) {
+      try {
+        showTopNotification(context, "Saving images to Gallery...", true, scale);
+        await complaintVM.saveAttachmentsToGallery();
+      } catch (e) {
+        debugPrint("Gallery save error: $e");
+        // We continue even if gallery save fails, as the user still wants to send the message
+      }
+    }
+
+    final StringBuffer text = StringBuffer();
+    text.writeln('*Notes*');
+    text.writeln(complaint.description?.isEmpty ?? true ? "No description provided." : complaint.description);
+
+    text.writeln('*COMPLAINT CATEGORY*');
+    text.writeln('Category: ${complaint.category}');
+    text.writeln('Product Name: ${complaint.productName}');
+    text.writeln('Product Price: RM ${complaint.productPrice}');
+    text.writeln('Loss Amount: RM ${complaint.lossAmount}');
+    text.writeln('Date Issue: ${DateFormat('dd/MM/yyyy').format(complaint.dateIssue)}');
+    text.writeln();
+    
+    text.writeln('*PERSONAL INFORMATION*');
+    text.writeln('Full Name: ${complaint.fullName ?? "-"}');
+    text.writeln('NRIC: ${complaint.nric ?? "-"}');
+    text.writeln('Phone No: ${complaint.phoneNo ?? "-"}');
+    text.writeln('Email: ${complaint.email ?? "-"}');
+    text.writeln();
+    
+    text.writeln('*PREMISE INFORMATION*');
+    text.writeln('Premise Type: ${complaint.premiseType}');
+    text.writeln('Premise Name: ${complaint.premiseName}');
+    text.writeln('Address: ${complaint.premiseAddress}');
+    text.writeln('Postal Code: ${complaint.postalCode ?? "-"}');
+    text.writeln('District: ${complaint.district ?? "-"}');
+    text.writeln('State: ${complaint.state ?? "-"}');
+    text.writeln();
+    
+    if (complaint.latitude != null && complaint.longitude != null) {
+      text.writeln('*LOCATION*');
+      text.writeln('Latitude: ${complaint.latitude}');
+      text.writeln('Longitude: ${complaint.longitude}');
+      text.writeln('Map Link: https://www.google.com/maps/search/?api=1&query=${complaint.latitude},${complaint.longitude}');
+      text.writeln();
+    }
+
+    final String textContent = text.toString();
+    final uri = Uri.parse(
+      'https://wa.me/60198488000?text=${Uri.encodeComponent(textContent)}',
+    );
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          showTopNotification(context, "WhatsApp is not installed.", false, scale);
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showTopNotification(context, "Error opening WhatsApp: $e", false, scale);
+      }
+    }
+  }
+
+  void _showSendOptions(BuildContext context, Complaint complaint) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15 * scale)),
+      ),
+      builder: (BuildContext modalContext) {
+        return Padding(
+          padding: EdgeInsets.all(20 * scale),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "SEND COMPLAINT VIA",
+                style: TextStyle(
+                  fontSize: 14 * scale,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1A1D1F),
+                ),
+              ),
+              SizedBox(height: 20 * scale),
+              ListTile(
+                leading: Icon(
+                  Icons.email_outlined,
+                  color: const Color(0xFF1A1D1F),
+                  size: 24 * scale,
+                ),
+                title: Text("Email", style: TextStyle(fontSize: 14 * scale)),
+                onTap: () {
+                  Navigator.pop(modalContext);
+                  _sendEmail(context, complaint);
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.chat_outlined,
+                  color: const Color(0xFF1A1D1F),
+                  size: 24 * scale,
+                ),
+                title: Text("WhatsApp", style: TextStyle(fontSize: 14 * scale)),
+                onTap: () {
+                  Navigator.pop(modalContext);
+                  _sendWhatsApp(context, complaint);
+                },
+              ),
+              SizedBox(height: 20 * scale),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ComplaintViewModel>(
@@ -213,6 +402,8 @@ class ComplaintSummaryView extends StatelessWidget {
                 ]),
                 SizedBox(height: 45 * scale),
                 _buildSection("YOUR INFORMATION", [
+                  _buildInfoRow("Full Name", complaint.fullName ?? "-"),
+                  _buildInfoRow("NRIC", complaint.nric ?? "-"),
                   _buildInfoRow("Phone No", complaint.phoneNo ?? "-"),
                   _buildInfoRow("Email", complaint.email ?? "-"),
                 ]),
@@ -368,7 +559,7 @@ class ComplaintSummaryView extends StatelessWidget {
                     "SUBMIT",
                     const Color(0xFF1A1D1F),
                     Colors.white,
-                    () => _showSendOptions(context),
+                    () => _showSendOptions(context, complaint),
                   ),
                 ),
                 SizedBox(height: 20 * scale + MediaQuery.of(context).padding.bottom),
@@ -472,70 +663,6 @@ class ComplaintSummaryView extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14 * scale),
         ),
       ),
-    );
-  }
-
-  void _showSendOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(15 * scale)),
-      ),
-      builder: (BuildContext modalContext) {
-        return Padding(
-          padding: EdgeInsets.all(20 * scale),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "SEND COMPLAINT VIA",
-                style: TextStyle(
-                  fontSize: 14 * scale,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1A1D1F),
-                ),
-              ),
-              SizedBox(height: 20 * scale),
-              ListTile(
-                leading: Icon(
-                  Icons.email_outlined,
-                  color: const Color(0xFF1A1D1F),
-                  size: 24 * scale,
-                ),
-                title: Text("Email", style: TextStyle(fontSize: 14 * scale)),
-                onTap: () {
-                  Navigator.pop(modalContext);
-                  showTopNotification(
-                    context,
-                    "Sending via Email...",
-                    true,
-                    scale,
-                  );
-                },
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.chat_outlined,
-                  color: const Color(0xFF1A1D1F),
-                  size: 24 * scale,
-                ),
-                title: Text("WhatsApp", style: TextStyle(fontSize: 14 * scale)),
-                onTap: () {
-                  Navigator.pop(modalContext);
-                  showTopNotification(
-                    context,
-                    "Sending via WhatsApp...",
-                    true,
-                    scale,
-                  );
-                },
-              ),
-              SizedBox(height: 20 * scale),
-            ],
-          ),
-        );
-      },
     );
   }
 }

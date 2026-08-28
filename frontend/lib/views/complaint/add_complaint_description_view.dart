@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/complaint_view_model.dart';
 import 'complaint_premise_coordinates.dart';
+import 'add_complaint_attachments.dart';
 
 class AddComplaintDescriptionView extends StatefulWidget {
   final double scale;
@@ -65,7 +66,6 @@ class _AddComplaintDescriptionViewState extends State<AddComplaintDescriptionVie
               style: TextStyle(
                 fontSize: 12 * widget.scale,
                 color: const Color(0xFF1A1D1F),
-                fontWeight: FontWeight.w500
               ),
             ),
             SizedBox(height: 8 * widget.scale),
@@ -83,12 +83,21 @@ class _AddComplaintDescriptionViewState extends State<AddComplaintDescriptionVie
               height: 50 * widget.scale,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ComplaintPremiseCoordinatesView(scale: widget.scale),
-                    ),
-                  );
+                  if (viewModel.latitudeController.text.isNotEmpty && viewModel.longitudeController.text.isNotEmpty) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ComplaintAddAttachmentsView(scale: widget.scale),
+                      ),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ComplaintPremiseCoordinatesView(scale: widget.scale),
+                      ),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A1D1F),
@@ -138,7 +147,6 @@ class _AddComplaintDescriptionViewState extends State<AddComplaintDescriptionVie
       ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(1 * widget.scale),
-        borderSide: BorderSide.none,
       ),
       contentPadding: EdgeInsets.all(15 * widget.scale),
     );

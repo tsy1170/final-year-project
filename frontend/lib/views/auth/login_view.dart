@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/auth_view_model.dart';
 import '../widgets/common/animated_notification.dart';
+import '../widgets/common/custom_button.dart';
 import 'register_view.dart';
 
 class LoginView extends StatefulWidget {
@@ -50,6 +51,8 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   Widget build(BuildContext context) {
+    final authViewModel = context.watch<AuthViewModel>();
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFFDFD),
       appBar: AppBar(
@@ -103,23 +106,14 @@ class _LoginViewState extends State<LoginView> {
                 },
               ),
               SizedBox(height: 40 * widget.scale),
-              context.watch<AuthViewModel>().isLoggingIn
+              authViewModel.isLoggingIn
                   ? const Center(child: CircularProgressIndicator(color: Color(0xFF1A1D1F)))
-                  : SizedBox(
-                      width: double.infinity,
-                      height: 55 * widget.scale,
-                      child: ElevatedButton(
-                        onPressed: _handleLogin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1A1D1F),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(1 * widget.scale)),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          "LOGIN",
-                          style: TextStyle(color: Colors.white, fontSize: 16 * widget.scale, fontWeight: FontWeight.w600),
-                        ),
-                      ),
+                  : CustomButton(
+                      label: "LOGIN",
+                      onTap: _handleLogin,
+                      bg: const Color(0xFF1A1D1F),
+                      text: Colors.white,
+                      scale: widget.scale,
                     ),
               SizedBox(height: 20 * widget.scale),
               Center(

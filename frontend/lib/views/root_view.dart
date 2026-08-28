@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/navigation_view_model.dart';
 import 'grocery/grocery_view.dart';
+import 'grocery/search_page_view.dart';
 import 'favourite/favourite_view.dart';
 import 'auth/profile_view.dart';
 import 'complaint/complaint_view.dart';
@@ -65,7 +66,7 @@ class _RootViewState extends State<RootView> {
               final scale = constraints.maxWidth / 402;
 
               return Container(
-                color: const Color(0xFFFFFDFD),
+                color: const Color(0xFFFFFAF3),
                 child: Stack(
                   children: [
                     // 1. Content Layer
@@ -76,6 +77,7 @@ class _RootViewState extends State<RootView> {
                         children: [
                           GroceryView(scale: scale),
                           FavouriteView(scale: scale),
+                          SearchPageView(scale: scale),
                           ComplaintView(scale: scale),
                           ProfileView(scale: scale),
                         ],

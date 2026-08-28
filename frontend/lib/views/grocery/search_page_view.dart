@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/grocery_product.dart';
 import '../../services/grocery_service.dart';
+import '../../viewmodels/navigation_view_model.dart';
 import 'product_details_view.dart';
 
 class SearchPageView extends StatefulWidget {
@@ -80,7 +82,7 @@ class _SearchPageViewState extends State<SearchPageView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFDFD),
+      backgroundColor: const Color(0xFFFFFAF3),
       body: SafeArea(
         child: Column(
           children: [
@@ -92,7 +94,7 @@ class _SearchPageViewState extends State<SearchPageView> {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.black.withValues(alpha: 0.1),
+                      color: Colors.grey.withValues(alpha: 0.3),
                       width: 0.5 * widget.scale,
                     ),
                   ),
@@ -101,7 +103,14 @@ class _SearchPageViewState extends State<SearchPageView> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     IconButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        } else {
+                          // If accessed via bottom navigation, return to the first tab (Grocery)
+                          context.read<NavigationViewModel>().setSelectedIndex(0);
+                        }
+                      },
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       icon: Padding(
@@ -150,9 +159,9 @@ class _SearchPageViewState extends State<SearchPageView> {
                                     icon: Padding(
                                       padding: EdgeInsets.symmetric(horizontal: 10 * widget.scale),
                                       child: Icon(
-                                        Icons.cancel_sharp,
+                                        Icons.cancel_rounded,
                                         size: 20 * widget.scale,
-                                        color: const Color(0xFF1A1D1F),
+                                        color: const Color(0xFF325E6A),
                                       ),
                                     ),
                                   )
@@ -202,7 +211,12 @@ class _SearchPageViewState extends State<SearchPageView> {
               Expanded(
                 child: ListView.builder(
                   itemCount: _searchResults.length,
-                  padding: EdgeInsets.symmetric(horizontal: 10 * widget.scale),
+                  padding: EdgeInsets.fromLTRB(
+                    10 * widget.scale,
+                    0,
+                    10 * widget.scale,
+                    80 * widget.scale
+                  ),
                   itemBuilder: (context, index) {
                     final product = _searchResults[index];
                     return Padding(
@@ -222,11 +236,20 @@ class _SearchPageViewState extends State<SearchPageView> {
                         child: Container(
                           padding: EdgeInsets.all(8 * widget.scale),
                           decoration: BoxDecoration(
+                            color: const Color(0xFFFFFDFD),
                             border: Border.all(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              width: 0.5 * widget.scale,
+                              color: Colors.grey.withValues(alpha: 0.3),
+                              width: 1 * widget.scale,
                             ),
-                            borderRadius: BorderRadius.circular(1 * widget.scale),
+                            borderRadius: BorderRadius.circular(12 * widget.scale),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2), // Shadow color
+                                  spreadRadius: -6,                     // How far the shadow extends
+                                  blurRadius: 8,                      // Softness of the shadow
+                                  offset: const Offset(4, 6),        // Offset of the shadow, 2),
+                                )
+                              ]
                           ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,7 +259,7 @@ class _SearchPageViewState extends State<SearchPageView> {
                                 height: 70 * widget.scale,
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFF4F4F4),
-                                  borderRadius: BorderRadius.circular(1 * widget.scale),
+                                  borderRadius: BorderRadius.circular(12 * widget.scale),
                                 ),
                                 child: product.imageUrl != null
                                     ? Image.network(
