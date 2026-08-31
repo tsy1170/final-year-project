@@ -2,14 +2,17 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 import os
+from datetime import datetime
 
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+current_month_str = datetime.now().strftime("%Y-%m")
+
 ITEM_LOOKUP_URL = "https://storage.data.gov.my/pricecatcher/lookup_item.parquet"
 PREMISE_LOOKUP_URL = "https://storage.data.gov.my/pricecatcher/lookup_premise.parquet"
-PRICE_URL = "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-07.parquet"
+PRICE_URL = f"https://storage.data.gov.my/pricecatcher/pricecatcher_{current_month_str}.parquet"
 
 engine = create_engine(DATABASE_URL)
 
@@ -151,6 +154,12 @@ def load_price_records():
         "price"
     ])
 
+    df = df.drop_duplicates(subset=[
+        "price_date", 
+        "premise_code", 
+        "item_code"
+    ])
+
     df = df[[
         "price_date",
         "premise_code",
@@ -185,8 +194,7 @@ def load_price_records():
             JOIN items i ON i.item_code = s.item_code
             JOIN premises p ON p.premise_code = s.premise_code
             ON CONFLICT (price_date, premise_code, item_code)
-            DO UPDATE SET
-                price = EXCLUDED.price;
+            DO NOTHING;
         """))
 
         conn.execute(text("DROP TABLE _stg_price_records;"))
