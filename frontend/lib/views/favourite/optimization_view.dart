@@ -57,7 +57,7 @@ class _OptimizationViewState extends State<OptimizationView> {
     final viewModel = context.watch<OptimizationViewModel>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFDFD),
+      backgroundColor: const Color(0xFFFFFAF3),
       body: SafeArea(
         child: Column(
           children: [

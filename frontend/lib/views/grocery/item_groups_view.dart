@@ -40,9 +40,9 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
     final viewModel = context.watch<GroceryViewModel>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFDFD),
+      backgroundColor: const Color(0xFFFFFAF3),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFFFFAF3),
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
@@ -51,7 +51,7 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
         title: Text(
           'ALL CATEGORIES',
           style: TextStyle(
-            color: const Color(0xFF1A1D1F),
+            color: const Color(0xFF325E6A),
             fontSize: 18 * widget.scale,
             fontWeight: FontWeight.w700,
           ),
@@ -69,7 +69,7 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
                 return Column(
                   children: [
                     Material(
-                      color: Colors.white,
+                      color: Colors.transparent,
                       child: InkWell(
                         onTap: () {
                           setState(() {
@@ -123,7 +123,7 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
                           width: double.infinity,
                           height: isExpanded ? null : 0,
                           child: Container(
-                            color: const Color(0xFFF9F9F9),
+                            color: Colors.white,
                             child: Column(
                               children: [
                                 // 1. The "All" selection (Only passes item group)
@@ -149,7 +149,7 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
                                         style: TextStyle(
                                           fontSize: 13 * widget.scale,
                                           fontWeight: FontWeight.w700,
-                                          color: const Color(0xFF1A1D1F),
+                                          color: const Color(0xFF325E6A),
                                         ),
                                       ),
                                     ),

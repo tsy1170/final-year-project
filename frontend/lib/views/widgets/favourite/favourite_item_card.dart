@@ -64,7 +64,7 @@ class FavouriteItemCard extends StatelessWidget {
                   Text(
                     product.name,
                     style: TextStyle(
-                      fontSize: 14 * scale,
+                      fontSize: 13 * scale,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF1A1D1F),
                     ),

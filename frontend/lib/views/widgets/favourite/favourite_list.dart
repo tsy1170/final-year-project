@@ -21,7 +21,7 @@ class FavouriteList extends StatelessWidget {
     final double navBarHeight = MediaQuery.of(context).padding.bottom;
     
     return ListView.builder(
-      padding: EdgeInsets.fromLTRB(10 * scale, 10 * scale, 10 * scale, (80 + 60 + 25) * scale + navBarHeight),
+      padding: EdgeInsets.fromLTRB(12 * scale, 10 * scale, 12 * scale, (100 + 60 + 25) * scale + navBarHeight),
       itemCount: viewModel.favouriteProducts.length,
       itemBuilder: (context, index) {
         final product = viewModel.favouriteProducts[index];

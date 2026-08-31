@@ -63,7 +63,7 @@ class _PromotionSectionState extends State<PromotionSection> {
           child: Text(
             'WORTH BUYING',
             style: TextStyle(
-              fontSize: 17 * widget.scale,
+              fontSize: 16 * widget.scale,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF1A1D1F),
               letterSpacing: 0,

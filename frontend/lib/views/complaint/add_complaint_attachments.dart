@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../../viewmodels/complaint_view_model.dart';
 import 'complaint_summary_view.dart';
 import '../widgets/common/animated_notification.dart';
+import '../widgets/common/custom_button.dart';
+import '../../services/ocr_service.dart';
 
 class ComplaintAddAttachmentsView extends StatefulWidget {
   final double scale;
@@ -17,6 +19,13 @@ class ComplaintAddAttachmentsView extends StatefulWidget {
 
 class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsView> {
   final ImagePicker _picker = ImagePicker();
+  final OCRService _ocrService = OCRService();
+
+  @override
+  void dispose() {
+    _ocrService.dispose();
+    super.dispose();
+  }
 
   Future<void> _takePicture(ComplaintViewModel viewModel) async {
     if (viewModel.attachments.length >= 4) {
@@ -30,8 +39,117 @@ class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsVie
     );
 
     if (image != null) {
+      _processAndCheckSimilarity(image, viewModel);
+    }
+  }
+
+  Future<void> _processAndCheckSimilarity(XFile image, ComplaintViewModel viewModel) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          padding: EdgeInsets.all(20 * widget.scale),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10 * widget.scale),
+          ),
+          child: CircularProgressIndicator(
+            color: const Color(0xFF1A1D1F),
+            strokeWidth: 3 * widget.scale,
+          ),
+        ),
+      ),
+    );
+
+    try {
+      // 1. Pre-process the image for better OCR accuracy (grayscale, contrast, sharpening)
+      final processedPath = await _ocrService.preprocessImage(image.path);
+
+      // 2. Run OCR text recognition on the enhanced image
+      final ocrText = await _ocrService.recognizeFullText(processedPath);
+      
+      // Cleanup temporary processed file if created
+      if (processedPath != image.path) {
+        try { File(processedPath).delete(); } catch (_) {}
+      }
+
+      // 3. Get target keywords from ViewModel (Product Name and Price)
+      final targetText = "${viewModel.productNameController.text} ${viewModel.productPriceController.text}";
+      
+      // 4. Calculate similarity using TF-IDF + Cosine Similarity
+      final similarity = _ocrService.calculateSimilarity(targetText, ocrText);
+
+      if (mounted) Navigator.pop(context); // Dismiss loading indicator
+
+      // 5. Check against threshold (70%)
+      if (similarity < 0.7) {
+        _showSimilarityWarning(image, viewModel, similarity);
+      } else {
+        viewModel.addAttachment(image);
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      // Fallback: attach the original image if OCR process fails
       viewModel.addAttachment(image);
     }
+  }
+
+  void _showSimilarityWarning(XFile image, ComplaintViewModel viewModel, double score) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFFFFDFD),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12 * widget.scale),
+        ),
+        title: Text(
+          "WARNING",
+          style: TextStyle(
+            fontSize: 16 * widget.scale,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1A1D1F),
+          ),
+        ),
+        content: Text(
+          "This photo only has a ${(score * 100).toStringAsFixed(1)}% relevant with your product details. Do you still want to attach it?",
+          textAlign: TextAlign.justify,
+          style: TextStyle(
+            fontSize: 14 * widget.scale,
+            color: const Color(0xFF1A1D1F),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "CANCEL",
+              style: TextStyle(
+                color: const Color(0xFF9A9FA5),
+                fontWeight: FontWeight.w700,
+                fontSize: 14 * widget.scale,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              viewModel.addAttachment(image);
+              Navigator.pop(context);
+            },
+            child: Text(
+              "ATTACH ANYWAY",
+              style: TextStyle(
+                color: const Color(0xFFED1A4B),
+                fontWeight: FontWeight.w700,
+                fontSize: 14 * widget.scale,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -39,10 +157,11 @@ class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsVie
     return Consumer<ComplaintViewModel>(
       builder: (context, viewModel, child) {
         return Scaffold(
-          backgroundColor: const Color(0xFFFFFDFD),
+          backgroundColor: const Color(0xFFFFFAF3),
           appBar: AppBar(
-            backgroundColor: const Color(0xFFFFFDFD),
+            backgroundColor: const Color(0xFFFFFAF3),
             elevation: 0,
+            centerTitle: true,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
               icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
@@ -51,14 +170,10 @@ class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsVie
             title: Text(
               'ATTACHMENTS',
               style: TextStyle(
-                color: const Color(0xFF1A1D1F),
+                color: const Color(0xFF325E6A),
                 fontSize: 16 * widget.scale,
                 fontWeight: FontWeight.w700,
               ),
-            ),
-            bottom: PreferredSize(
-              preferredSize: Size.fromHeight(1 * widget.scale),
-              child: Divider(height: 1 * widget.scale, color: Colors.grey.withValues(alpha: 0.2)),
             ),
           ),
           body: SingleChildScrollView(
@@ -82,19 +197,27 @@ class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsVie
                     width: double.infinity,
                     height: 150 * widget.scale,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF4F4F4),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(1 * widget.scale),
                       border: Border.all(
-                        color: const Color(0xFF1A1D1F).withValues(alpha: 0.1),
+                        color: Colors.grey.withValues(alpha: 0.3),
                         width: 1 * widget.scale,
                       ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2), // Shadow color
+                            spreadRadius: -6,                     // How far the shadow extends
+                            blurRadius: 6,                      // Softness of the shadow
+                            offset: const Offset(4, 5),        // Offset of the shadow, 2),
+                          )
+                        ]
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.camera_alt_outlined,
-                          size: 40 * widget.scale,
+                          size: 35 * widget.scale,
                           color: const Color(0xFF1A1D1F),
                         ),
                         SizedBox(height: 10 * widget.scale),
@@ -180,33 +303,19 @@ class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsVie
                 SizedBox(height: 40 * widget.scale),
                 
                 // Next Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50 * widget.scale,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ComplaintSummaryView(scale: widget.scale),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A1D1F),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(1 * widget.scale),
+                CustomButton(
+                  label: "NEXT",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ComplaintSummaryView(scale: widget.scale),
                       ),
-                    ),
-                    child: Text(
-                      "NEXT",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14 * widget.scale,
-                      ),
-                    ),
-                  ),
+                    );
+                  },
+                  bg: const Color(0xFF1A1D1F),
+                  text: Colors.white,
+                  scale: widget.scale,
                 ),
                 SizedBox(height: 20 * widget.scale),
               ],

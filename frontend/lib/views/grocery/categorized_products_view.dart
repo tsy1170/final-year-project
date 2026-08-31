@@ -64,10 +64,10 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
     final authViewModel = context.watch<AuthViewModel>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFDFD),
+      backgroundColor: const Color(0xFFFFFAF3),
       appBar: AppBar(
-        elevation: 2,
-        backgroundColor: const Color(0xFFFFFDFD),
+        elevation: 0,
+        backgroundColor: const Color(0xFFFFFAF3),
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
@@ -76,7 +76,7 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
         title: Text(
           widget.category ?? widget.group,
           style: TextStyle(
-            color: const Color(0xFF1A1D1F),
+            color: const Color(0xFF325E6A),
             fontSize: 16 * widget.scale,
             fontWeight: FontWeight.w700,
           ),

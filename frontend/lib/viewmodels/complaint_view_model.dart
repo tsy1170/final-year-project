@@ -382,7 +382,7 @@ class ComplaintViewModel extends ChangeNotifier {
     bool granted = false;
     
     if (Platform.isAndroid) {
-      // Android 13+ (SDK 33) uses granular media permissions
+      // For Android 13+ (SDK 33) uses granular media permissions
       // Permission.photos handles READ_MEDIA_IMAGES and related access
       if (await Permission.photos.request().isGranted) {
         granted = true;

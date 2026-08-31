@@ -76,7 +76,7 @@ class _EditProfileViewState extends State<EditProfileView> {
             datePickerTheme: DatePickerThemeData(
               dividerColor: Colors.grey.withValues(alpha: 0.3),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(1 * widget.scale),
+                borderRadius: BorderRadius.circular(12 * widget.scale),
               ),
             ),
             dialogTheme: const DialogThemeData(backgroundColor: Color(0xFFFFFDFD)),
@@ -142,11 +142,12 @@ class _EditProfileViewState extends State<EditProfileView> {
     final authViewModel = context.watch<AuthViewModel>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFDFD),
+      backgroundColor: const Color(0xFFFFFAF3),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFFDFD),
+        backgroundColor: const Color(0xFFFFFAF3),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
           onPressed: () => Navigator.pop(context),
@@ -154,14 +155,10 @@ class _EditProfileViewState extends State<EditProfileView> {
         title: Text(
           'EDIT PROFILE',
           style: TextStyle(
-            color: const Color(0xFF1A1D1F),
+            color: const Color(0xFF325E6A),
             fontSize: 16 * widget.scale,
             fontWeight: FontWeight.w700,
           ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1 * widget.scale),
-          child: Divider(height: 1 * widget.scale, color: Colors.grey.withValues(alpha: 0.2)),
         ),
         actions: [
           if (_hasChanges)
@@ -171,9 +168,9 @@ class _EditProfileViewState extends State<EditProfileView> {
                   ? SizedBox(
                       width: 15 * widget.scale,
                       height: 15 * widget.scale,
-                      child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1A1D1F)),
+                      child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF325E6A)),
                     )
-                  : Icon(Icons.save_as, color: const Color(0xFF1A1D1F), size: 25 * widget.scale)
+                  : Icon(Icons.save_as, color: const Color(0xFF325E6A), size: 25 * widget.scale)
             ),
           SizedBox(width: 10 * widget.scale),
         ],
@@ -293,41 +290,53 @@ class _EditProfileViewState extends State<EditProfileView> {
     VoidCallback? onTap,
     String? Function(String?)? validator,
   }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
-      readOnly: readOnly,
-      onTap: onTap,
-      validator: validator,
-      style: TextStyle(fontSize: 14 * widget.scale, fontWeight: FontWeight.w400, color: const Color(0xFF1A1D1F)),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: const Color(0xFFF4F4F4),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(1 * widget.scale),
-          borderSide: BorderSide(color: const Color(0xFF1A1D1F), width: 1 * widget.scale),
+    return Container(
+      decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2), // Shadow color
+              spreadRadius: -6,                     // How far the shadow extends
+              blurRadius: 6,                      // Softness of the shadow
+              offset: const Offset(4, 5),        // Offset of the shadow, 2),
+            )
+          ]
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        readOnly: readOnly,
+        onTap: onTap,
+        validator: validator,
+        style: TextStyle(fontSize: 14 * widget.scale, fontWeight: FontWeight.w400, color: const Color(0xFF1A1D1F)),
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: Colors.white,
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12 * widget.scale),
+            borderSide: BorderSide(color: const Color(0xFF325E6A), width: 1 * widget.scale),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12 * widget.scale),
+            borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3), width: 1 * widget.scale),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(1 * widget.scale),
+            borderSide: BorderSide(color: Colors.red.shade700, width: 1 * widget.scale),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12 * widget.scale),
+            borderSide: BorderSide(color: Colors.red.shade700, width: 1 * widget.scale),
+          ),
+          prefixIcon: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 15 * widget.scale),
+            child: Icon(icon, color: const Color(0xFF1A1D1F), size: 18 * widget.scale),
+          ),
+          hintText: hint,
+          hintStyle: TextStyle(color: const Color(0xFF9A9FA5), fontSize: 13 * widget.scale),
+          contentPadding: EdgeInsets.symmetric(vertical: 15 * widget.scale),
+          errorStyle: TextStyle(fontSize: 11 * widget.scale, color: Colors.red.shade700),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(1 * widget.scale),
-          borderSide: BorderSide.none,
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(1 * widget.scale),
-          borderSide: BorderSide(color: Colors.red.shade700, width: 1 * widget.scale),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(1 * widget.scale),
-          borderSide: BorderSide(color: Colors.red.shade700, width: 1 * widget.scale),
-        ),
-        prefixIcon: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 15 * widget.scale),
-          child: Icon(icon, color: const Color(0xFF1A1D1F), size: 18 * widget.scale),
-        ),
-        hintText: hint,
-        hintStyle: TextStyle(color: const Color(0xFF9A9FA5), fontSize: 13 * widget.scale),
-        contentPadding: EdgeInsets.symmetric(vertical: 15 * widget.scale),
-        errorStyle: TextStyle(fontSize: 11 * widget.scale, color: Colors.red.shade700),
       ),
     );
   }
@@ -335,7 +344,17 @@ class _EditProfileViewState extends State<EditProfileView> {
   Widget _buildRedirectBox({required String label, required IconData icon, bool isPassword = false, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: SizedBox(
+      child: Container(
+        decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2), // Shadow color
+                spreadRadius: -6,                     // How far the shadow extends
+                blurRadius: 6,                      // Softness of the shadow
+                offset: const Offset(4, 5),        // Offset of the shadow, 2),
+              )
+            ]
+        ),
         width: double.infinity,
         child: InputDecorator(
           decoration: InputDecoration(
@@ -343,13 +362,17 @@ class _EditProfileViewState extends State<EditProfileView> {
               padding: EdgeInsets.symmetric(horizontal: 15 * widget.scale),
               child: Icon(icon, color: const Color(0xFF1A1D1F), size: 18 * widget.scale),
             ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12 * widget.scale),
+              borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3), width: 1 * widget.scale),
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(1 * widget.scale),
-              borderSide: BorderSide.none
+              borderRadius: BorderRadius.circular(12 * widget.scale),
+              borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3), width: 1 * widget.scale),
             ),
             contentPadding: EdgeInsets.symmetric(vertical: 15 * widget.scale),
             filled: true,
-            fillColor: const Color(0xFFF4F4F4),
+            fillColor: Colors.white,
           ),
           child: Row(
             children: [

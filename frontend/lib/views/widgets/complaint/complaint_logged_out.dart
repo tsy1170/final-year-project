@@ -18,14 +18,14 @@ class ComplaintLoggedOutState extends StatelessWidget {
             Icon(
               Icons.lock_outline_rounded,
               size: 50 * scale,
-              color: const Color(0xFF1A1D1F).withValues(alpha: 0.2),
+              color: const Color(0xFF325E6A).withValues(alpha: 0.5),
             ),
-            SizedBox(height: 20 * scale),
+            SizedBox(height: 10 * scale),
             Text(
               'Login to see your complaints',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 16 * scale,
+                fontSize: 14 * scale,
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF1A1D1F),
               ),

@@ -69,7 +69,7 @@ class _RootViewState extends State<RootView> {
                 color: const Color(0xFFFFFAF3),
                 child: Stack(
                   children: [
-                    // 1. Content Layer
+                    // Content layer
                     Positioned.fill(
                       child: PageView(
                         controller: _pageController,
@@ -83,8 +83,8 @@ class _RootViewState extends State<RootView> {
                         ],
                       ),
                     ),
-                    
-                    // 2. Bottom Navigation
+
+                    // Bottom navigation
                     Positioned(
                       bottom: 0,
                       left: 0,

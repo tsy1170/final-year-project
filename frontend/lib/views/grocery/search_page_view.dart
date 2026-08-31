@@ -18,6 +18,7 @@ class SearchPageView extends StatefulWidget {
 class _SearchPageViewState extends State<SearchPageView> {
   final TextEditingController _searchController = TextEditingController();
   final GroceryService _groceryService = GroceryService();
+  final _focusNode = FocusNode();
   List<GroceryProduct> _searchResults = [];
   bool _showClearButton = false;
   bool _isLoading = false;
@@ -33,6 +34,7 @@ class _SearchPageViewState extends State<SearchPageView> {
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _focusNode.dispose();
     _debounce?.cancel();
     super.dispose();
   }
@@ -81,6 +83,22 @@ class _SearchPageViewState extends State<SearchPageView> {
 
   @override
   Widget build(BuildContext context) {
+    final navViewModel = context.watch<NavigationViewModel>();
+    final isOnSearchPage = navViewModel.selectedIndex == 2;
+
+    if (!isOnSearchPage && _focusNode.hasFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _focusNode.unfocus();
+      });
+    }
+
+    // ← add this: auto-focus when user intentionally navigates to search
+    if (isOnSearchPage && !_focusNode.hasFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focusNode.requestFocus();
+      });
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFFAF3),
       body: SafeArea(
@@ -95,7 +113,7 @@ class _SearchPageViewState extends State<SearchPageView> {
                   border: Border(
                     bottom: BorderSide(
                       color: Colors.grey.withValues(alpha: 0.3),
-                      width: 0.5 * widget.scale,
+                      width: 1 * widget.scale,
                     ),
                   ),
                 ),
@@ -131,7 +149,8 @@ class _SearchPageViewState extends State<SearchPageView> {
                         ),
                         child: TextField(
                           controller: _searchController,
-                          autofocus: true,
+                          focusNode: _focusNode,
+                          autofocus: false,
                           textAlignVertical: TextAlignVertical.center,
                           style: TextStyle(
                             fontSize: 14 * widget.scale,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/auth_view_model.dart';
 import '../widgets/common/animated_notification.dart';
+import '../widgets/common/custom_button.dart';
 
 class ChangeEmailView extends StatefulWidget {
   final double scale;
@@ -37,7 +38,7 @@ class _ChangeEmailViewState extends State<ChangeEmailView> {
       builder: (dialogContext) => AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(1 * widget.scale)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12 * widget.scale)),
         title: Text(
           "Current Password",
           style: TextStyle(fontSize: 18 * widget.scale, fontWeight: FontWeight.bold),
@@ -62,7 +63,7 @@ class _ChangeEmailViewState extends State<ChangeEmailView> {
                 filled: true,
                 fillColor: const Color(0xFFF4F4F4),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(1 * widget.scale),
+                  borderRadius: BorderRadius.circular(12 * widget.scale),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -103,11 +104,14 @@ class _ChangeEmailViewState extends State<ChangeEmailView> {
 
   @override
   Widget build(BuildContext context) {
+    bool isEmailNotEmpty = _emailController.text.isNotEmpty;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFFDFD),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFFDFD),
         elevation: 0,
+        centerTitle: true,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
           onPressed: () => Navigator.pop(context),
@@ -115,10 +119,6 @@ class _ChangeEmailViewState extends State<ChangeEmailView> {
         title: Text(
           'CHANGE EMAIL',
           style: TextStyle(color: const Color(0xFF1A1D1F), fontSize: 16 * widget.scale, fontWeight: FontWeight.w700),
-        ),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1 * widget.scale),
-          child: Divider(height: 1 * widget.scale, color: Colors.grey.withValues(alpha: 0.2)),
         ),
       ),
       body: Padding(
@@ -144,24 +144,22 @@ class _ChangeEmailViewState extends State<ChangeEmailView> {
                 filled: true,
                 fillColor: const Color(0xFFF4F4F4),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(1 * widget.scale),
+                  borderRadius: BorderRadius.circular(12 * widget.scale),
                   borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12 * widget.scale),
+                  borderSide: BorderSide(color: const Color(0xFF325E6A), width: 1 * widget.scale),
                 ),
               ),
             ),
             SizedBox(height: 20 * widget.scale),
-            SizedBox(
-              width: double.infinity,
-              height: 50 * widget.scale,
-              child: ElevatedButton(
-                onPressed: _emailController.text.isNotEmpty ? _showPasswordDialog : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A1D1F),
-                  disabledBackgroundColor: const Color(0xFF1A1D1F).withValues(alpha: 0.5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(1 * widget.scale)),
-                ),
-                child: Text("NEXT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
+            CustomButton(
+              label: "NEXT",
+              onTap: isEmailNotEmpty ? _showPasswordDialog : () {},
+              bg: const Color(0xFF1A1D1F).withValues(alpha: isEmailNotEmpty ? 1.0 : 0.5),
+              text: Colors.white.withValues(alpha: isEmailNotEmpty ? 1.0 : 0.5),
+              scale: widget.scale,
             ),
           ],
         ),

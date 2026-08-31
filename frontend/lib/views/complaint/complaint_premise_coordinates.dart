@@ -5,6 +5,7 @@ import '../../viewmodels/location_view_model.dart';
 import '../../viewmodels/complaint_view_model.dart';
 import 'add_complaint_attachments.dart';
 import '../widgets/common/animated_notification.dart';
+import '../widgets/common/custom_button.dart';
 
 class ComplaintPremiseCoordinatesView extends StatefulWidget {
   final double scale;
@@ -56,10 +57,11 @@ class _ComplaintPremiseCoordinatesViewState extends State<ComplaintPremiseCoordi
             : null;
 
         return Scaffold(
-          backgroundColor: const Color(0xFFFFFDFD),
+          backgroundColor: const Color(0xFFFFFAF3),
           appBar: AppBar(
-            backgroundColor: const Color(0xFFFFFDFD),
+            backgroundColor: const Color(0xFFFFFAF3),
             elevation: 0,
+            centerTitle: true,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
               icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
@@ -68,14 +70,10 @@ class _ComplaintPremiseCoordinatesViewState extends State<ComplaintPremiseCoordi
             title: Text(
               'PREMISE LOCATION',
               style: TextStyle(
-                color: const Color(0xFF1A1D1F),
+                color: const Color(0xFF325E6A),
                 fontSize: 16 * widget.scale,
                 fontWeight: FontWeight.w700,
               ),
-            ),
-            bottom: PreferredSize(
-              preferredSize: Size.fromHeight(1 * widget.scale),
-              child: Divider(height: 1 * widget.scale, color: Colors.grey.withValues(alpha: 0.2)),
             ),
           ),
           body: Column(
@@ -153,38 +151,23 @@ class _ComplaintPremiseCoordinatesViewState extends State<ComplaintPremiseCoordi
                       ),
                       SizedBox(height: 20 * widget.scale),
                     ],
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50 * widget.scale,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (selectedLocation == null) {
-                            showTopNotification(context, "Please select a location on the map", false, widget.scale);
-                            return;
-                          }
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ComplaintAddAttachmentsView(scale: widget.scale),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          elevation: 0,
-                          backgroundColor: const Color(0xFF1A1D1F),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(1 * widget.scale),
+                    CustomButton(
+                      label: "NEXT",
+                      onTap: () {
+                        if (selectedLocation == null) {
+                          showTopNotification(context, "Please select a location on the map", false, widget.scale);
+                          return;
+                        }
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ComplaintAddAttachmentsView(scale: widget.scale),
                           ),
-                        ),
-                        child: Text(
-                          "NEXT",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14 * widget.scale,
-                          ),
-                        ),
-                      ),
+                        );
+                      },
+                      bg: const Color(0xFF1A1D1F),
+                      text: Colors.white,
+                      scale: widget.scale,
                     ),
                   ],
                 ),

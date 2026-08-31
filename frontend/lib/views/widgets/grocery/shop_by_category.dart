@@ -27,7 +27,7 @@ class ShopByCategory extends StatelessWidget {
             child: Text(
               "SHOP BY CATEGORY",
               style: TextStyle(
-                fontSize: 17 * scale,
+                fontSize: 16 * scale,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF325E6A),
                 letterSpacing: 0,
@@ -74,7 +74,7 @@ class ShopByCategory extends StatelessWidget {
                 Text(
                   "BARANGAN SEGAR",
                   style: TextStyle(
-                    fontSize: 13 * scale,
+                    fontSize: 12 * scale,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF1A1D1F),
                   ),
@@ -124,7 +124,7 @@ class ShopByCategory extends StatelessWidget {
                 Text(
                   "BARANGAN KERING",
                   style: TextStyle(
-                    fontSize: 13 * scale,
+                    fontSize: 12 * scale,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF1A1D1F),
                   ),
@@ -174,7 +174,7 @@ class ShopByCategory extends StatelessWidget {
                 Text(
                   "BARANGAN BERBUNGKUS",
                   style: TextStyle(
-                    fontSize: 13 * scale,
+                    fontSize: 12 * scale,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF1A1D1F),
                   ),

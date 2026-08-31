@@ -188,7 +188,7 @@ class _ComplaintViewState extends State<ComplaintView> {
       ),
       padding: EdgeInsets.fromLTRB(
         20 * widget.scale,
-        20 * widget.scale,
+        10 * widget.scale,
         20 * widget.scale,
         180 * widget.scale,
       ),
@@ -201,7 +201,7 @@ class _ComplaintViewState extends State<ComplaintView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: EdgeInsets.only(top: index == 0 ? 0 : 10 * widget.scale),
+              padding: EdgeInsets.only(top: index == 0 ? 0 : 5 * widget.scale, left: 10 * widget.scale),
               child: Text(
                 DateFormat('dd MMMM yyyy').format(date).toUpperCase(),
                 style: TextStyle(
@@ -212,26 +212,23 @@ class _ComplaintViewState extends State<ComplaintView> {
                 ),
               ),
             ),
-            GridView.builder(
-              padding: EdgeInsets.only(top: 25 * widget.scale),
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 8 * widget.scale,
-                mainAxisSpacing: 8 * widget.scale,
-                mainAxisExtent: 180 * widget.scale,
+            Padding(
+              padding: EdgeInsets.only(top: 15 * widget.scale),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: complaints.length,
+                separatorBuilder: (context, i) => SizedBox(),
+                itemBuilder: (context, i) {
+                  return ComplaintTile(
+                    complaint: complaints[i],
+                    viewModel: viewModel,
+                    scale: widget.scale,
+                  );
+                },
               ),
-              itemCount: complaints.length,
-              itemBuilder: (context, i) {
-                return ComplaintTile(
-                  complaint: complaints[i],
-                  viewModel: viewModel,
-                  scale: widget.scale,
-                );
-              },
             ),
-            SizedBox(height: 30 * widget.scale),
+            SizedBox(height: 25 * widget.scale),
           ],
         );
       },

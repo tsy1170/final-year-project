@@ -22,7 +22,7 @@ class OptimizationSubHeader extends StatelessWidget {
       width: double.infinity,
       height: 50 * scale,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFDFD),
+        color: const Color(0xFFFFFAF3),
         border: Border(
           bottom: BorderSide(
             color: Colors.grey.withValues(alpha: 0.3),
@@ -41,7 +41,7 @@ class OptimizationSubHeader extends StatelessWidget {
             child: Container(
               width: screenWidth / 2,
               height: 3 * scale,
-              color: const Color(0xFFED1A4B),
+              color: const Color(0xFF325E6A),
             ),
           ),
           Row(
@@ -58,7 +58,7 @@ class OptimizationSubHeader extends StatelessWidget {
                     'SINGLE-STORE',
                     style: TextStyle(
                       color: isSingleStore
-                          ? const Color(0xFFED1A4B)
+                          ? const Color(0xFF325E6A)
                           : const Color(0xFF1A1D1F).withValues(alpha: 0.5),
                       fontSize: 13 * scale,
                       fontWeight: FontWeight.w700,
@@ -79,7 +79,7 @@ class OptimizationSubHeader extends StatelessWidget {
                     'MULTI-STORE',
                     style: TextStyle(
                       color: !isSingleStore
-                          ? const Color(0xFFED1A4B)
+                          ? const Color(0xFF325E6A)
                           : const Color(0xFF1A1D1F).withValues(alpha: 0.5),
                       fontSize: 13 * scale,
                       fontWeight: FontWeight.w700,

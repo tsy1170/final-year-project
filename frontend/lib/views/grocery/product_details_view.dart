@@ -149,11 +149,11 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                   Container(
                     width: double.infinity,
                     height: 300 * widget.scale,
-                    color: const Color(0xFFF4F4F4),
+                    color: Colors.white,
                     child: details['item'].imageUrl != null
                         ? Image.network(
                             details['item'].imageUrl,
-                            fit: BoxFit.fill,
+                            fit: BoxFit.contain,
                           )
                         : Icon(
                             Icons.image,
@@ -277,7 +277,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                 color: const Color(0xFFFFFDFD),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     offset: const Offset(0, -2),
                     blurRadius: 10,
                   ),

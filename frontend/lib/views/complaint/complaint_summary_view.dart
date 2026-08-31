@@ -9,6 +9,7 @@ import '../../viewmodels/auth_view_model.dart';
 import '../../viewmodels/complaint_view_model.dart';
 import '../../models/complaint.dart';
 import '../widgets/common/animated_notification.dart';
+import '../widgets/common/custom_button.dart';
 
 class ComplaintSummaryView extends StatelessWidget {
   final double scale;
@@ -18,6 +19,11 @@ class ComplaintSummaryView extends StatelessWidget {
     required this.scale,
   });
 
+  String _formatPrice(String price) {
+    final double? value = double.tryParse(price);
+    return value?.toStringAsFixed(2) ?? price;
+  }
+
   void _showConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -26,7 +32,7 @@ class ComplaintSummaryView extends StatelessWidget {
           backgroundColor: const Color(0xFFFFFDFD),
           surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(1 * scale),
+            borderRadius: BorderRadius.circular(12 * scale),
           ),
           title: Text(
             "CONFIRM SAVE",
@@ -139,8 +145,8 @@ class ComplaintSummaryView extends StatelessWidget {
     body.writeln('COMPLAINT CATEGORY');
     body.writeln('Category: ${complaint.category}');
     body.writeln('Product Name: ${complaint.productName}');
-    body.writeln('Product Price: RM ${complaint.productPrice}');
-    body.writeln('Loss Amount: RM ${complaint.lossAmount}');
+    body.writeln('Product Price: RM ${_formatPrice(complaint.productPrice)}');
+    body.writeln('Loss Amount: RM ${_formatPrice(complaint.lossAmount)}');
     body.writeln('Date Issue: ${DateFormat('dd/MM/yyyy').format(complaint.dateIssue)}');
     body.writeln();
     
@@ -206,8 +212,8 @@ class ComplaintSummaryView extends StatelessWidget {
     text.writeln('*COMPLAINT CATEGORY*');
     text.writeln('Category: ${complaint.category}');
     text.writeln('Product Name: ${complaint.productName}');
-    text.writeln('Product Price: RM ${complaint.productPrice}');
-    text.writeln('Loss Amount: RM ${complaint.lossAmount}');
+    text.writeln('Product Price: RM ${_formatPrice(complaint.productPrice)}');
+    text.writeln('Loss Amount: RM ${_formatPrice(complaint.lossAmount)}');
     text.writeln('Date Issue: ${DateFormat('dd/MM/yyyy').format(complaint.dateIssue)}');
     text.writeln();
     
@@ -316,10 +322,11 @@ class ComplaintSummaryView extends StatelessWidget {
         final complaint = complaintVM.complaint;
 
         return Scaffold(
-          backgroundColor: const Color(0xFFFFFDFD),
+          backgroundColor: const Color(0xFFFFFAF3),
           appBar: AppBar(
-            backgroundColor: const Color(0xFFFFFDFD),
+            backgroundColor: const Color(0xFFFFFAF3),
             elevation: 0,
+            centerTitle: true,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
               icon: Icon(
@@ -374,13 +381,6 @@ class ComplaintSummaryView extends StatelessWidget {
                 ),
               SizedBox(width: 10 * scale),
             ],
-            bottom: PreferredSize(
-              preferredSize: Size.fromHeight(1 * scale),
-              child: Divider(
-                height: 1 * scale,
-                color: Colors.grey.withValues(alpha: 0.3),
-              ),
-            ),
           ),
           body: SingleChildScrollView(
             padding: EdgeInsets.all(20 * scale),
@@ -392,9 +392,9 @@ class ComplaintSummaryView extends StatelessWidget {
                   _buildInfoRow("Product Name", complaint.productName),
                   _buildInfoRow(
                     "Product Price",
-                    "RM ${complaint.productPrice}",
+                    "RM ${_formatPrice(complaint.productPrice)}",
                   ),
-                  _buildInfoRow("Loss Amount", "RM ${complaint.lossAmount}"),
+                  _buildInfoRow("Loss Amount", "RM ${_formatPrice(complaint.lossAmount)}"),
                   _buildInfoRow(
                     "Date Issue",
                     DateFormat('dd/MM/yyyy').format(complaint.dateIssue),
@@ -481,7 +481,6 @@ class ComplaintSummaryView extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13 * scale,
                       color: const Color(0xFF1A1D1F),
-                        fontWeight: FontWeight.w500
                     ),
                   ),
                 ]),
@@ -553,14 +552,12 @@ class ComplaintSummaryView extends StatelessWidget {
                     ),
                 ]),
                 SizedBox(height: 30 * scale),
-                SizedBox(
-                  width: double.infinity,
-                  child: _buildButton(
-                    "SUBMIT",
-                    const Color(0xFF1A1D1F),
-                    Colors.white,
-                    () => _showSendOptions(context, complaint),
-                  ),
+                CustomButton(
+                  label: "SUBMIT",
+                  onTap: () => _showSendOptions(context, complaint),
+                  bg: const Color(0xFF1A1D1F),
+                  text: Colors.white,
+                  scale: scale,
                 ),
                 SizedBox(height: 20 * scale + MediaQuery.of(context).padding.bottom),
               ],
@@ -592,7 +589,7 @@ class ComplaintSummaryView extends StatelessWidget {
             style: TextStyle(
               fontSize: 16 * scale,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1A1D1F),
+              color: const Color(0xFF325E6A),
             ),
           ),
         ),
@@ -631,37 +628,6 @@ class ComplaintSummaryView extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildButton(
-    String text,
-    Color bgColor,
-    Color textColor,
-    VoidCallback onPressed,
-  ) {
-    return SizedBox(
-      height: 50 * scale,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: bgColor,
-          foregroundColor: textColor,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(1 * scale),
-            side: bgColor == const Color(0xFFF4F4F4)
-                ? BorderSide(
-                    color: const Color(0xFF1A1D1F).withValues(alpha: 0.1),
-                  )
-                : BorderSide.none,
-          ),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14 * scale),
-        ),
       ),
     );
   }

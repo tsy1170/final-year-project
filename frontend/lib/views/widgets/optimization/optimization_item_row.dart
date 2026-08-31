@@ -57,7 +57,7 @@ class OptimizationItemRow extends StatelessWidget {
                     item['unit'] ?? '',
                     style: TextStyle(
                       fontSize: 11 * scale,
-                      color: const Color(0xFF9A9FA5),
+                      color: Color(0xFF1A1D1F).withValues(alpha: 0.5),
                     ),
                   ),
                 ],

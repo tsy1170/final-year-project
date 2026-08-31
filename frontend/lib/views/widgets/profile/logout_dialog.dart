@@ -18,7 +18,7 @@ class LogoutDialog extends StatelessWidget {
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(1 * scale),
+          borderRadius: BorderRadius.circular(12 * scale),
           side: BorderSide(color: Colors.grey.withValues(alpha: 0.3), width: 1 * scale)),
       titlePadding: EdgeInsets.fromLTRB(20 * scale, 15 * scale, 10 * scale, 0),
       title: Row(

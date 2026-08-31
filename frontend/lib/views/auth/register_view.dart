@@ -54,7 +54,7 @@ class _RegisterViewState extends State<RegisterView> {
             datePickerTheme: DatePickerThemeData(
               dividerColor: Colors.grey.withValues(alpha: 0.3),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(1 * widget.scale),
+                borderRadius: BorderRadius.circular(12 * widget.scale),
               ),
             ),
             dialogTheme: const DialogThemeData(backgroundColor: Color(0xFFFFFDFD)),
@@ -321,12 +321,16 @@ class _RegisterViewState extends State<RegisterView> {
       style: TextStyle(fontSize: 14 * widget.scale, color: const Color(0xFF1A1D1F)),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: const Color(0xFF9A9FA5), fontSize: 12 * widget.scale),
+        hintStyle: TextStyle(color: const Color(0xFF9A9FA5), fontSize: 11 * widget.scale),
         filled: true,
         fillColor: const Color(0xFFF4F4F4),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(1 * widget.scale),
-          borderSide: BorderSide(color: const Color(0xFF1A1D1F), width: 1 * widget.scale),
+          borderRadius: BorderRadius.circular(12 * widget.scale),
+          borderSide: BorderSide(color: const Color(0xFF325E6A), width: 1 * widget.scale),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12 * widget.scale),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3), width: 1 * widget.scale),
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(1 * widget.scale),

@@ -7,6 +7,7 @@ import '../../viewmodels/location_view_model.dart';
 import 'add_complaint_description_view.dart';
 import 'price_tag_scanner_view.dart';
 import '../widgets/common/animated_notification.dart';
+import '../widgets/common/custom_button.dart';
 
 class AddComplaintView extends StatefulWidget {
   final double scale;
@@ -88,6 +89,15 @@ class _AddComplaintViewState extends State<AddComplaintView> {
     });
   }
 
+  void _formatPrice(TextEditingController controller) {
+    if (controller.text.isNotEmpty) {
+      final double? val = double.tryParse(controller.text);
+      if (val != null) {
+        controller.text = val.toStringAsFixed(2);
+      }
+    }
+  }
+
   void _handleNext(ComplaintViewModel viewModel) {
     if (viewModel.selectedCategory == null ||
         viewModel.productNameController.text.isEmpty ||
@@ -102,6 +112,10 @@ class _AddComplaintViewState extends State<AddComplaintView> {
       showTopNotification(context, "Please fill in all required fields", false, widget.scale);
       return;
     }
+
+    // Final formatting check before proceeding
+    _formatPrice(viewModel.productPriceController);
+    _formatPrice(viewModel.lossAmountController);
 
     Navigator.push(
       context,
@@ -250,10 +264,11 @@ class _AddComplaintViewState extends State<AddComplaintView> {
     return Consumer<ComplaintViewModel>(
       builder: (context, viewModel, child) {
         return Scaffold(
-          backgroundColor: const Color(0xFFFFFDFD),
+          backgroundColor: const Color(0xFFFFFAF3),
           appBar: AppBar(
-            backgroundColor: const Color(0xFFFFFDFD),
+            backgroundColor: const Color(0xFFFFFAF3),
             elevation: 0,
+            centerTitle: true,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
               icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
@@ -262,14 +277,10 @@ class _AddComplaintViewState extends State<AddComplaintView> {
             title: Text(
               'SUBMIT COMPLAINT',
               style: TextStyle(
-                color: const Color(0xFF1A1D1F),
-                fontSize: 16 * widget.scale,
+                color: const Color(0xFF325E6A),
+                fontSize: 14 * widget.scale,
                 fontWeight: FontWeight.w700,
               ),
-            ),
-            bottom: PreferredSize(
-              preferredSize: Size.fromHeight(1 * widget.scale),
-              child: Divider(height: 1 * widget.scale, color: Colors.grey.withValues(alpha: 0.2)),
             ),
           ),
           body: SingleChildScrollView(
@@ -315,18 +326,19 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                       ),
                     ),
                     SizedBox(width: 10 * widget.scale),
-                    GestureDetector(
-                      onTap: () => _showNearbyPremises(context),
-                      child: Container(
-                        width: 40 * widget.scale,
-                        height: 40 * widget.scale,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1A1D1F),
-                          borderRadius: BorderRadius.circular(10 * widget.scale),
+                      GestureDetector(
+                        onTap: () => _showNearbyPremises(context),
+                        child: Container(
+                          width: 40 * widget.scale,
+                          height: 50 * widget.scale,
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(12 * widget.scale),
+                          ),
+                          child: Icon(Icons.location_on, color: const Color(0xFF1A1D1F), size: 30 * widget.scale),
                         ),
-                        child: Icon(Icons.location_on, color: const Color(0xFFFFFDFD), size: 20 * widget.scale),
                       ),
-                    ),
+
                   ],
                 ),
                 SizedBox(height: 20 * widget.scale),
@@ -340,26 +352,12 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                 _buildTextField("Longitude", viewModel.longitudeController, isCoordinate: true),
 
                 SizedBox(height: 30 * widget.scale),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50 * widget.scale,
-                  child: ElevatedButton(
-                    onPressed: () => _handleNext(viewModel),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A1D1F),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(1 * widget.scale),
-                      ),
-                    ),
-                    child: Text(
-                      "NEXT",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14 * widget.scale,
-                      ),
-                    ),
-                  ),
+                CustomButton(
+                  label: "NEXT",
+                  onTap: () => _handleNext(viewModel),
+                  bg: const Color(0xFF1A1D1F),
+                  text: Colors.white,
+                  scale: widget.scale,
                 ),
                 SizedBox(height: 50 * widget.scale),
               ],
@@ -384,12 +382,20 @@ class _AddComplaintViewState extends State<AddComplaintView> {
         width: double.infinity,
         padding: EdgeInsets.symmetric(vertical: 50 * widget.scale, horizontal: 20 * widget.scale),
         decoration: BoxDecoration(
-          color: const Color(0xFFF4F4F4),
-          borderRadius: BorderRadius.circular(1 * widget.scale),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12 * widget.scale),
           border: Border.all(
-            color: const Color(0xFF1A1D1F).withValues(alpha: 0.1),
+            color: Colors.grey.withValues(alpha: 0.3),
             width: 1 * widget.scale,
           ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2), // Shadow color
+                spreadRadius: -6,                     // How far the shadow extends
+                blurRadius: 6,                      // Softness of the shadow
+                offset: const Offset(4, 5),        // Offset of the shadow, 2),
+              )
+            ]
         ),
         child: Column(
           children: [
@@ -428,7 +434,7 @@ class _AddComplaintViewState extends State<AddComplaintView> {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: Color(0xFF1A1D1F),
+        color: Color(0xFF325E6A),
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 5 * widget.scale, horizontal: 10 * widget.scale),
@@ -471,8 +477,18 @@ class _AddComplaintViewState extends State<AddComplaintView> {
           ],
         ),
         SizedBox(height: 8 * widget.scale),
-        SizedBox(
-          height: 40 * widget.scale,
+        Container(
+          decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2), // Shadow color
+                  spreadRadius: -6,                     // How far the shadow extends
+                  blurRadius: 6,                      // Softness of the shadow
+                  offset: const Offset(4, 5),        // Offset of the shadow, 2),
+                )
+              ]
+          ),
+          height: 50 * widget.scale,
           child: TextField(
             controller: controller,
             textCapitalization: TextCapitalization.sentences,
@@ -489,6 +505,14 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                   ? [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,10}'))]
                   : (isNumeric ? [FilteringTextInputFormatter.digitsOnly] : null),
             onTap: isDate ? () => _selectDate(context) : null,
+            onEditingComplete: isPrice ? () {
+              _formatPrice(controller);
+              FocusScope.of(context).unfocus();
+            } : null,
+            onTapOutside: (event) {
+              if (isPrice) _formatPrice(controller);
+              FocusScope.of(context).unfocus();
+            },
             style: TextStyle(fontSize: 12 * widget.scale, color: const Color(0xFF1A1D1F)),
             decoration: InputDecoration(
               hintText: "Enter $label",
@@ -497,14 +521,21 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                 fontSize: 11 * widget.scale,
               ),
               filled: true,
-              fillColor: const Color(0xFFF4F4F4),
+              fillColor: Colors.white,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(1 * widget.scale),
-                borderSide: BorderSide.none,
+                borderRadius: BorderRadius.circular(12 * widget.scale),
+                borderSide: BorderSide.none
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12 * widget.scale),
+                borderSide: BorderSide(
+                  color: Colors.grey.withValues(alpha: 0.3),
+                  width: 1 * widget.scale,
+                ),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(1 * widget.scale),
-                borderSide: BorderSide(color: const Color(0xFF1A1D1F), width: 1 * widget.scale),
+                borderRadius: BorderRadius.circular(12 * widget.scale),
+                borderSide: BorderSide(color: const Color(0xFF325E6A), width: 1 * widget.scale),
               ),
               contentPadding: EdgeInsets.symmetric(horizontal: 15 * widget.scale),
               suffixIcon: isDate ? Icon(Icons.calendar_today, size: 18 * widget.scale, color: const Color(0xFF1A1D1F)) : null,
@@ -542,99 +573,118 @@ class _AddComplaintViewState extends State<AddComplaintView> {
           ],
         ),
         SizedBox(height: 8 * widget.scale),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            return Theme(
-              data: Theme.of(context).copyWith(
-                scrollbarTheme: ScrollbarThemeData(
-                  thumbColor: WidgetStateProperty.all(const Color(0xFF1A1D1F))
-                ),
-                iconButtonTheme: IconButtonThemeData(
-                  style: ButtonStyle(
-                    // Set maximum bounds for the inner icon target box
-                    maximumSize: WidgetStateProperty.all(Size(32 * widget.scale, 32 * widget.scale)),
-                    minimumSize: WidgetStateProperty.all(Size(24 * widget.scale, 24 * widget.scale)),
-                    // Completely zero out the padding pushing the splash outwards
-                    padding: WidgetStateProperty.all(EdgeInsets.zero),
-                    splashFactory: NoSplash.splashFactory,
-
-                    // Keep the tap ripple perfectly bounded within the 40px row
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
+        Container(
+          decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2), // Shadow color
+                  spreadRadius: -6,                     // How far the shadow extends
+                  blurRadius: 6,                      // Softness of the shadow
+                  offset: const Offset(4, 5),        // Offset of the shadow, 2),
                 )
-              ),
-              child: DropdownMenu<String>(
-                menuHeight: 300 * widget.scale,
-                width: constraints.maxWidth,
-                initialSelection: selectedValue,
-                onSelected: onChanged,
-                hintText: "Select $label",
-                requestFocusOnTap: false,
-                enableSearch: false,
-                trailingIcon: Icon(Icons.keyboard_arrow_down_rounded,
-                      color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
+              ]
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Theme(
+                data: Theme.of(context).copyWith(
+                  scrollbarTheme: ScrollbarThemeData(
+                    thumbColor: WidgetStateProperty.all(const Color(0xFF1A1D1F))
+                  ),
+                  iconButtonTheme: IconButtonThemeData(
+                    style: ButtonStyle(
+                      // Set maximum bounds for the inner icon target box
+                      maximumSize: WidgetStateProperty.all(Size(32 * widget.scale, 32 * widget.scale)),
+                      minimumSize: WidgetStateProperty.all(Size(24 * widget.scale, 24 * widget.scale)),
+                      // Completely zero out the padding pushing the splash outwards
+                      padding: WidgetStateProperty.all(EdgeInsets.zero),
+                      splashFactory: NoSplash.splashFactory,
 
-                selectedTrailingIcon: Icon(Icons.keyboard_arrow_up_rounded,
-                      color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
-
-
-                textStyle: TextStyle(
-                  fontSize: 12 * widget.scale,
-                  color: const Color(0xFF1A1D1F),
-                  fontFamily: "Montserrat",
-                ),
-                inputDecorationTheme: InputDecorationTheme(
-                  isDense: true,
-                  constraints: BoxConstraints(
-                    maxHeight: 40.0 * widget.scale,
-                      minHeight: 40.0 * widget.scale,
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF4F4F4),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(1 * widget.scale),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(1 * widget.scale),
-                    borderSide: BorderSide(color: const Color(0xFF1A1D1F), width: 1 * widget.scale),
-                  ),
-                  hintStyle: TextStyle(
-                    color: const Color(0xFF9A9FA5),
-                    fontSize: 12 * widget.scale,
-                  ),
-                  contentPadding: EdgeInsets.symmetric(
-                horizontal: 15 * widget.scale,
-                ),
-                ),
-                menuStyle: MenuStyle(
-                  elevation: const WidgetStatePropertyAll(0),
-                  backgroundColor: WidgetStateProperty.all(const Color(0xFF1A1D1F)),
-                  surfaceTintColor: WidgetStateProperty.all(Colors.transparent),
-                  shape: WidgetStateProperty.all(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(1 * widget.scale),
+                      // Keep the tap ripple perfectly bounded within the 40px row
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                  ),
+                  )
                 ),
-                dropdownMenuEntries: options.map((String value) {
-                  return DropdownMenuEntry<String>(
-                    value: value,
-                    label: value,
-                    labelWidget: Text(
-                      value,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12 * widget.scale,
-                        color: const Color(0xFFFFFDFD),
-                        fontFamily: "Montserrat",
+                child: DropdownMenu<String>(
+                  menuHeight: 300 * widget.scale,
+                  width: constraints.maxWidth,
+                  initialSelection: selectedValue,
+                  onSelected: onChanged,
+                  hintText: "Select $label",
+                  requestFocusOnTap: false,
+                  enableSearch: false,
+                  trailingIcon: Icon(Icons.keyboard_arrow_down_rounded,
+                        color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
+
+                  selectedTrailingIcon: Icon(Icons.keyboard_arrow_up_rounded,
+                        color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
+
+
+                  textStyle: TextStyle(
+                    fontSize: 12 * widget.scale,
+                    color: const Color(0xFF1A1D1F),
+                    fontFamily: "Montserrat",
+                  ),
+                  inputDecorationTheme: InputDecorationTheme(
+                    isDense: true,
+                    constraints: BoxConstraints(
+                      maxHeight: 50.0 * widget.scale,
+                      minHeight: 50.0 * widget.scale,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12 * widget.scale),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12 * widget.scale),
+                      borderSide: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                        width: 1 * widget.scale,
                       ),
                     ),
-                  );
-                }).toList(),
-              )
-            );
-          },
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12 * widget.scale),
+                      borderSide: BorderSide(color: const Color(0xFF1A1D1F), width: 1 * widget.scale),
+                    ),
+                    hintStyle: TextStyle(
+                      color: const Color(0xFF9A9FA5),
+                      fontSize: 12 * widget.scale,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                  horizontal: 15 * widget.scale,
+                  ),
+                  ),
+                  menuStyle: MenuStyle(
+                    elevation: const WidgetStatePropertyAll(0),
+                    backgroundColor: WidgetStateProperty.all(const Color(0xFF1A1D1F)),
+                    surfaceTintColor: WidgetStateProperty.all(Colors.transparent),
+                    shape: WidgetStateProperty.all(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12 * widget.scale),
+                      ),
+                    ),
+                  ),
+                  dropdownMenuEntries: options.map((String value) {
+                    return DropdownMenuEntry<String>(
+                      value: value,
+                      label: value,
+                      labelWidget: Text(
+                        value,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12 * widget.scale,
+                          color: const Color(0xFFFFFDFD),
+                          fontFamily: "Montserrat",
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                )
+              );
+            },
+          ),
         ),
         if (!noBottomPadding) SizedBox(height: 20 * widget.scale),
       ],
@@ -653,7 +703,7 @@ class _AddComplaintViewState extends State<AddComplaintView> {
           data: Theme.of(context).copyWith(
             datePickerTheme: DatePickerThemeData(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(1 * widget.scale),
+                borderRadius: BorderRadius.circular(12 * widget.scale),
               ),
               dividerColor: Colors.grey.withValues(alpha: 0.3)
             ),

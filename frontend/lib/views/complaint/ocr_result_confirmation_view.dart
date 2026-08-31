@@ -6,6 +6,7 @@ import '../../services/ocr_service.dart';
 import '../../viewmodels/complaint_view_model.dart';
 import '../../viewmodels/location_view_model.dart';
 import '../widgets/common/animated_notification.dart';
+import '../widgets/common/custom_button.dart';
 
 class OCRResultConfirmationView extends StatefulWidget {
   final String imagePath;  // for display
@@ -122,15 +123,16 @@ class _OCRResultConfirmationViewState extends State<OCRResultConfirmationView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFDFD),
+      backgroundColor: const Color(0xFFFFFAF3),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFFDFD),
+        backgroundColor: const Color(0xFFFFFAF3),
         elevation: 0,
+        centerTitle: true,
         surfaceTintColor: Colors.transparent,
         title: Text(
           'CONFIRM INFORMATION',
           style: TextStyle(
-            color: const Color(0xFF1A1D1F),
+            color: const Color(0xFF325E6A),
             fontSize: 16 * widget.scale,
             fontWeight: FontWeight.w700,
           ),
@@ -142,13 +144,6 @@ class _OCRResultConfirmationViewState extends State<OCRResultConfirmationView> {
             size: 20 * widget.scale,
           ),
           onPressed: () => Navigator.pop(context),
-        ),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1 * widget.scale),
-          child: Divider(
-            height: 1 * widget.scale,
-            color: Colors.grey.withValues(alpha: 0.3),
-          ),
         ),
       ),
       body: (_isLoading || _isConfirming)
@@ -200,26 +195,12 @@ class _OCRResultConfirmationViewState extends State<OCRResultConfirmationView> {
                     isNumeric: true,
                   ),
                   SizedBox(height: 30 * widget.scale),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50 * widget.scale,
-                    child: ElevatedButton(
-                      onPressed: _confirmSelection,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1A1D1F),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(1 * widget.scale),
-                        ),
-                      ),
-                      child: Text(
-                        "CONFIRM",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14 * widget.scale,
-                        ),
-                      ),
-                    ),
+                  CustomButton(
+                    label: "CONFIRM",
+                    onTap: _confirmSelection,
+                    bg: const Color(0xFF1A1D1F),
+                    text: Colors.white,
+                    scale: widget.scale,
                   ),
                 ],
               ),
@@ -244,32 +225,51 @@ class _OCRResultConfirmationViewState extends State<OCRResultConfirmationView> {
           ),
         ),
         SizedBox(height: 8 * widget.scale),
-        TextField(
-          controller: controller,
-          keyboardType: isNumeric
-              ? const TextInputType.numberWithOptions(decimal: true)
-              : TextInputType.text,
-          inputFormatters: isNumeric
-              ? [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-                ]
-              : null,
-          style: TextStyle(
-            fontSize: 13 * widget.scale,
-            color: const Color(0xFF1A1D1F),
+        Container(
+          decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2), // Shadow color
+                  spreadRadius: -6,                     // How far the shadow extends
+                  blurRadius: 6,                      // Softness of the shadow
+                  offset: const Offset(4, 5),        // Offset of the shadow, 2),
+                )
+              ]
           ),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: const Color(0xFFF4F4F4),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(1 * widget.scale),
-              borderSide: BorderSide.none,
+          child: TextField(
+            controller: controller,
+            keyboardType: isNumeric
+                ? const TextInputType.numberWithOptions(decimal: true)
+                : TextInputType.text,
+            inputFormatters: isNumeric
+                ? [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                  ]
+                : null,
+            style: TextStyle(
+              fontSize: 13 * widget.scale,
+              color: const Color(0xFF1A1D1F),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(1 * widget.scale),
-              borderSide: BorderSide(color: const Color(0xFF1A1D1F), width: 1 * widget.scale),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12 * widget.scale),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12 * widget.scale),
+                borderSide: BorderSide(
+                  color: Colors.grey.withValues(alpha: 0.3),
+                  width: 1 * widget.scale,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12 * widget.scale),
+                borderSide: BorderSide(color: const Color(0xFF325E6A), width: 1 * widget.scale),
+              ),
+              contentPadding: EdgeInsets.all(15 * widget.scale),
             ),
-            contentPadding: EdgeInsets.all(15 * widget.scale),
           ),
         ),
         SizedBox(height: 20 * widget.scale),

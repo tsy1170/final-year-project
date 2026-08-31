@@ -91,7 +91,7 @@ class OptimizationSingleStoreContent extends StatelessWidget {
               },
               icon: Icon(
                 Icons.location_on,
-                color: const Color(0xFF1A1D1F),
+                color: const Color(0xFF325E6A),
                 size: 25 * scale,
               ),
             ),
@@ -102,7 +102,7 @@ class OptimizationSingleStoreContent extends StatelessWidget {
           store['address'] ?? '',
           style: TextStyle(
             fontSize: 12 * scale,
-            color: const Color(0xFF1A1D1F).withValues(alpha: 0.5),
+            color: const Color(0xFF1A1D1F).withValues(alpha: 0.4),
             fontWeight: FontWeight.w500
           ),
         ),
@@ -113,7 +113,7 @@ class OptimizationSingleStoreContent extends StatelessWidget {
           style: TextStyle(
             fontSize: 13 * scale,
             fontWeight: FontWeight.w500,
-            color: const Color(0xFFED1A4B),
+            color: const Color(0xFF325E6A),
             letterSpacing: 0
           ),
         ),
@@ -144,7 +144,7 @@ class OptimizationSingleStoreContent extends StatelessWidget {
               style: TextStyle(
                 fontSize: 17 * scale,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFFED1A4B),
+                color: const Color(0xFF325E6A),
               ),
             ),
           ],
