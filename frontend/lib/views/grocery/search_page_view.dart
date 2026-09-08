@@ -8,8 +8,13 @@ import 'product_details_view.dart';
 
 class SearchPageView extends StatefulWidget {
   final double scale;
+  final bool isTab;
 
-  const SearchPageView({super.key, required this.scale});
+  const SearchPageView({
+    super.key, 
+    required this.scale, 
+    this.isTab = false
+  });
 
   @override
   State<SearchPageView> createState() => _SearchPageViewState();
@@ -61,10 +66,8 @@ class _SearchPageViewState extends State<SearchPageView> {
   }
 
   Future<void> _performSearch(String query) async {
-    // _isLoading is already true from _onSearchChanged
     try {
       final results = await _groceryService.searchProducts(query);
-      // Verify text still matches to avoid race conditions with old queries
       if (mounted && _searchController.text == query) {
         setState(() {
           _searchResults = results;
@@ -83,20 +86,23 @@ class _SearchPageViewState extends State<SearchPageView> {
 
   @override
   Widget build(BuildContext context) {
-    final navViewModel = context.watch<NavigationViewModel>();
-    final isOnSearchPage = navViewModel.selectedIndex == 2;
+    if (widget.isTab) {
+      final navViewModel = context.watch<NavigationViewModel>();
+      final bool isSelectedTab = navViewModel.selectedIndex == 2;
 
-    if (!isOnSearchPage && _focusNode.hasFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _focusNode.unfocus();
-      });
-    }
+      // Unfocus if we switch away from the search tab
+      if (!isSelectedTab && _focusNode.hasFocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _focusNode.unfocus();
+        });
+      }
 
-    // ← add this: auto-focus when user intentionally navigates to search
-    if (isOnSearchPage && !_focusNode.hasFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _focusNode.requestFocus();
-      });
+      // Auto-focus when the search tab becomes active
+      if (isSelectedTab && !_focusNode.hasFocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _focusNode.requestFocus();
+        });
+      }
     }
 
     return Scaffold(
@@ -150,7 +156,7 @@ class _SearchPageViewState extends State<SearchPageView> {
                         child: TextField(
                           controller: _searchController,
                           focusNode: _focusNode,
-                          autofocus: false,
+                          autofocus: !widget.isTab, // Only autofocus if NOT in a tab
                           textAlignVertical: TextAlignVertical.center,
                           style: TextStyle(
                             fontSize: 14 * widget.scale,
@@ -219,7 +225,6 @@ class _SearchPageViewState extends State<SearchPageView> {
                           fontSize: 13 * widget.scale,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF1A1D1F),
-                          // letterSpacing: -0.5
                         ),
                       ),
                     ],
@@ -263,10 +268,10 @@ class _SearchPageViewState extends State<SearchPageView> {
                             borderRadius: BorderRadius.circular(12 * widget.scale),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2), // Shadow color
-                                  spreadRadius: -6,                     // How far the shadow extends
-                                  blurRadius: 8,                      // Softness of the shadow
-                                  offset: const Offset(4, 6),        // Offset of the shadow, 2),
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  spreadRadius: -6,
+                                  blurRadius: 8,
+                                  offset: const Offset(4, 6),
                                 )
                               ]
                           ),

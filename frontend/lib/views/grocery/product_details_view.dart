@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../viewmodels/grocery_view_model.dart';
 import '../../viewmodels/auth_view_model.dart';
 import '../../viewmodels/favourite_view_model.dart';
 import '../../viewmodels/location_view_model.dart';
+import '../../viewmodels/notification_view_model.dart';
 import '../../models/store_price.dart';
 import 'product_map_view.dart';
 import '../widgets/common/animated_notification.dart';
@@ -37,11 +39,105 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
     });
   }
 
+  Future<void> _showPriceAlertDialog(BuildContext context, double latitude, double longitude) async {
+    final authVM = context.read<AuthViewModel>();
+    final notificationVM = context.read<NotificationViewModel>();
+    
+    if (!authVM.isLoggedIn || authVM.accessToken == null) {
+      showTopNotification(context, "Please login to set price alerts", false, widget.scale);
+      return;
+    }
+
+    final TextEditingController priceController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12 * widget.scale)),
+        title: Text(
+          'Set Price Notification',
+          style: TextStyle(
+            fontSize: 18 * widget.scale, 
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF1A1D1F),
+          )
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Enter your target price:', 
+              style: TextStyle(fontSize: 14 * widget.scale, color: const Color(0xFF1A1D1F))
+            ),
+            SizedBox(height: 12 * widget.scale),
+            TextField(
+              controller: priceController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.deny(RegExp(r'[^\d.]')),
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+              ],
+              autofocus: true,
+              style: TextStyle(fontSize: 16 * widget.scale),
+              decoration: InputDecoration(
+                prefixText: 'RM ',
+                hintText: '0.00',
+                contentPadding: EdgeInsets.symmetric(horizontal: 12 * widget.scale, vertical: 8 * widget.scale),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8 * widget.scale)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8 * widget.scale),
+                  borderSide: const BorderSide(color: Color(0xFF325E6A), width: 1.5),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: Colors.grey, fontSize: 14 * widget.scale)),
+          ),
+          TextButton(
+            onPressed: () async {
+              final targetPrice = double.tryParse(priceController.text);
+              if (targetPrice == null || targetPrice <= 0) {
+                return;
+              }
+              
+              Navigator.pop(context);
+
+              try {
+                final message = await notificationVM.createPriceAlert(
+                  authVM.accessToken!,
+                  widget.itemCode,
+                  targetPrice,
+                  latitude,
+                  longitude,
+                );
+                if (mounted) {
+                  showTopNotification(context, message, true, widget.scale);
+                }
+              } catch (e) {
+                if (mounted) {
+                  showTopNotification(context, e.toString().replaceAll('Exception: ', ''), false, widget.scale);
+                }
+              }
+            },
+            child: Text('Set', style: TextStyle(color: const Color(0xFF1A1D1F), fontSize: 14 * widget.scale, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<GroceryViewModel>();
     final authViewModel = context.watch<AuthViewModel>();
     final favouriteViewModel = context.watch<FavouriteViewModel>();
+    final locationViewModel = context.watch<LocationViewModel>();
     final details = viewModel.selectedProductDetails;
 
     return Scaffold(
@@ -49,7 +145,8 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFFDFD),
         surfaceTintColor: Colors.transparent,
-        elevation: 2,
+        elevation: 0,
+        centerTitle: true,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
@@ -71,7 +168,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
             IconButton(
               icon: Icon(
                 Icons.map_outlined,
-                color: const Color(0xFF1A1D1F),
+                color: const Color(0xFF325E6A),
                 size: 24 * widget.scale,
               ),
               onPressed: () {
@@ -102,7 +199,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                     Icon(
                       Icons.error_outline_rounded,
                       size: 60 * widget.scale,
-                      color: const Color(0xFF1A1D1F).withOpacity(0.2),
+                      color: const Color(0xFF1A1D1F).withValues(alpha: 0.2),
                     ),
                     SizedBox(height: 20 * widget.scale),
                     Text(
@@ -189,6 +286,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                                     ),
                                   ),
                                 ),
+                                SizedBox(width: 10 * widget.scale),
                                 IconButton(
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
@@ -196,10 +294,14 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                                   alignment: Alignment.center,
                                   icon: Icon(
                                     Icons.edit_notifications_outlined,
-                                    color: const Color(0xFF1A1D1F),
+                                    color: const Color(0xFF325E6A),
                                     size: 26 * widget.scale,
                                   ),
-                                  onPressed: () {},
+                                  onPressed: () => _showPriceAlertDialog(
+                                      context,
+                                      locationViewModel.currentPosition?.latitude ?? 5.356,
+                                      locationViewModel.currentPosition?.longitude ?? 100.301
+                                  ),
                                 ),
                               ],
                             ),
@@ -277,7 +379,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                 color: const Color(0xFFFFFDFD),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withOpacity(0.1),
                     offset: const Offset(0, -2),
                     blurRadius: 10,
                   ),
@@ -290,7 +392,12 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                     final itemCode = details['item'].itemCode;
                     if (authViewModel.isLoggedIn) {
                       final isAdding = !favouriteViewModel.favourites.contains(itemCode);
-                      favouriteViewModel.toggleFavourite(itemCode, authViewModel.accessToken!);
+                      favouriteViewModel.toggleFavourite(
+                        itemCode, 
+                        authViewModel.accessToken!,
+                        lat: locationViewModel.currentPosition?.latitude,
+                        lng: locationViewModel.currentPosition?.longitude,
+                      );
                       if (isAdding) {
                         showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
                       }
@@ -457,7 +564,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                             style: TextStyle(fontSize: 14 * widget.scale, fontWeight: FontWeight.w600, color: const Color(0xFF1A1D1F)),
                           ),
                         ),
-                        Icon(Icons.location_on, size: 23 * widget.scale, color: const Color(0xFF1A1D1F)),
+                        Icon(Icons.location_on, size: 23 * widget.scale, color: const Color(0xFF325E6A)),
                       ],
                     ),
                     SizedBox(height: 2 * widget.scale),

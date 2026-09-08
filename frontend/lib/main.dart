@@ -9,14 +9,24 @@ import 'viewmodels/optimization_view_model.dart';
 import 'viewmodels/navigation_view_model.dart';
 import 'viewmodels/location_view_model.dart';
 import 'viewmodels/complaint_view_model.dart';
+import 'viewmodels/notification_view_model.dart';
+import 'viewmodels/compare_prices_view_model.dart';
 import 'services/grocery_service.dart';
 import 'services/auth_service.dart';
 import 'services/favourite_service.dart';
 import 'services/optimization_service.dart';
 import 'services/complaint_service.dart';
+import 'services/notification_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Lock orientation to portrait
   await SystemChrome.setPreferredOrientations([
@@ -45,6 +55,7 @@ void main() async {
   final favouriteService = FavouriteService();
   final optimizationService = OptimizationService();
   final complaintService = ComplaintService();
+  final notificationService = NotificationService();
 
   // Initialize AuthViewModel first as it handles the global auth state
   final authViewModel = AuthViewModel(authService);
@@ -54,6 +65,16 @@ void main() async {
   groceryService.onResponseStatus = authViewModel.handleServiceResponse;
   favouriteService.onResponseStatus = authViewModel.handleServiceResponse;
   optimizationService.onResponseStatus = authViewModel.handleServiceResponse;
+  notificationService.onResponseStatus = authViewModel.handleServiceResponse;
+
+  // Initialize Notifications and capture the device token
+  await notificationService.initNotifications();
+  final fcmToken = await notificationService.getDeviceToken();
+  // Provide the token to AuthViewModel for backend synchronization
+  await authViewModel.setFcmToken(fcmToken);
+
+  // Register background handler before runApp
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   runApp(
     MultiProvider(
@@ -68,11 +89,18 @@ void main() async {
         ChangeNotifierProvider<GroceryViewModel>(
           create: (_) => GroceryViewModel(groceryService),
         ),
-        ChangeNotifierProxyProvider<AuthViewModel, FavouriteViewModel>(
+        ChangeNotifierProxyProvider2<AuthViewModel, LocationViewModel, FavouriteViewModel>(
           create: (_) => FavouriteViewModel(favouriteService),
-          update: (_, auth, favourite) {
+          update: (_, auth, location, favourite) {
             if (auth.isLoggedIn && auth.accessToken != null) {
               favourite!.loadFavourites(auth.accessToken!);
+              if (location.currentPosition != null && !favourite.isWorthBuyingLoading) {
+                favourite.loadWorthBuyingFavourites(
+                  auth.accessToken!, 
+                  location.currentPosition!.latitude, 
+                  location.currentPosition!.longitude
+                );
+              }
             } else {
               favourite!.clearFavourites();
             }
@@ -84,6 +112,20 @@ void main() async {
         ),
         ChangeNotifierProvider<ComplaintViewModel>(
           create: (_) => ComplaintViewModel(complaintService),
+        ),
+        ChangeNotifierProxyProvider<AuthViewModel, NotificationViewModel>(
+          create: (_) => NotificationViewModel(notificationService),
+          update: (_, auth, notification) {
+            if (auth.isLoggedIn && auth.accessToken != null) {
+              notification!.fetchPriceAlerts(auth.accessToken!);
+            } else {
+              notification!.clearAlerts();
+            }
+            return notification;
+          },
+        ),
+        ChangeNotifierProvider<ComparePricesViewModel>(
+          create: (_) => ComparePricesViewModel(complaintService, groceryService),
         ),
       ],
       child: const GroceryApp(),
@@ -101,8 +143,8 @@ class GroceryApp extends StatelessWidget {
       title: 'Grocery',
       theme: ThemeData(
         textSelectionTheme: TextSelectionThemeData(
-          selectionColor: Color(0xFF1A1D1F).withValues(alpha: 0.4), // Global highlight
-          selectionHandleColor: const Color(0xFF1A1D1F), // Global selection handles
+          selectionColor: const Color(0xFF1A1D1F).withOpacity(0.4),
+          selectionHandleColor: const Color(0xFF1A1D1F),
           cursorColor: const Color(0xFF1A1D1F),
         ),
         scaffoldBackgroundColor: Colors.white,

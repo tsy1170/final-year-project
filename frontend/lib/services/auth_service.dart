@@ -101,6 +101,25 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> updateFcmToken(String token, String fcmToken) async {
+    final url = Uri.parse('$baseUrl/users/me/fcm-token');
+    final response = await http.put(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'fcm_token': fcmToken}),
+    );
+    _handleResponse(response);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception(_parseError(response.body, 'Failed to update FCM token'));
+    }
+  }
+
   Future<Map<String, dynamic>> updateUsername(String token, String newUsername) async {
     final url = Uri.parse('$baseUrl/users/me/username');
     final response = await http.patch(

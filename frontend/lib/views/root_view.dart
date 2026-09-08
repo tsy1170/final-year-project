@@ -77,7 +77,7 @@ class _RootViewState extends State<RootView> {
                         children: [
                           GroceryView(scale: scale),
                           FavouriteView(scale: scale),
-                          SearchPageView(scale: scale),
+                          SearchPageView(scale: scale, isTab: true),
                           ComplaintView(scale: scale),
                           ProfileView(scale: scale),
                         ],

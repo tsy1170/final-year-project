@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../viewmodels/grocery_view_model.dart';
 import '../../viewmodels/auth_view_model.dart';
 import '../../viewmodels/favourite_view_model.dart';
+import '../../viewmodels/location_view_model.dart';
 import 'product_details_view.dart';
 import '../widgets/common/grocery_card.dart';
 import '../widgets/common/animated_notification.dart';
@@ -62,6 +63,7 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
     final viewModel = context.watch<GroceryViewModel>();
     final favouriteViewModel = context.watch<FavouriteViewModel>();
     final authViewModel = context.watch<AuthViewModel>();
+    final locationViewModel = context.watch<LocationViewModel>();
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFAF3),
@@ -115,7 +117,12 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
                               isFavourite: isFavourite,
                               onFavourite: () {
                                 if (authViewModel.isLoggedIn) {
-                                  favouriteViewModel.toggleFavourite(product.itemCode, authViewModel.accessToken!);
+                                  favouriteViewModel.toggleFavourite(
+                                    product.itemCode, 
+                                    authViewModel.accessToken!,
+                                    lat: locationViewModel.currentPosition?.latitude,
+                                    lng: locationViewModel.currentPosition?.longitude,
+                                  );
                                   if (!isFavourite) {
                                     showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
                                   }

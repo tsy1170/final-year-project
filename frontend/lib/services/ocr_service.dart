@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image/image.dart' as img;
 
@@ -24,39 +26,52 @@ class OCRService {
   );
 
   /// Pre-processing logic for OCR enhancement
+  /// Now uses [compute] to run in a background isolate to prevent UI thread blocking
   Future<String> preprocessImage(String imagePath) async {
     try {
       final bytes = await File(imagePath).readAsBytes();
-      img.Image? capturedImage = img.decodeImage(bytes);
-      if (capturedImage == null) return imagePath;
 
-      // Handle orientation
-      capturedImage = img.bakeOrientation(capturedImage);
+      // Heavy computation moved to background
+      final Uint8List? processedBytes = await compute(_processImageIsolate, bytes);
 
-      // Enhance for OCR: Grayscale -> Contrast -> Sharpening
-      img.Image processed = img.grayscale(capturedImage);
-      processed = img.adjustColor(processed, contrast: 1.3);
-      processed = img.convolution(
-        processed,
-        filter: [0, -1, 0, -1, 5, -1, 0, -1, 0], // Sharpening kernel
-        div: 1,
-        offset: 0,
-      );
-
-      // Ensure minimum width for better recognition
-      if (processed.width < 600) {
-        processed = img.copyResize(processed, width: 600);
-      }
+      if (processedBytes == null) return imagePath;
 
       final processedPath = '${imagePath}_processed.jpg';
-      await File(processedPath).writeAsBytes(img.encodeJpg(processed, quality: 100));
+      await File(processedPath).writeAsBytes(processedBytes);
       return processedPath;
     } catch (e) {
+      debugPrint("OCR Pre-processing error: $e");
       return imagePath;
     }
   }
 
-  /// Existing function for price tag scanner in price_tag_scanner_view.dart
+  /// Static helper for [compute] isolate
+  static Uint8List? _processImageIsolate(Uint8List bytes) {
+    img.Image? capturedImage = img.decodeImage(bytes);
+    if (capturedImage == null) return null;
+
+    // Fix orientation
+    capturedImage = img.bakeOrientation(capturedImage);
+
+    // Enhance: Grayscale -> Contrast -> Sharpen
+    img.Image processed = img.grayscale(capturedImage);
+    processed = img.adjustColor(processed, contrast: 1.3);
+    processed = img.convolution(
+      processed,
+      filter: [0, -1, 0, -1, 5, -1, 0, -1, 0],
+      div: 1,
+      offset: 0,
+    );
+
+    // Resize if too small
+    if (processed.width < 800) {
+      processed = img.copyResize(processed, width: 800);
+    }
+
+    return Uint8List.fromList(img.encodeJpg(processed, quality: 90));
+  }
+
+  /// Existing function for price tag scanner
   Future<Map<String, String?>> processPriceTag(String imagePath) async {
     try {
       final inputImage = InputImage.fromFilePath(imagePath);
@@ -83,7 +98,7 @@ class OCRService {
     }
   }
 
-  /// Recognizes all text in an image for general comparison
+  /// Recognizes all text in an image
   Future<String> recognizeFullText(String imagePath) async {
     try {
       final inputImage = InputImage.fromFilePath(imagePath);
@@ -115,11 +130,9 @@ class OCRService {
 
     final allWords = (words1 + words2).toSet().toList();
     
-    // TF - Term Frequency
     final tf1 = _getTF(words1, allWords);
     final tf2 = _getTF(words2, allWords);
 
-    // IDF - Inverse Document Frequency (Smoothed for N=2)
     final idf = allWords.map((w) {
       int df = 0;
       if (words1.contains(w)) df++;
@@ -127,7 +140,6 @@ class OCRService {
       return log(3.0 / (df + 1.0)) + 1.0;
     }).toList();
 
-    // TF-IDF Vectors
     final tfidf1 = List<double>.generate(allWords.length, (i) => tf1[i] * idf[i]);
     final tfidf2 = List<double>.generate(allWords.length, (i) => tf2[i] * idf[i]);
 

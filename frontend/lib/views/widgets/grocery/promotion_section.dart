@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../models/grocery_product.dart';
 import '../../../viewmodels/grocery_view_model.dart';
 import '../../../viewmodels/auth_view_model.dart';
 import '../../../viewmodels/favourite_view_model.dart';
+import '../../../viewmodels/location_view_model.dart';
 import '../../grocery/product_details_view.dart';
 import '../common/animated_notification.dart';
 
@@ -47,8 +47,17 @@ class _PromotionSectionState extends State<PromotionSection> {
   @override
   Widget build(BuildContext context) {
     final authViewModel = context.watch<AuthViewModel>();
-    final promoProducts = widget.viewModel.visibleProducts.take(10).toList();
-    if (promoProducts.isEmpty) return const SizedBox.shrink();
+    final locationViewModel = context.watch<LocationViewModel>();
+    final worthBuyingProducts = widget.viewModel.worthBuyingProducts;
+
+    if (widget.viewModel.isWorthBuyingLoading && worthBuyingProducts.isEmpty) {
+      return SizedBox(
+        height: 230 * widget.scale,
+        child: const Center(child: CircularProgressIndicator(color: Color(0xFF1A1D1F))),
+      );
+    }
+
+    if (worthBuyingProducts.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,14 +85,13 @@ class _PromotionSectionState extends State<PromotionSection> {
             controller: _pageController,
             onPageChanged: (index) {
               setState(() {
-                _currentPage = index % promoProducts.length;
+                _currentPage = index % worthBuyingProducts.length;
               });
             },
             itemBuilder: (context, index) {
-              final product = promoProducts[index % promoProducts.length];
-              final isFavourite = widget.favouriteViewModel.favourites.contains(
-                product.itemCode,
-              );
+              final product = worthBuyingProducts[index % worthBuyingProducts.length];
+              final itemCode = product['item_code'] as int;
+              final isFavourite = widget.favouriteViewModel.favourites.contains(itemCode);
 
               return _PromotionCard(
                 product: product,
@@ -93,7 +101,12 @@ class _PromotionSectionState extends State<PromotionSection> {
                   if (authViewModel.isLoggedIn) {
                     final token = authViewModel.accessToken;
                     if (token != null) {
-                      widget.favouriteViewModel.toggleFavourite(product.itemCode, token);
+                      widget.favouriteViewModel.toggleFavourite(
+                        itemCode, 
+                        token,
+                        lat: locationViewModel.currentPosition?.latitude,
+                        lng: locationViewModel.currentPosition?.longitude,
+                      );
                       if (!isFavourite) {
                         showTopNotification(
                           context,
@@ -120,7 +133,7 @@ class _PromotionSectionState extends State<PromotionSection> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
-            promoProducts.length,
+            worthBuyingProducts.length,
             (index) => AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               margin: EdgeInsets.symmetric(horizontal: 2 * widget.scale),
@@ -143,7 +156,7 @@ class _PromotionSectionState extends State<PromotionSection> {
 }
 
 class _PromotionCard extends StatelessWidget {
-  final GroceryProduct product;
+  final Map<String, dynamic> product;
   final double scale;
   final bool isFavourite;
   final VoidCallback onFavourite;
@@ -157,6 +170,14 @@ class _PromotionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final itemCode = product['item_code'] as int;
+    final itemName = product['item_name'] ?? 'Unknown Item';
+    final unit = product['unit'] ?? '';
+    final imageUrl = product['image_url'];
+    final premiseName = product['premise_name'] ?? 'Unknown Premise';
+    final todayPrice = product['today_price']?.toStringAsFixed(2) ?? '0.00';
+    final priceReduction = product['price_reduction']?.toStringAsFixed(2) ?? '0.00';
+
     return GestureDetector(
         onTap: () {
           Navigator.push(
@@ -164,7 +185,7 @@ class _PromotionCard extends StatelessWidget {
               MaterialPageRoute(
                 builder: (context) =>
                     ProductDetailsView(
-                      itemCode: product.itemCode,
+                      itemCode: itemCode,
                       scale: scale,
                     ),
               )
@@ -205,9 +226,9 @@ class _PromotionCard extends StatelessWidget {
                     ),
                     padding: EdgeInsets.all(2 * scale),
                     child:
-                    (product.imageUrl != null && product.imageUrl!.isNotEmpty)
+                    (imageUrl != null && imageUrl.isNotEmpty)
                         ? Image.network(
-                        product.imageUrl!,
+                        imageUrl,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) =>
                             Icon(
@@ -239,7 +260,7 @@ class _PromotionCard extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  product.name,
+                                  itemName,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -269,7 +290,7 @@ class _PromotionCard extends StatelessWidget {
                             ],
                           ),
                           Text(
-                            product.unit,
+                            unit,
                             style: TextStyle(
                               fontSize: 11 * scale,
                               fontWeight: FontWeight.w500,
@@ -284,7 +305,7 @@ class _PromotionCard extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Pulau-Pinang Sunshine Mart',
+                                      premiseName,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
@@ -293,13 +314,35 @@ class _PromotionCard extends StatelessWidget {
                                         color: const Color(0xFF1A1D1F),
                                       ),
                                     ),
-                                    Text(
-                                      'RM 3.50',
-                                      style: TextStyle(
-                                        fontSize: 13 * scale,
-                                        fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF1A1D1F),
-                                      ),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'RM $todayPrice',
+                                          style: TextStyle(
+                                            fontSize: 13 * scale,
+                                            fontWeight: FontWeight.w700,
+                                            color: const Color(0xFF1A1D1F),
+                                          ),
+                                        ),
+                                        if (double.tryParse(priceReduction) != null && double.parse(priceReduction) > 0) ...[
+                                          SizedBox(width: 8 * scale),
+                                          Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 4 * scale, vertical: 1 * scale),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFED1A4B).withValues(alpha: 0.1),
+                                              borderRadius: BorderRadius.circular(4 * scale),
+                                            ),
+                                            child: Text(
+                                              '-RM $priceReduction',
+                                              style: TextStyle(
+                                                fontSize: 10 * scale,
+                                                fontWeight: FontWeight.w700,
+                                                color: const Color(0xFFED1A4B),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                   ],
                                 ),

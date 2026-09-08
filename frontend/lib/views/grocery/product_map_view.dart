@@ -110,6 +110,7 @@ class _ProductMapViewState extends State<ProductMapView> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFFDFD),
         elevation: 0,
+        centerTitle: true,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(

@@ -187,9 +187,9 @@ class _ComplaintViewState extends State<ComplaintView> {
         parent: AlwaysScrollableScrollPhysics(),
       ),
       padding: EdgeInsets.fromLTRB(
-        20 * widget.scale,
         10 * widget.scale,
-        20 * widget.scale,
+        10 * widget.scale,
+        10 * widget.scale,
         180 * widget.scale,
       ),
       itemCount: sortedDates.length,
@@ -228,7 +228,7 @@ class _ComplaintViewState extends State<ComplaintView> {
                 },
               ),
             ),
-            SizedBox(height: 25 * widget.scale),
+            SizedBox(height: 17 * widget.scale),
           ],
         );
       },

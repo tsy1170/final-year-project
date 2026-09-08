@@ -9,6 +9,7 @@ import '../widgets/profile/logout_dialog.dart';
 import '../widgets/common/custom_button.dart';
 import 'change_password_view.dart';
 import 'edit_profile_view.dart';
+import '../price_alert/price_alerts_view.dart';
 
 class ProfileView extends StatelessWidget {
   final double scale;
@@ -52,13 +53,6 @@ class ProfileView extends StatelessWidget {
             ),
           SizedBox(width: 10 * scale),
         ],
-        // bottom: PreferredSize(
-        //   preferredSize: Size.fromHeight(1 * scale),
-        //   child: Divider(
-        //     height: 1 * scale,
-        //     color: const Color(0xFF1A1D1F),
-        //   ),
-        // ),
       ),
       body: authViewModel.isLoggedIn
           ? _buildLoggedInUI(context, authViewModel)
@@ -110,7 +104,14 @@ class ProfileView extends StatelessWidget {
                 icon: Icons.notifications_none_rounded,
                 title: 'Notifications',
                 desc: 'Notify prices',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PriceAlertsView(scale: scale),
+                    ),
+                  );
+                },
                 scale: scale,
               ),
               ProfileMenuItem(
@@ -131,7 +132,7 @@ class ProfileView extends StatelessWidget {
                 icon: Icons.assignment_late_outlined,
                 title: 'Complaints',
                 desc: 'Submit a complaint',
-                onTap: () => navViewModel.setSelectedIndex(2),
+                onTap: () => navViewModel.setSelectedIndex(3),
                 scale: scale,
               ),
             ],

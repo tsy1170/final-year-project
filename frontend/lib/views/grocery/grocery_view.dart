@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../viewmodels/grocery_view_model.dart';
 import '../../viewmodels/auth_view_model.dart';
 import '../../viewmodels/favourite_view_model.dart';
+import '../../viewmodels/location_view_model.dart';
 import '../widgets/grocery/promotion_section.dart';
 import '../widgets/grocery/shop_by_category.dart';
 import '../widgets/common/grocery_card.dart';
@@ -25,6 +26,18 @@ class _GroceryViewState extends State<GroceryView> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    
+    // Initial load of worth buying products if location is already available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final locationVM = context.read<LocationViewModel>();
+      final groceryVM = context.read<GroceryViewModel>();
+      if (locationVM.currentPosition != null) {
+        groceryVM.loadWorthBuying(
+          lat: locationVM.currentPosition!.latitude,
+          lng: locationVM.currentPosition!.longitude,
+        );
+      }
+    });
   }
 
   @override
@@ -45,7 +58,20 @@ class _GroceryViewState extends State<GroceryView> {
     final viewModel = context.watch<GroceryViewModel>();
     final authViewModel = context.watch<AuthViewModel>();
     final favouriteViewModel = context.watch<FavouriteViewModel>();
+    final locationViewModel = context.watch<LocationViewModel>();
     final double navBarHeight = MediaQuery.of(context).padding.bottom;
+
+    // Listen for location changes to trigger worth buying fetch if not yet loaded
+    if (locationViewModel.currentPosition != null && 
+        viewModel.worthBuyingProducts.isEmpty && 
+        !viewModel.isWorthBuyingLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        viewModel.loadWorthBuying(
+          lat: locationViewModel.currentPosition!.latitude,
+          lng: locationViewModel.currentPosition!.longitude,
+        );
+      });
+    }
 
     if (viewModel.isLoading && viewModel.allProducts.isEmpty) {
       return const Center(
@@ -60,7 +86,15 @@ class _GroceryViewState extends State<GroceryView> {
             color: const Color(0xFFFFFDFD),
             backgroundColor: const Color(0xFF1A1D1F),
             edgeOffset: 140 * widget.scale,
-            onRefresh: () => viewModel.loadProducts(isRefresh: true),
+            onRefresh: () async {
+              await viewModel.loadProducts(isRefresh: true);
+              if (locationViewModel.currentPosition != null) {
+                await viewModel.loadWorthBuying(
+                  lat: locationViewModel.currentPosition!.latitude,
+                  lng: locationViewModel.currentPosition!.longitude,
+                );
+              }
+            },
             child: CustomScrollView(
               controller: _scrollController,
               physics: const BouncingScrollPhysics(
@@ -109,7 +143,13 @@ class _GroceryViewState extends State<GroceryView> {
                           isFavourite: isFavourite,
                           onFavourite: () {
                             if (authViewModel.isLoggedIn) {
-                              favouriteViewModel.toggleFavourite(product.itemCode, authViewModel.accessToken!);
+                              // PASSING LOCATION HERE TO TRIGGER WORTH BUYING CHECK
+                              favouriteViewModel.toggleFavourite(
+                                product.itemCode, 
+                                authViewModel.accessToken!,
+                                lat: locationViewModel.currentPosition?.latitude,
+                                lng: locationViewModel.currentPosition?.longitude,
+                              );
                               if (!isFavourite) {
                                 showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
                               }

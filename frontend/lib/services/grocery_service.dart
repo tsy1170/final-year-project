@@ -115,4 +115,33 @@ class GroceryService {
       return [];
     }
   }
+
+  Future<Map<String, dynamic>> fetchWorthBuying({
+    required double latitude,
+    required double longitude,
+    double radiusKm = 10.0,
+    int limit = 10,
+  }) async {
+    try {
+      final queryParams = {
+        'latitude': latitude.toString(),
+        'longitude': longitude.toString(),
+        'radius_km': radiusKm.toString(),
+        'limit': limit.toString(),
+      };
+
+      final url = Uri.parse('$baseUrl/products/worth-buying').replace(queryParameters: queryParams);
+      final response = await http.get(url);
+      _handleResponse(response);
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to load worth buying products');
+      }
+    } catch (e) {
+      print('Error fetching worth buying products: $e');
+      return {'results': []};
+    }
+  }
 }

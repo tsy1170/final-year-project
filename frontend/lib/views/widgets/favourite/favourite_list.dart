@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../../viewmodels/favourite_view_model.dart';
 import '../../../viewmodels/auth_view_model.dart';
+import '../../../viewmodels/location_view_model.dart';
 import 'favourite_item_card.dart';
 import '../../grocery/product_details_view.dart';
 
 class FavouriteList extends StatelessWidget {
   final FavouriteViewModel viewModel;
   final AuthViewModel authViewModel;
+  final LocationViewModel locationViewModel;
   final double scale;
 
   const FavouriteList({
     super.key,
     required this.viewModel,
     required this.authViewModel,
+    required this.locationViewModel,
     required this.scale,
   });
 
@@ -25,14 +28,22 @@ class FavouriteList extends StatelessWidget {
       itemCount: viewModel.favouriteProducts.length,
       itemBuilder: (context, index) {
         final product = viewModel.favouriteProducts[index];
+        final worthBuyingInfo = viewModel.getWorthBuyingInfo(product.itemCode);
+
         return Padding(
           padding: EdgeInsets.only(bottom: 6 * scale),
           child: FavouriteItemCard(
             product: product,
             scale: scale,
             isFavourite: true,
+            worthBuyingInfo: worthBuyingInfo,
             onFavourite: () {
-              viewModel.toggleFavourite(product.itemCode, authViewModel.accessToken!);
+              viewModel.toggleFavourite(
+                product.itemCode, 
+                authViewModel.accessToken!,
+                lat: locationViewModel.currentPosition?.latitude,
+                lng: locationViewModel.currentPosition?.longitude,
+              );
             },
             onTap: () {
               Navigator.push(

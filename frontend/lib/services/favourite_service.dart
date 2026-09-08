@@ -57,4 +57,32 @@ class FavouriteService {
     );
     _handleResponse(response);
   }
+
+  Future<Map<String, dynamic>> fetchFavouritesWorthBuying({
+    required String token,
+    required double latitude,
+    required double longitude,
+    double radiusKm = 10.0,
+  }) async {
+    final queryParams = {
+      'latitude': latitude.toString(),
+      'longitude': longitude.toString(),
+      'radius_km': radiusKm.toString(),
+    };
+    final url = Uri.parse('$baseUrl/favourites/worth_buying').replace(queryParameters: queryParams);
+    
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+    _handleResponse(response);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to fetch favourites worth buying');
+    }
+  }
 }

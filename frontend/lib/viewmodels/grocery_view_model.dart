@@ -56,6 +56,12 @@ class GroceryViewModel extends ChangeNotifier {
   String? _detailsError;
   String? get detailsError => _detailsError;
 
+  // Worth Buying State
+  List<Map<String, dynamic>> _worthBuyingProducts = [];
+  List<Map<String, dynamic>> get worthBuyingProducts => _worthBuyingProducts;
+  bool _isWorthBuyingLoading = false;
+  bool get isWorthBuyingLoading => _isWorthBuyingLoading;
+
   GroceryViewModel(this._groceryService) {
     _searchController.addListener(_onSearchChanged);
     loadProducts();
@@ -157,6 +163,21 @@ class GroceryViewModel extends ChangeNotifier {
       _detailsError = e.toString().replaceFirst('Exception: ', '');
     } finally {
       _isDetailsLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadWorthBuying({required double lat, required double lng}) async {
+    _isWorthBuyingLoading = true;
+    notifyListeners();
+    try {
+      final response = await _groceryService.fetchWorthBuying(latitude: lat, longitude: lng);
+      _worthBuyingProducts = List<Map<String, dynamic>>.from(response['results'] ?? []);
+    } catch (e) {
+      debugPrint('Error loading worth buying products: $e');
+      _worthBuyingProducts = [];
+    } finally {
+      _isWorthBuyingLoading = false;
       notifyListeners();
     }
   }

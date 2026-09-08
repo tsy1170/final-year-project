@@ -2,21 +2,58 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/favourite_view_model.dart';
 import '../../viewmodels/auth_view_model.dart';
+import '../../viewmodels/location_view_model.dart';
 import '../../views/grocery/item_groups_view.dart';
 import '../widgets/favourite/favourite_compare_button.dart';
 import '../widgets/favourite/favourite_empty_state.dart';
 import '../widgets/favourite/favourite_logged_out_state.dart';
 import '../widgets/favourite/favourite_list.dart';
+import 'compare_prices_view.dart';
 
-class FavouriteView extends StatelessWidget {
+class FavouriteView extends StatefulWidget {
   final double scale;
 
   const FavouriteView({super.key, required this.scale});
 
   @override
+  State<FavouriteView> createState() => _FavouriteViewState();
+}
+
+class _FavouriteViewState extends State<FavouriteView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchWorthBuying();
+    });
+  }
+
+  void _fetchWorthBuying() {
+    final favVM = context.read<FavouriteViewModel>();
+    final authVM = context.read<AuthViewModel>();
+    final locVM = context.read<LocationViewModel>();
+
+    if (authVM.isLoggedIn && authVM.accessToken != null && locVM.currentPosition != null) {
+      favVM.loadWorthBuyingFavourites(
+        authVM.accessToken!,
+        locVM.currentPosition!.latitude,
+        locVM.currentPosition!.longitude,
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<FavouriteViewModel>();
     final authViewModel = context.watch<AuthViewModel>();
+    final locationViewModel = context.watch<LocationViewModel>();
+
+    if (authViewModel.isLoggedIn && 
+        viewModel.worthBuyingFavourites.isEmpty && 
+        !viewModel.isWorthBuyingLoading && 
+        locationViewModel.currentPosition != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _fetchWorthBuying());
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFAF3),
@@ -28,54 +65,64 @@ class FavouriteView extends StatelessWidget {
           'FAVOURITES',
           style: TextStyle(
             color: const Color(0xFF1A1D1F),
-            fontSize: 18 * scale,
+            fontSize: 18 * widget.scale,
             fontWeight: FontWeight.w700,
           ),
         ),
         actions: [
+          if (authViewModel.isLoggedIn && viewModel.favouriteProducts.isNotEmpty)
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ComparePricesView(scale: widget.scale),
+                  ),
+                );
+              },
+              icon: Icon(
+                Icons.compare_arrows_outlined,
+                size: 30 * widget.scale,
+                color: const Color(0xFF325E6A),
+              ),
+            ),
+
           if (authViewModel.isLoggedIn)
             IconButton(
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ItemGroupsView(scale: scale),
+                    builder: (context) => ItemGroupsView(scale: widget.scale),
                   ),
                 );
               },
               icon: Icon(
                 Icons.add_circle_outline_rounded,
-                size: 26 * scale,
+                size: 26 * widget.scale,
                 color: const Color(0xFF325E6A),
               ),
             ),
-            SizedBox(width: 10 * scale),
+          SizedBox(width: 10 * widget.scale),
         ],
-        // bottom: PreferredSize(
-        //   preferredSize: Size.fromHeight(1 * scale),
-        //   child: Divider(
-        //     height: 1 * scale,
-        //     color: const Color(0xFF1A1D1F),
-        //   ),
-        // )
       ),
       body: Stack(
         children: [
           !authViewModel.isLoggedIn
-              ? FavouriteLoggedOutState(scale: scale)
+              ? FavouriteLoggedOutState(scale: widget.scale)
               : viewModel.isLoading
-              ? const Center(child: CircularProgressIndicator(color: Color(0xFF1A1D1F)))
-              : viewModel.favouriteProducts.isEmpty
-              ? FavouriteEmptyState(scale: scale)
-              : FavouriteList(
-            viewModel: viewModel,
-            authViewModel: authViewModel,
-            scale: scale,
-          ),
-          if (authViewModel.isLoggedIn &&
-              viewModel.favouriteProducts.isNotEmpty)
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF1A1D1F)))
+                  : viewModel.favouriteProducts.isEmpty
+                      ? FavouriteEmptyState(scale: widget.scale)
+                      : FavouriteList(
+                          viewModel: viewModel,
+                          authViewModel: authViewModel,
+                          locationViewModel: locationViewModel,
+                          scale: widget.scale,
+                        ),
+          if (authViewModel.isLoggedIn && viewModel.favouriteProducts.isNotEmpty)
             FavouriteCompareButton(
-              scale: scale,
+              scale: widget.scale,
               itemCount: viewModel.favouriteProducts.length,
             ),
         ],

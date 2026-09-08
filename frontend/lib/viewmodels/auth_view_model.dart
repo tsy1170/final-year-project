@@ -27,6 +27,8 @@ class AuthViewModel extends ChangeNotifier {
   String? _accessToken;
   String? get accessToken => _accessToken;
 
+  String? _fcmToken;
+
   bool _isRegistering = false;
   bool get isRegistering => _isRegistering;
 
@@ -53,6 +55,10 @@ class AuthViewModel extends ChangeNotifier {
       try {
         await _fetchAndSetUserInfo(token);
         _isLoggedIn = true;
+        // If we have a cached FCM token, sync it now that login is confirmed
+        if (_fcmToken != null) {
+          await syncFcmToken(_fcmToken);
+        }
       } catch (e) {
         debugPrint('Auto-login check failed: $e');
         await logout();
@@ -74,6 +80,25 @@ class AuthViewModel extends ChangeNotifier {
     await _storage.write(key: 'user_email', value: _userEmail ?? '');
     await _storage.write(key: 'user_phone', value: _userPhoneNumber ?? '');
     await _storage.write(key: 'user_dob', value: _userDob ?? '');
+  }
+
+  /// Sets the FCM token and syncs it if the user is already logged in.
+  Future<void> setFcmToken(String? token) async {
+    _fcmToken = token;
+    if (_isLoggedIn && token != null) {
+      await syncFcmToken(token);
+    }
+  }
+
+  Future<void> syncFcmToken(String? token) async {
+    if (_accessToken != null && token != null) {
+      try {
+        await _authService.updateFcmToken(_accessToken!, token);
+        debugPrint("FCM Token updated successfully on backend");
+      } catch (e) {
+        debugPrint("Failed to update FCM token: $e");
+      }
+    }
   }
 
   Future<bool> register({
@@ -124,6 +149,12 @@ class AuthViewModel extends ChangeNotifier {
       await _fetchAndSetUserInfo(token);
 
       _isLoggedIn = true;
+      
+      // Sync FCM token if we have one
+      if (_fcmToken != null) {
+        await syncFcmToken(_fcmToken);
+      }
+
       return true;
     } catch (e) {
       rethrow;

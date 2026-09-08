@@ -33,9 +33,14 @@ class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsVie
       return;
     }
 
+    // CRITICAL FIX: Limit dimensions to 1024px. 
+    // This allows the native layer to resize the image before it reaches Dart,
+    // preventing "Signal 3" (ANR) and memory exhaustion on devices like Vivo.
     final XFile? image = await _picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 85,
+      maxWidth: 1024,
+      maxHeight: 1024,
     );
 
     if (image != null) {
@@ -64,7 +69,7 @@ class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsVie
     );
 
     try {
-      // 1. Pre-process the image for better OCR accuracy (grayscale, contrast, sharpening)
+      // 1. Pre-process the image (This runs in a background isolate in OCRService)
       final processedPath = await _ocrService.preprocessImage(image.path);
 
       // 2. Run OCR text recognition on the enhanced image
@@ -91,6 +96,7 @@ class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsVie
       }
     } catch (e) {
       if (mounted) Navigator.pop(context);
+      debugPrint("OCR verification failed: $e");
       // Fallback: attach the original image if OCR process fails
       viewModel.addAttachment(image);
     }
@@ -114,7 +120,7 @@ class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsVie
           ),
         ),
         content: Text(
-          "This photo only has a ${(score * 100).toStringAsFixed(1)}% relevant with your product details. Do you still want to attach it?",
+          "This photo only has a ${(score * 100).toStringAsFixed(1)}% relevance with your product details. Do you still want to attach it?",
           textAlign: TextAlign.justify,
           style: TextStyle(
             fontSize: 14 * widget.scale,

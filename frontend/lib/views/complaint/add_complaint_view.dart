@@ -289,7 +289,7 @@ class _AddComplaintViewState extends State<AddComplaintView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildOCRScannerContainer(),
-                SizedBox(height: 35 * widget.scale),
+                SizedBox(height: 40 * widget.scale),
                 
                 _buildSectionTitle("COMPLAINT CATEGORY"),
                 SizedBox(height: 20 * widget.scale),
