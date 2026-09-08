@@ -13,7 +13,8 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from pathlib import Path
 from typing import Annotated
 from .schemas import AccessTokenResponse, UserRegister, BasketOptimizationInput, FavouriteItem
-from .schemas import UpdateUsernameInput, UpdatePhoneNumberInput, UpdateDobInput, UpdateEmailInput, UpdateNricInput, UpdatePasswordInput, CreateComplaintInput, DeleteComplaintInput
+from .schemas import UpdateUsernameInput, UpdatePhoneNumberInput, UpdateDobInput, UpdateEmailInput, UpdateNricInput
+from .schemas import UpdatePasswordInput, CreateComplaintInput, DeleteComplaintInput, CreatePriceAlertInput, UpdateFCMTokenInput
 from .database import engine
 from .image_url_builder import build_image_url
 from .basket_helpers import load_basket_data, calculate_single_store_recommendation, calculate_multi_store_recommendation
@@ -101,6 +102,219 @@ def root():
     return {
         "message": "PriceCatcher backend is running"
     }
+
+
+# Endpoint for returning worth buying section products display
+@app.get("/products/worth-buying")
+def get_worth_buying(latitude: float = Query(..., ge=-90, le=90),
+                     longitude: float = Query(..., ge=-180, le=180),
+                     radius_km: float = Query(default=10, gt=0, le=50),
+                     limit: int = Query(default=10, ge=1, le=10),
+                     request: Request = None):
+    try:
+        with engine.begin() as conn:
+            # Get the two most recent available price dates
+            price_dates = conn.execute(
+                text("""
+                    SELECT DISTINCT price_date
+                    FROM price_records
+                    ORDER BY price_date DESC
+                    LIMIT 2
+                """)
+            ).scalars().all()
+
+            # Not enough historical data to make a comparison
+            if len(price_dates) < 2:
+                return {
+                    "latest_price_date": price_dates[0]
+                    if price_dates else None,
+                    "comparison_price_date": None,
+                    "results": []
+                }
+
+            latest_date = price_dates[0]
+            comparison_date = price_dates[1]
+
+            results = conn.execute(
+                text("""
+                    WITH nearby_premises AS (
+                        SELECT
+                            p.premise_code,
+                            p.premise_name,
+                            p.latitude,
+                            p.longitude,
+
+                            ST_Distance(
+                                p.location,
+                                ST_SetSRID(
+                                    ST_MakePoint(
+                                        :user_longitude,
+                                        :user_latitude
+                                    ),
+                                    4326
+                                )::geography
+                            ) / 1000 AS straight_line_distance_km
+
+                        FROM premises p
+
+                        WHERE ST_DWithin(
+                            p.location,
+                            ST_SetSRID(
+                                ST_MakePoint(
+                                    :user_longitude,
+                                    :user_latitude
+                                ),
+                                4326
+                            )::geography,
+                            :radius_m
+                        )
+                    ),
+
+                    price_comparison AS (
+                        SELECT
+                            i.item_code,
+                            i.item_name,
+                            i.unit,
+                            i.image_path,
+
+                            np.premise_code,
+                            np.premise_name,
+                            np.latitude,
+                            np.longitude,
+                            np.straight_line_distance_km,
+
+                            latest_price.price AS today_price,
+                            previous_price.price AS yesterday_price,
+
+                            previous_price.price - latest_price.price
+                                AS price_reduction
+
+                        FROM nearby_premises np
+
+                        JOIN price_records latest_price
+                            ON latest_price.premise_code =
+                            np.premise_code
+                            AND latest_price.price_date =
+                                :latest_date
+
+                        JOIN price_records previous_price
+                            ON previous_price.premise_code =
+                            latest_price.premise_code
+                            AND previous_price.item_code =
+                            latest_price.item_code
+                            AND previous_price.price_date =
+                                :comparison_date
+
+                        JOIN items i
+                            ON i.item_code = latest_price.item_code
+
+                        WHERE latest_price.price < previous_price.price
+                    ),
+
+                    ranked_results AS (
+                        SELECT
+                            *,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY item_code
+                                ORDER BY price_reduction DESC
+                            ) AS rn
+
+                        FROM price_comparison
+                    )
+
+                    SELECT
+                        item_code,
+                        item_name,
+                        unit,
+                        image_path,
+                        premise_code,
+                        premise_name,
+                        latitude,
+                        longitude,
+                        straight_line_distance_km,
+                        today_price,
+                        yesterday_price,
+                        price_reduction
+
+                    FROM ranked_results
+                    WHERE rn = 1
+                    ORDER BY price_reduction DESC
+                    LIMIT :limit
+                """), {
+                    "user_latitude": latitude,
+                    "user_longitude": longitude,
+                    "radius_m": radius_km * 1000,
+                    "latest_date": latest_date,
+                    "comparison_date": comparison_date,
+                    "limit": limit,
+                }
+            ).mappings().all()
+
+            candidate_premises = [
+                {
+                    "item_code": result["item_code"],
+                    "item_name": result["item_name"],
+                    "unit": result["unit"],
+                    "image_path": result["image_path"],
+                    "premise_code": result["premise_code"],
+                    "premise_name": result["premise_name"],
+                    "latitude": result["latitude"],
+                    "longitude": result["longitude"],
+                    "straight_line_distance_km": round(float(result["straight_line_distance_km"]), 2),
+                    "today_price": round(float(result["today_price"]), 2),
+                    "yesterday_price": round(float(result["yesterday_price"]), 2),
+                    "price_reduction": round(float(result["price_reduction"]), 2),
+                }
+                for result in results
+            ]
+
+            premises_with_road_distance = get_road_distance(
+                user_latitude=latitude,
+                user_longitude=longitude,
+                stores=candidate_premises
+            )
+
+            nearby_premises = [
+                premise for premise in premises_with_road_distance
+                if premise["road_distance_km"] <= radius_km
+            ]
+            
+            nearby_premises.sort(key=lambda premise: premise["road_distance_km"])
+
+            if not nearby_premises:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=(
+                        "No price reductions were found"
+                    )
+                )
+
+            for premise in nearby_premises:
+                # build the image URL for each premise
+                premise["image_url"] = build_image_url(request, premise.get("image_path"))
+
+                # round the road distance and driving duration for better readability
+                premise["road_distance_km"] = round(
+                    float(premise["road_distance_km"]),
+                    3
+                )
+
+        return {
+            "latest_price_date": latest_date,
+            "comparison_price_date": comparison_date,
+            "results": nearby_premises
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to retrieve worth buying products"
+        ) from e
+
+            
 
 
 # get premises within the user's road-distance radius
@@ -1096,6 +1310,48 @@ def update_password(request_data: UpdatePasswordInput,
     }
 
 
+# Update user's FCM token
+@app.put("/users/me/fcm-token")
+def update_fcm_token(request_data: UpdateFCMTokenInput,
+                     current_user: Annotated[dict, Depends(get_current_user)]):
+    try:
+        user_id = current_user["user_id"]
+
+        with engine.begin() as conn:
+            updated_fcm_token = conn.execute(
+                text("""
+                    UPDATE users
+                    SET fcm_token = :fcm_token
+                    WHERE user_id = :user_id
+                    RETURNING user_id, fcm_token
+                """),
+                {
+                    "user_id": user_id,
+                    "fcm_token": request_data.fcm_token,
+                }
+            ).mappings().first()
+
+            if updated_fcm_token is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User not found"
+                )
+            
+        return {
+            "message": "FCM token updated successfully",
+            "user_id": updated_fcm_token["user_id"],
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to update FCM token"
+        ) from e
+
+
 # add product to favourite
 @app.post("/favourites")
 def add_favourite(request_data: FavouriteItem, 
@@ -1171,6 +1427,228 @@ def get_user_favourites(current_user: Annotated[dict, Depends(get_current_user)]
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail = f"Failed to retrieve favourites: {str(e)}"
         )
+
+
+# get price reduction in favourites
+@app.get("/favourites/worth_buying")
+def get_favourites_worth_buying(current_user: Annotated[dict, Depends(get_current_user)],
+                                latitude: float = Query(..., ge=-90, le=90),
+                                longitude: float = Query(..., ge=-180, le=180),
+                                radius_km: float = Query(default=10, gt=0, le=50),
+                                request: Request = None):
+    try:
+        user_id = current_user["user_id"]
+
+        with engine.begin() as conn:
+            # Get the two most recent available price dates
+            dates_result = conn.execute(
+                text("""
+                    SELECT DISTINCT price_date
+                    FROM price_records
+                    ORDER BY price_date DESC
+                    LIMIT 2
+                """)
+            ).scalars().all()
+
+            if len(dates_result) < 2:
+                return {
+                    "latest_price_date": dates_result[0]
+                    if dates_result else None,
+                    "comparison_price_date": None,
+                    "results": []
+                }
+
+            latest_date = dates_result[0]
+            comparison_date = dates_result[1]
+
+            results = conn.execute(
+                text("""
+                    WITH nearby_premises AS (
+                        SELECT
+                            p.premise_code,
+                            p.premise_name,
+                            p.latitude,
+                            p.longitude,
+    
+                            ST_Distance(
+                                p.location,
+                                ST_SetSRID(
+                                    ST_MakePoint(
+                                        :user_longitude,
+                                        :user_latitude
+                                    ),
+                                    4326
+                                )::geography
+                            ) / 1000 AS straight_line_distance_km
+    
+                        FROM premises p
+    
+                        WHERE ST_DWithin(
+                            p.location,
+                            ST_SetSRID(
+                                ST_MakePoint(
+                                    :user_longitude,
+                                    :user_latitude
+                                ),
+                                4326
+                            )::geography,
+                            :radius_m
+                        )
+                    ),
+    
+                    price_comparison AS (
+                        SELECT
+                            i.item_code,
+                            i.item_name,
+                            i.unit,
+                            i.image_path,
+    
+                            np.premise_code,
+                            np.premise_name,
+                            np.straight_line_distance_km,
+                            np.latitude,
+                            np.longitude,
+    
+                            latest_price.price AS today_price,
+                            previous_price.price AS yesterday_price,
+    
+                            previous_price.price - latest_price.price
+                                AS price_reduction
+    
+                        FROM nearby_premises np
+    
+                        JOIN price_records latest_price
+                            ON latest_price.premise_code =
+                                np.premise_code
+                            AND latest_price.price_date =
+                                :latest_date
+    
+                        JOIN price_records previous_price
+                            ON previous_price.premise_code =
+                                latest_price.premise_code
+                            AND previous_price.item_code =
+                                latest_price.item_code
+                            AND previous_price.price_date =
+                                :comparison_date
+    
+                        -- Only the current user's favourite items
+                        JOIN favourites f
+                            ON f.item_code = latest_price.item_code
+                            AND f.user_id = :user_id
+    
+                        JOIN items i
+                            ON i.item_code = latest_price.item_code
+    
+                        WHERE latest_price.price < previous_price.price
+                    ),
+    
+                    ranked_results AS (
+                        SELECT
+                            *,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY item_code
+                                ORDER BY price_reduction DESC
+                            ) AS rn
+    
+                        FROM price_comparison
+                    )
+    
+                    SELECT
+                        item_code,
+                        item_name,
+                        unit,
+                        image_path,
+                        premise_code,
+                        premise_name,
+                        latitude,
+                        longitude,
+                        straight_line_distance_km,
+                        today_price,
+                        yesterday_price,
+                        price_reduction
+
+                    FROM ranked_results
+                    WHERE rn = 1
+                    ORDER BY price_reduction DESC
+                """), {
+                    "user_id": user_id,
+                    "user_latitude": latitude,
+                    "user_longitude": longitude,
+                    "radius_m": radius_km * 1000,
+                    "latest_date": latest_date,
+                    "comparison_date": comparison_date,
+                }
+            ).mappings().all()
+
+            candidate_premises = [
+                {
+                    "item_code": result["item_code"],
+                    "item_name": result["item_name"],
+                    "unit": result["unit"],
+                    "image_path": result["image_path"],
+                    "premise_code": result["premise_code"],
+                    "premise_name": result["premise_name"],
+                    "latitude": result["latitude"],
+                    "longitude": result["longitude"],
+                    "straight_line_distance_km": round(float(result["straight_line_distance_km"]), 2),
+                    "today_price": round(float(result["today_price"]), 2),
+                    "yesterday_price": round(float(result["yesterday_price"]), 2),
+                    "price_reduction": round(float(result["price_reduction"]), 2),
+                }
+                for result in results
+            ]
+
+            premises_with_road_distance = get_road_distance(
+                user_latitude=latitude,
+                user_longitude=longitude,
+                stores=candidate_premises
+            )
+
+            nearby_premises = [
+                premise for premise in premises_with_road_distance
+                if premise["road_distance_km"] <= radius_km
+            ]
+            
+            nearby_premises.sort(key=lambda premise: premise["road_distance_km"])
+
+            if not nearby_premises:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=(
+                        "No price reductions were found"
+                    )
+                )
+
+            for premise in nearby_premises:
+                # build the image URL for each premise
+                premise["image_url"] = build_image_url(request, premise.get("image_path"))
+
+                # round the road distance and driving duration for better readability
+                premise["road_distance_km"] = round(
+                    float(premise["road_distance_km"]),
+                    3
+                )
+
+                # # round the driving duration to 1 decimal place for better readability
+                # premise["driving_duration_minutes"] = round(
+                #     float(premise["driving_duration_minutes"]),
+                #     1
+                # )
+
+        return {
+            "latest_price_date": latest_date,
+            "comparison_price_date": comparison_date,
+            "results": nearby_premises
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to retrieve favourite items with price reductions",
+        ) from e
     
 
 #  Remove product from user favourites
@@ -1579,7 +2057,7 @@ async def create_complaint(
 
 # Get the complaints for user
 @app.get("/complaints")
-async def get_complaints(request: Request, current_user: Annotated[dict, Depends(get_current_user)]):
+def get_complaints(request: Request, current_user: Annotated[dict, Depends(get_current_user)]):
     user_id = current_user["user_id"]
 
     try:
@@ -1737,6 +2215,138 @@ def delete_complaints(request_data: DeleteComplaintInput,
             detail="Unable to delete complaints"
         ) from e
 
+
+# Create alert
+@app.post("/price-alerts")
+def create_price_alert(request_data: CreatePriceAlertInput,
+                       current_user: Annotated[dict, Depends(get_current_user)]):
+    try:
+        user_id = current_user["user_id"]
+
+        with engine.begin() as conn:
+            # Check if alert already exists for this item
+            existing = conn.execute(text("""
+                SELECT alert_id FROM price_alerts
+                WHERE user_id = :user_id
+                AND item_code = :item_code
+                AND is_active = TRUE
+            """), {
+                "user_id": user_id,
+                "item_code": request_data.item_code,
+            }).first()
+
+            if existing:
+                # Update existing alert instead of creating duplicate
+                conn.execute(text("""
+                    UPDATE price_alerts
+                    SET target_price = :target_price
+                    WHERE alert_id = :alert_id
+                """), {
+                    "target_price": request_data.target_price,
+                    "alert_id": existing.alert_id,
+                })
+                return {"message": "Price alert updated"}
+
+            conn.execute(text("""
+                INSERT INTO price_alerts (user_id, item_code, target_price, user_longitude, user_latitude)
+                VALUES (:user_id, :item_code, :target_price, :user_longitude, :user_latitude)
+            """), {
+                "user_id": user_id,
+                "item_code": request_data.item_code,
+                "target_price": request_data.target_price,
+                "user_longitude": request_data.user_longitude,
+                "user_latitude": request_data.user_latitude,
+            })
+
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to create price alert"
+        ) from e
+
+    return {"message": "Price alert created"}
+
+
+# Get user's alerts
+@app.get("/price-alerts")
+def get_price_alerts(current_user: Annotated[dict, Depends(get_current_user)],
+                     request: Request):
+    try:
+        user_id = current_user["user_id"]
+
+        with engine.connect() as conn:
+            alerts = conn.execute(
+                text("""
+                    SELECT
+                        pa.alert_id,
+                        pa.item_code,
+                        pa.target_price,
+                        pa.is_active,
+                        pa.created_at,
+                        i.item_name,
+                        i.unit,
+                        i.image_path
+                    FROM price_alerts pa
+                    JOIN items i ON pa.item_code = i.item_code
+                    WHERE pa.user_id = :user_id
+                    AND pa.is_active = TRUE
+                    ORDER BY pa.created_at DESC
+                """), {
+                "user_id": user_id
+                }
+            ).mappings().all()
+
+            if not alerts:
+                return {
+                    "message": "No price alerts found",
+                    "alerts": []
+                }
+
+            alerts = [dict(row) for row in alerts]
+
+    except SQLAlchemyError as e:
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to retrieve price alerts"
+        ) from e
+
+    for alert in alerts:
+        image_path = alert.get("image_path")
+        alert["image_url"] = build_image_url(request, image_path)
+    
+    return {
+        "message": "Price alerts retrieved successfully",
+        "alerts": alerts
+    }
+
+
+# Delete alert
+@app.delete("/price-alerts/{alert_id}")
+def delete_price_alert(alert_id: int,
+                       current_user: Annotated[dict, Depends(get_current_user)]):
+    try:
+        user_id = current_user["user_id"]
+
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                    UPDATE price_alerts
+                    SET is_active = FALSE
+                    WHERE alert_id = :alert_id
+                    AND user_id = :user_id
+                """), {
+                    "alert_id": alert_id, "user_id": user_id
+                }
+            )
+
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to remove price alert"
+        ) from e
+
+    return {"message": "Price alert removed"}
 
 # print(
 #     app.openapi()["components"]["schemas"]["Body_create_complaint_complaints_post"]

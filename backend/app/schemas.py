@@ -52,6 +52,9 @@ class UpdateEmailInput(BaseModel):
 class UpdatePasswordInput(BaseModel):
     current_password: str = Field(min_length=8, max_length=128)
     new_password: str = Field(min_length=8, max_length=128)
+
+class UpdateFCMTokenInput(BaseModel):
+    fcm_token: str = Field(min_length=1, description="Firebase Cloud Messaging device token")
 # -------------------------------------------------------------------------------------------------
 
 
@@ -110,3 +113,11 @@ class CreateComplaintInput(BaseModel):
 
 class DeleteComplaintInput(BaseModel):
     complaint_ids: list[int] = Field(description="A list of complaint_id for bulk delete")
+# -------------------------------------------------------------------------------------
+
+
+class CreatePriceAlertInput(BaseModel):
+    item_code: int = Field(gt=0, description="Unique identifier for the product")
+    target_price: float = Field(gt=0, description="Target price for the alert")
+    user_longitude: float = Field(ge=-180, le=180, description="User's current longitude")
+    user_latitude: float = Field(ge=-90, le=90, description="User's current latitude")

@@ -8,11 +8,8 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-current_month_str = datetime.now().strftime("%Y-%m")
-
 ITEM_LOOKUP_URL = "https://storage.data.gov.my/pricecatcher/lookup_item.parquet"
 PREMISE_LOOKUP_URL = "https://storage.data.gov.my/pricecatcher/lookup_premise.parquet"
-PRICE_URL = f"https://storage.data.gov.my/pricecatcher/pricecatcher_{current_month_str}.parquet"
 
 engine = create_engine(DATABASE_URL)
 
@@ -136,7 +133,24 @@ def load_premises():
 def load_price_records():
     print("Reading PriceCatcher price records...")
 
-    df = pd.read_parquet(PRICE_URL)
+    import urllib.error
+    
+    today = datetime.now()
+    current_month_str = today.strftime("%Y-%m")
+    url = f"https://storage.data.gov.my/pricecatcher/pricecatcher_{current_month_str}.parquet"
+    
+    try:
+        df = pd.read_parquet(url)
+        print(f"Loaded data for {current_month_str}")
+    except Exception as e:
+        if "HTTP Error 404" in str(e) or "404 Not Found" in str(e):
+            prev_month = today.replace(year=today.year - 1, month=12) if today.month == 1 else today.replace(month=today.month - 1)
+            prev_month_str = prev_month.strftime("%Y-%m")
+            print(f"Data for {current_month_str} not found. Falling back to {prev_month_str}...")
+            url = f"https://storage.data.gov.my/pricecatcher/pricecatcher_{prev_month_str}.parquet"
+            df = pd.read_parquet(url)
+        else:
+            raise
 
     df = df.rename(columns={
         "date": "price_date"

@@ -34,7 +34,16 @@ dist/
 product_images/
 complaint_attachments/
 
+# Firebase / secrets
+app/fyp-push-notifications-firebase-adminsdk-*.json
+
+# Local runtime/generated files
+logs/
+tmp/
+*.log
+*.sqlite3
+*.db
+
 # testing files
 test.py
-
 tmp_complaint_check.py
