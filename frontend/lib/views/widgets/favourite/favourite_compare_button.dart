@@ -23,7 +23,7 @@ class FavouriteCompareButton extends StatelessWidget {
         width: double.infinity,
         height: 60 * scale,
         decoration: BoxDecoration(
-          color: const Color(0xFF325E6A),
+          color: const Color(0xFFB85A3A),
           border: Border(
             top: BorderSide(
               color: Colors.grey.withValues(alpha: 0.3),

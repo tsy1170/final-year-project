@@ -18,7 +18,7 @@ class FavouriteLoggedOutState extends StatelessWidget {
             Icon(
               Icons.lock_outline_rounded,
               size: 50 * scale,
-              color: const Color(0xFF325E6A).withValues(alpha: 0.5),
+              color: const Color(0xFFB85A3A).withValues(alpha: 0.5),
             ),
             SizedBox(height: 10 * scale),
             Text(

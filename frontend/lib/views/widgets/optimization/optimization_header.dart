@@ -12,7 +12,7 @@ class OptimizationHeader extends StatelessWidget {
       height: 60 * scale,
       padding: EdgeInsets.symmetric(horizontal: 10 * scale),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFAF3),
+        color: const Color(0xFFFBF8F5),
         border: Border(
           bottom: BorderSide(
             color: Colors.grey.withValues(alpha: 0.3),

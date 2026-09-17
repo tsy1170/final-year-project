@@ -106,7 +106,7 @@ class _SearchPageViewState extends State<SearchPageView> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFAF3),
+      backgroundColor: const Color(0xFFFBF8F5),
       body: SafeArea(
         child: Column(
           children: [
@@ -118,8 +118,8 @@ class _SearchPageViewState extends State<SearchPageView> {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.grey.withValues(alpha: 0.3),
-                      width: 1 * widget.scale,
+                      color: const Color(0xFFF2EFEA),
+                      width: 1.5 * widget.scale,
                     ),
                   ),
                 ),
@@ -186,7 +186,7 @@ class _SearchPageViewState extends State<SearchPageView> {
                                       child: Icon(
                                         Icons.cancel_rounded,
                                         size: 20 * widget.scale,
-                                        color: const Color(0xFF325E6A),
+                                        color: const Color(0xFFB85A3A),
                                       ),
                                     ),
                                   )
@@ -245,82 +245,86 @@ class _SearchPageViewState extends State<SearchPageView> {
                     final product = _searchResults[index];
                     return Padding(
                       padding: EdgeInsets.only(bottom: 8 * widget.scale),
-                      child: InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ProductDetailsView(
-                                itemCode: product.itemCode,
-                                scale: widget.scale,
-                              ),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: EdgeInsets.all(8 * widget.scale),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFFDFD),
-                            border: Border.all(
-                              color: Colors.grey.withValues(alpha: 0.3),
-                              width: 1 * widget.scale,
-                            ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12 * widget.scale),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              spreadRadius: -6,
+                              blurRadius: 10,
+                              offset: const Offset(2, 6),
+                            )
+                          ]
+                        ),
+                        child: Material(
+                          color: const Color(0xFFFFFDFD),
+                          borderRadius: BorderRadius.circular(12 * widget.scale),
+                          child: InkWell(
                             borderRadius: BorderRadius.circular(12 * widget.scale),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  spreadRadius: -6,
-                                  blurRadius: 8,
-                                  offset: const Offset(4, 6),
-                                )
-                              ]
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: 70 * widget.scale,
-                                height: 70 * widget.scale,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF4F4F4),
-                                  borderRadius: BorderRadius.circular(12 * widget.scale),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ProductDetailsView(
+                                    itemCode: product.itemCode,
+                                    scale: widget.scale,
+                                  ),
                                 ),
-                                child: product.imageUrl != null
-                                    ? Image.network(
-                                        product.imageUrl!,
-                                        fit: BoxFit.fill,
-                                        errorBuilder: (context, error, stackTrace) =>
-                                            const Icon(Icons.image_not_supported_outlined),
-                                      )
-                                    : const Icon(Icons.image_outlined),
-                              ),
-                              SizedBox(width: 12 * widget.scale),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      product.name,
-                                      style: TextStyle(
-                                        fontSize: 14 * widget.scale,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF1A1D1F),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                              );
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.all(8 * widget.scale),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    clipBehavior: Clip.antiAlias,
+                                    width: 70 * widget.scale,
+                                    height: 70 * widget.scale,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12 * widget.scale),
                                     ),
-                                    SizedBox(height: 4 * widget.scale),
-                                    Text(
-                                      product.unit,
-                                      style: TextStyle(
-                                        fontSize: 12 * widget.scale,
-                                        color: const Color(0xFF9A9FA5),
-                                      ),
+                                    child: product.imageUrl != null
+                                        ? Image.network(
+                                            product.imageUrl!,
+                                            fit: BoxFit.fill,
+                                            errorBuilder: (context, error, stackTrace) =>
+                                                const Icon(Icons.image_not_supported_outlined),
+                                          )
+                                        : const Icon(Icons.image_outlined),
+                                  ),
+                                  SizedBox(width: 12 * widget.scale),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          product.name[0].toUpperCase() + product.name.substring(1).toLowerCase(),
+                                          style: TextStyle(
+                                            fontSize: 13 * widget.scale,
+                                            fontWeight: FontWeight.w700,
+                                            color: const Color(0xFF1A1D1F),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        SizedBox(height: 4 * widget.scale),
+                                        Text(
+                                          product.unit,
+                                          style: TextStyle(
+                                            fontSize: 12 * widget.scale,
+                                            color: const Color(0xFF9A9FA5),
+                                            fontWeight: FontWeight.w500
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),

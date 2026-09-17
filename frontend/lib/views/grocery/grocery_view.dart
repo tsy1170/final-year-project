@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:mesh_gradient/mesh_gradient.dart';
 import '../../viewmodels/grocery_view_model.dart';
 import '../../viewmodels/auth_view_model.dart';
 import '../../viewmodels/favourite_view_model.dart';
@@ -27,7 +29,6 @@ class _GroceryViewState extends State<GroceryView> {
     super.initState();
     _scrollController.addListener(_onScroll);
     
-    // Initial load of worth buying products if location is already available
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final locationVM = context.read<LocationViewModel>();
       final groceryVM = context.read<GroceryViewModel>();
@@ -62,8 +63,8 @@ class _GroceryViewState extends State<GroceryView> {
     final double navBarHeight = MediaQuery.of(context).padding.bottom;
 
     // Listen for location changes to trigger worth buying fetch if not yet loaded
-    if (locationViewModel.currentPosition != null && 
-        viewModel.worthBuyingProducts.isEmpty && 
+    if (locationViewModel.currentPosition != null &&
+        viewModel.worthBuyingProducts.isEmpty &&
         !viewModel.isWorthBuyingLoading) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         viewModel.loadWorthBuying(
@@ -73,6 +74,10 @@ class _GroceryViewState extends State<GroceryView> {
       });
     }
 
+    const Color color1 = Color(0xFFF2EBE4); // Warm Linen (Dominant Body)
+    const Color color2 = Color(0xFFE8CFBF); // Muted Terracotta Tint (Bottom-Right)
+    const Color color3 = Color(0xFFD3DFE2);
+
     if (viewModel.isLoading && viewModel.allProducts.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: Color(0xFF1A1D1F)),
@@ -81,6 +86,47 @@ class _GroceryViewState extends State<GroceryView> {
 
     return Stack(
       children: [
+        // Mesh Gradient Background
+        Positioned.fill(
+          child: MeshGradient(
+            points: [
+              // 1. Top-Left Origin (pushed tighter into the corner)
+              MeshGradientPoint(
+                position: const Offset(0.0, 0.0),
+                color: color3,
+              ),
+              // 2. Expanded Color 1 Area (occupies upper-middle)
+              MeshGradientPoint(
+                position: const Offset(0.25, 0.25),
+                color: color1,
+              ),
+              // 3. Core Center (dominated by Color 1)
+              MeshGradientPoint(
+                position: const Offset(0.5, 0.5),
+                color: color1,
+              ),
+              // 4. Upper-Right Extension (dominated by Color 1)
+              MeshGradientPoint(
+                position: const Offset(0.85, 0.2),
+                color: color1,
+              ),
+              // 5. Lower-Left Extension (dominated by Color 1)
+              MeshGradientPoint(
+                position: const Offset(0.2, 0.85),
+                color: color1,
+              ),
+              // 6. Bottom-Right Destination (pushed tighter into the corner)
+              MeshGradientPoint(
+                position: const Offset(1.0, 1.0),
+                color: color2,
+              ),
+            ],
+            options: MeshGradientOptions(
+              blend: 4,
+              noiseIntensity: 0,
+            ),
+          ),
+        ),
         Positioned.fill(
           child: RefreshIndicator(
             color: const Color(0xFFFFFDFD),
@@ -110,68 +156,74 @@ class _GroceryViewState extends State<GroceryView> {
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(20 * widget.scale, 40 * widget.scale, 20 * widget.scale, 10 * widget.scale),
-                    child: Center(
-                      child: Text(
-                        'ALL PRODUCTS',
-                        style: TextStyle(
-                          fontSize: 17 * widget.scale,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1A1D1F),
-                          letterSpacing: 0,
+                    padding: EdgeInsets.fromLTRB(20 * widget.scale, 60 * widget.scale, 30 * widget.scale, 15 * widget.scale),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'BROWSE',
+                          style: TextStyle(
+                            fontSize: 15 * widget.scale,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF1A1D1F),
+                            letterSpacing: 0,
+                          ),
                         ),
-                      ),
+                        Text(
+                          'PRODUCTS',
+                          style: TextStyle(
+                            fontSize: 22 * widget.scale,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFFB85A3A),
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(6 * widget.scale, 0, 6 * widget.scale, 10 * widget.scale),
-                  sliver: SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 6 * widget.scale,
-                      mainAxisSpacing: 6 * widget.scale,
-                      mainAxisExtent: 310 * widget.scale,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final product = viewModel.allProducts[index];
-                        final isFavourite = favouriteViewModel.favourites.contains(product.itemCode);
-                        return GroceryCard(
-                          product: product,
-                          scale: widget.scale,
-                          isFavourite: isFavourite,
-                          onFavourite: () {
-                            if (authViewModel.isLoggedIn) {
-                              // PASSING LOCATION HERE TO TRIGGER WORTH BUYING CHECK
-                              favouriteViewModel.toggleFavourite(
-                                product.itemCode, 
-                                authViewModel.accessToken!,
-                                lat: locationViewModel.currentPosition?.latitude,
-                                lng: locationViewModel.currentPosition?.longitude,
-                              );
-                              if (!isFavourite) {
-                                showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
-                              }
-                            } else {
-                              showTopNotification(context, "Please login to add favourites", false, widget.scale);
-                            }
-                          },
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ProductDetailsView(
-                                  itemCode: product.itemCode,
-                                  scale: widget.scale,
-                                ),
-                              ),
+                  padding: EdgeInsets.fromLTRB(12 * widget.scale, 0, 12 * widget.scale, 10 * widget.scale),
+                  sliver: SliverMasonryGrid.count(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 10 * widget.scale,
+                    crossAxisSpacing: 10 * widget.scale,
+                    itemBuilder: (context, index) {
+                      final product = viewModel.allProducts[index];
+                      final isFavourite = favouriteViewModel.favourites.contains(product.itemCode);
+                      return GroceryCard(
+                        product: product,
+                        scale: widget.scale,
+                        isFavourite: isFavourite,
+                        onFavourite: () {
+                          if (authViewModel.isLoggedIn) {
+                            favouriteViewModel.toggleFavourite(
+                              product.itemCode, 
+                              authViewModel.accessToken!,
+                              lat: locationViewModel.currentPosition?.latitude,
+                              lng: locationViewModel.currentPosition?.longitude,
                             );
-                          },
-                        );
-                      },
-                      childCount: viewModel.allProducts.length,
-                    ),
+                            if (!isFavourite) {
+                              showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
+                            }
+                          } else {
+                            showTopNotification(context, "Please login to add favourites", false, widget.scale);
+                          }
+                        },
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProductDetailsView(
+                                itemCode: product.itemCode,
+                                scale: widget.scale,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    childCount: viewModel.allProducts.length,
                   ),
                 ),
                 if (viewModel.isLoading && viewModel.allProducts.isNotEmpty)

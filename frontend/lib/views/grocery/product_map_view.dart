@@ -108,7 +108,7 @@ class _ProductMapViewState extends State<ProductMapView> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFFDFD),
+        backgroundColor: const Color(0xFFFBF8F5),
         elevation: 0,
         centerTitle: true,
         surfaceTintColor: Colors.transparent,
@@ -125,7 +125,8 @@ class _ProductMapViewState extends State<ProductMapView> {
           style: TextStyle(
             color: const Color(0xFF1A1D1F),
             fontSize: 13 * widget.scale,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5
           ),
         ),
       ),
@@ -189,7 +190,7 @@ class _ProductMapViewState extends State<ProductMapView> {
                 10 * widget.scale + bottomPadding,
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFDFD),
+                color: const Color(0xFFFBF8F5),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(1 * widget.scale),
                 ),
@@ -235,7 +236,7 @@ class _ProductMapViewState extends State<ProductMapView> {
                   ),
                   SizedBox(height: 5 * widget.scale),
                   Divider(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: const Color(0xFFF2EFEA),
                     thickness: 1 * widget.scale,
                   ),
                   SizedBox(height: 5 * widget.scale),
@@ -243,22 +244,22 @@ class _ProductMapViewState extends State<ProductMapView> {
                     _selectedStore.premiseName,
                     style: TextStyle(
                       fontSize: 15 * widget.scale,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       color: const Color(0xFF1A1D1F),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 4 * widget.scale),
+                  SizedBox(height: 7 * widget.scale),
                   Row(
                     children: [
-                      Icon(Icons.location_on_outlined, size: 15 * widget.scale, color: const Color(0xFF1A1D1F)),
+                      Icon(Icons.location_on_outlined, size: 15 * widget.scale, color: const Color(0xFFB85A3A)),
                       SizedBox(width: 8 * widget.scale),
                       Expanded(
                         child: Text(
                           _selectedStore.address,
                           style: TextStyle(
-                            fontSize: 12 * widget.scale,
+                            fontSize: 11 * widget.scale,
                             color: const Color(0xFF1A1D1F),
                           ),
                           maxLines: 2,

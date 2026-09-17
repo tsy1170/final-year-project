@@ -25,18 +25,14 @@ class ProfileMenuItem extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(16 * scale),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFFDFD),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(12 * scale),
-            border: Border.all(
-              color: Colors.grey.withValues(alpha: 0.3),
-              width: 1 * scale,
-            ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2), // Shadow color
+                  color: Colors.black.withValues(alpha: 0.08), // Shadow color
                   spreadRadius: -6,                     // How far the shadow extends
                   blurRadius: 8,                      // Softness of the shadow
-                  offset: const Offset(3, 7),        // Offset of the shadow, 2),
+                  offset: const Offset(2, 6),        // Offset of the shadow, 2),
                 )
               ]
           ),
@@ -57,7 +53,7 @@ class ProfileMenuItem extends StatelessWidget {
                 title,
                 style: TextStyle(
                   fontSize: 14 * scale,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                   color: const Color(0xFF1A1D1F),
                 ),
               ),

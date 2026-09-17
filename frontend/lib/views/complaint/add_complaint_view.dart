@@ -64,7 +64,6 @@ class _AddComplaintViewState extends State<AddComplaintView> {
   @override
   void initState() {
     super.initState();
-    // Reset the viewmodel state when entering the flow from the start
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final complaintViewModel = Provider.of<ComplaintViewModel>(context, listen: false);
       final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
@@ -73,7 +72,6 @@ class _AddComplaintViewState extends State<AddComplaintView> {
       complaintViewModel.reset();
       locationViewModel.initLocation();
 
-      // Prefill user information from AuthViewModel
       if (authViewModel.userNric != null) {
         complaintViewModel.nricController.text = authViewModel.userNric!;
       }
@@ -113,7 +111,6 @@ class _AddComplaintViewState extends State<AddComplaintView> {
       return;
     }
 
-    // Final formatting check before proceeding
     _formatPrice(viewModel.productPriceController);
     _formatPrice(viewModel.lossAmountController);
 
@@ -138,7 +135,6 @@ class _AddComplaintViewState extends State<AddComplaintView> {
       return;
     }
 
-    // Start fetching
     complaintViewModel.fetchNearbyPremises(
       locationViewModel.currentPosition!.latitude,
       locationViewModel.currentPosition!.longitude,
@@ -264,9 +260,9 @@ class _AddComplaintViewState extends State<AddComplaintView> {
     return Consumer<ComplaintViewModel>(
       builder: (context, viewModel, child) {
         return Scaffold(
-          backgroundColor: const Color(0xFFFFFAF3),
+          backgroundColor: const Color(0xFFFBF8F5),
           appBar: AppBar(
-            backgroundColor: const Color(0xFFFFFAF3),
+            backgroundColor: const Color(0xFFFBF8F5),
             elevation: 0,
             centerTitle: true,
             surfaceTintColor: Colors.transparent,
@@ -277,9 +273,10 @@ class _AddComplaintViewState extends State<AddComplaintView> {
             title: Text(
               'SUBMIT COMPLAINT',
               style: TextStyle(
-                color: const Color(0xFF325E6A),
-                fontSize: 14 * widget.scale,
-                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1A1D1F),
+                fontSize: 15 * widget.scale,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0
               ),
             ),
           ),
@@ -289,69 +286,72 @@ class _AddComplaintViewState extends State<AddComplaintView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildOCRScannerContainer(),
-                SizedBox(height: 40 * widget.scale),
+                SizedBox(height: 25 * widget.scale),
                 
-                _buildSectionTitle("COMPLAINT CATEGORY"),
-                SizedBox(height: 20 * widget.scale),
-                _buildDropdownField("Category", viewModel.selectedCategory, _categories, (val) => viewModel.setCategory(val), isRequired: true),
-                _buildTextField("Product Name", viewModel.productNameController, isRequired: true),
-                _buildTextField("Product Price", viewModel.productPriceController, isPrice: true, isRequired: true),
-                _buildTextField("Loss Amount", viewModel.lossAmountController, isPrice: true, isRequired: true),
-                _buildTextField("Date Issue", viewModel.dateIssueController, isDate: true, isRequired: true),
-
-                SizedBox(height: 40 * widget.scale),
-                _buildSectionTitle("YOUR INFORMATION"),
-                SizedBox(height: 20 * widget.scale),
-                _buildTextField("Full Name", viewModel.fullNameController, isRequired: true),
-                _buildTextField("NRIC", viewModel.nricController, isNumeric: true, isRequired: true),
-                _buildTextField("Phone No", viewModel.phoneNoController, isNumeric: true, isRequired: true),
-                _buildTextField("Email", viewModel.emailController, isRequired: true),
-
-                SizedBox(height: 40 * widget.scale),
-                _buildSectionTitle("PREMISE INFORMATION"),
-                SizedBox(height: 20 * widget.scale),
-
-                // Premise Type with Location Button
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                _buildSectionCard(
+                  title: "Complaint Category",
                   children: [
-                    Expanded(
-                      child: _buildDropdownField(
-                        "Premise Type",
-                        viewModel.selectedPremiseType,
-                        _premiseTypes,
-                        (val) => viewModel.setPremiseType(val),
-                        isRequired: true,
-                        noBottomPadding: true
-                      ),
-                    ),
-                    SizedBox(width: 10 * widget.scale),
-                      GestureDetector(
-                        onTap: () => _showNearbyPremises(context),
-                        child: Container(
-                          width: 40 * widget.scale,
-                          height: 50 * widget.scale,
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(12 * widget.scale),
-                          ),
-                          child: Icon(Icons.location_on, color: const Color(0xFF1A1D1F), size: 30 * widget.scale),
-                        ),
-                      ),
-
+                    _buildDropdownField("Category", viewModel.selectedCategory, _categories, (val) => viewModel.setCategory(val), isRequired: true),
+                    _buildTextField("Product Name", viewModel.productNameController, isRequired: true),
+                    _buildTextField("Product Price", viewModel.productPriceController, isPrice: true, isRequired: true),
+                    _buildTextField("Loss Amount", viewModel.lossAmountController, isPrice: true, isRequired: true),
+                    _buildTextField("Date Issue", viewModel.dateIssueController, isDate: true, isRequired: true),
                   ],
                 ),
-                SizedBox(height: 20 * widget.scale),
 
-                _buildTextField("Premise Name", viewModel.premiseNameController, isRequired: true),
-                _buildTextField("Premise Address", viewModel.addressController, isRequired: true),
-                _buildTextField("Postal Code", viewModel.postalCodeController, isNumeric: true),
-                _buildDropdownField("State", viewModel.selectedState, _states, (val) => viewModel.setSelectedState(val)),
-                _buildTextField("District", viewModel.districtController),
-                _buildTextField("Latitude", viewModel.latitudeController, isCoordinate: true),
-                _buildTextField("Longitude", viewModel.longitudeController, isCoordinate: true),
+                _buildSectionCard(
+                  title: "Your Information",
+                  children: [
+                    _buildTextField("Full Name", viewModel.fullNameController, isRequired: true),
+                    _buildTextField("NRIC", viewModel.nricController, isNumeric: true, isRequired: true),
+                    _buildTextField("Phone No", viewModel.phoneNoController, isNumeric: true, isRequired: true),
+                    _buildTextField("Email", viewModel.emailController, isRequired: true),
+                  ],
+                ),
 
-                SizedBox(height: 30 * widget.scale),
+                _buildSectionCard(
+                  title: "Premise Information",
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: _buildDropdownField(
+                            "Premise Type",
+                            viewModel.selectedPremiseType,
+                            _premiseTypes,
+                            (val) => viewModel.setPremiseType(val),
+                            isRequired: true,
+                            noBottomPadding: true
+                          ),
+                        ),
+                        SizedBox(width: 10 * widget.scale),
+                        GestureDetector(
+                          onTap: () => _showNearbyPremises(context),
+                          child: Container(
+                            width: 50 * widget.scale,
+                            height: 50 * widget.scale,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF7F5F0),
+                              borderRadius: BorderRadius.circular(12 * widget.scale),
+                            ),
+                            child: Icon(Icons.location_on, color: const Color(0xFF1A1D1F), size: 27 * widget.scale),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20 * widget.scale),
+                    _buildTextField("Premise Name", viewModel.premiseNameController, isRequired: true),
+                    _buildTextField("Premise Address", viewModel.addressController, isRequired: true),
+                    _buildTextField("Postal Code", viewModel.postalCodeController, isNumeric: true),
+                    _buildDropdownField("State", viewModel.selectedState, _states, (val) => viewModel.setSelectedState(val)),
+                    _buildTextField("District", viewModel.districtController),
+                    _buildTextField("Latitude", viewModel.latitudeController, isCoordinate: true),
+                    _buildTextField("Longitude", viewModel.longitudeController, isCoordinate: true),
+                  ],
+                ),
+
+                SizedBox(height: 10 * widget.scale),
                 CustomButton(
                   label: "NEXT",
                   onTap: () => _handleNext(viewModel),
@@ -368,6 +368,26 @@ class _AddComplaintViewState extends State<AddComplaintView> {
     );
   }
 
+  Widget _buildSectionCard({required String title, required List<Widget> children}) {
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.only(bottom: 30 * widget.scale),
+      padding: EdgeInsets.all(20 * widget.scale),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16 * widget.scale),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle(title),
+          SizedBox(height: 25 * widget.scale),
+          ...children,
+        ],
+      ),
+    );
+  }
+
   Widget _buildOCRScannerContainer() {
     return InkWell(
       onTap: () {
@@ -380,49 +400,48 @@ class _AddComplaintViewState extends State<AddComplaintView> {
       },
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 50 * widget.scale, horizontal: 20 * widget.scale),
+        padding: EdgeInsets.symmetric(vertical: 16 * widget.scale, horizontal: 20 * widget.scale),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFFB85A3A),
           borderRadius: BorderRadius.circular(12 * widget.scale),
-          border: Border.all(
-            color: Colors.grey.withValues(alpha: 0.3),
-            width: 1 * widget.scale,
-          ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2), // Shadow color
-                spreadRadius: -6,                     // How far the shadow extends
-                blurRadius: 6,                      // Softness of the shadow
-                offset: const Offset(4, 5),        // Offset of the shadow, 2),
-              )
-            ]
         ),
-        child: Column(
+        child: Row(
           children: [
             Icon(
-              Icons.camera_alt_outlined,
-              size: 32 * widget.scale,
-              color: const Color(0xFF1A1D1F),
+              Icons.camera_alt_rounded,
+              size: 28 * widget.scale,
+              color: Colors.white,
             ),
-            SizedBox(height: 12 * widget.scale),
-            Text(
-              "SCAN PRICE TAG",
-              style: TextStyle(
-                fontSize: 12 * widget.scale,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF1A1D1F),
-                letterSpacing: 1.2,
+            SizedBox(width: 15 * widget.scale),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "SCAN PRICE TAG",
+                    style: TextStyle(
+                      fontSize: 12 * widget.scale,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  Text(
+                    "Auto-extract item name and price from a photo",
+                    style: TextStyle(
+                      fontSize: 10 * widget.scale,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
               ),
             ),
-            SizedBox(height: 6 * widget.scale),
-            Text(
-              "Automatically extract item name and price from a photo",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 10 * widget.scale,
-                color: const Color(0xFF1A1D1F),
-                fontWeight: FontWeight.w400,
-              ),
+            SizedBox(width: 10 * widget.scale),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16 * widget.scale,
+              color: Colors.white.withValues(alpha: 0.7),
             ),
           ],
         ),
@@ -431,22 +450,13 @@ class _AddComplaintViewState extends State<AddComplaintView> {
   }
 
   Widget _buildSectionTitle(String title) {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: Color(0xFF325E6A),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 5 * widget.scale, horizontal: 10 * widget.scale),
-        child: Text(
-          title,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 14 * widget.scale,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFFFFFDFD),
-          ),
-        ),
+    return Text(
+      title.toUpperCase(),
+      style: TextStyle(
+        fontSize: 14 * widget.scale,
+        fontWeight: FontWeight.w800,
+        color: const Color(0xFFB85A3A),
+        letterSpacing: 1.0,
       ),
     );
   }
@@ -455,39 +465,32 @@ class _AddComplaintViewState extends State<AddComplaintView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text(
-              isPrice ? label + " (RM)" : label,
-              style: TextStyle(
-                fontSize: 12 * widget.scale,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF1A1D1F),
-              ),
-            ),
-            if (isRequired)
+        Padding(
+          padding: EdgeInsets.only(left: 5 * widget.scale),
+          child: Row(
+            children: [
               Text(
-                " *",
+                isPrice ? label + " (RM)" : label,
                 style: TextStyle(
                   fontSize: 12 * widget.scale,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFFED1A4B),
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1A1D1F),
                 ),
               ),
-          ],
+              if (isRequired)
+                Text(
+                  " *",
+                  style: TextStyle(
+                    fontSize: 12 * widget.scale,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFED1A4B),
+                  ),
+                ),
+            ],
+          ),
         ),
         SizedBox(height: 8 * widget.scale),
-        Container(
-          decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2), // Shadow color
-                  spreadRadius: -6,                     // How far the shadow extends
-                  blurRadius: 6,                      // Softness of the shadow
-                  offset: const Offset(4, 5),        // Offset of the shadow, 2),
-                )
-              ]
-          ),
+        SizedBox(
           height: 50 * widget.scale,
           child: TextField(
             controller: controller,
@@ -521,21 +524,18 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                 fontSize: 11 * widget.scale,
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: const Color(0xFFF7F5F0),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12 * widget.scale),
                 borderSide: BorderSide.none
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12 * widget.scale),
-                borderSide: BorderSide(
-                  color: Colors.grey.withValues(alpha: 0.3),
-                  width: 1 * widget.scale,
-                ),
+                borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12 * widget.scale),
-                borderSide: BorderSide(color: const Color(0xFF325E6A), width: 1 * widget.scale),
+                borderSide: BorderSide.none,
               ),
               contentPadding: EdgeInsets.symmetric(horizontal: 15 * widget.scale),
               suffixIcon: isDate ? Icon(Icons.calendar_today, size: 18 * widget.scale, color: const Color(0xFF1A1D1F)) : null,
@@ -551,140 +551,121 @@ class _AddComplaintViewState extends State<AddComplaintView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12 * widget.scale,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF1A1D1F),
-              ),
-            ),
-            if (isRequired)
+        Padding(
+          padding: EdgeInsets.only(left: 5 * widget.scale),
+          child: Row(
+            children: [
               Text(
-                " *",
+                label,
                 style: TextStyle(
                   fontSize: 12 * widget.scale,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFFED1A4B),
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1A1D1F),
                 ),
               ),
-          ],
+              if (isRequired)
+                Text(
+                  " *",
+                  style: TextStyle(
+                    fontSize: 12 * widget.scale,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFED1A4B),
+                  ),
+                ),
+            ],
+          ),
         ),
         SizedBox(height: 8 * widget.scale),
-        Container(
-          decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2), // Shadow color
-                  spreadRadius: -6,                     // How far the shadow extends
-                  blurRadius: 6,                      // Softness of the shadow
-                  offset: const Offset(4, 5),        // Offset of the shadow, 2),
-                )
-              ]
-          ),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return Theme(
-                data: Theme.of(context).copyWith(
-                  scrollbarTheme: ScrollbarThemeData(
-                    thumbColor: WidgetStateProperty.all(const Color(0xFF1A1D1F))
-                  ),
-                  iconButtonTheme: IconButtonThemeData(
-                    style: ButtonStyle(
-                      // Set maximum bounds for the inner icon target box
-                      maximumSize: WidgetStateProperty.all(Size(32 * widget.scale, 32 * widget.scale)),
-                      minimumSize: WidgetStateProperty.all(Size(24 * widget.scale, 24 * widget.scale)),
-                      // Completely zero out the padding pushing the splash outwards
-                      padding: WidgetStateProperty.all(EdgeInsets.zero),
-                      splashFactory: NoSplash.splashFactory,
-
-                      // Keep the tap ripple perfectly bounded within the 40px row
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  )
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                scrollbarTheme: ScrollbarThemeData(
+                  thumbColor: WidgetStateProperty.all(const Color(0xFF1A1D1F))
                 ),
-                child: DropdownMenu<String>(
-                  menuHeight: 300 * widget.scale,
-                  width: constraints.maxWidth,
-                  initialSelection: selectedValue,
-                  onSelected: onChanged,
-                  hintText: "Select $label",
-                  requestFocusOnTap: false,
-                  enableSearch: false,
-                  trailingIcon: Icon(Icons.keyboard_arrow_down_rounded,
-                        color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
-
-                  selectedTrailingIcon: Icon(Icons.keyboard_arrow_up_rounded,
-                        color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
-
-
-                  textStyle: TextStyle(
-                    fontSize: 12 * widget.scale,
-                    color: const Color(0xFF1A1D1F),
-                    fontFamily: "Montserrat",
+                iconButtonTheme: IconButtonThemeData(
+                  style: ButtonStyle(
+                    maximumSize: WidgetStateProperty.all(Size(32 * widget.scale, 32 * widget.scale)),
+                    minimumSize: WidgetStateProperty.all(Size(24 * widget.scale, 24 * widget.scale)),
+                    padding: WidgetStateProperty.all(EdgeInsets.zero),
+                    splashFactory: NoSplash.splashFactory,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  inputDecorationTheme: InputDecorationTheme(
-                    isDense: true,
-                    constraints: BoxConstraints(
-                      maxHeight: 50.0 * widget.scale,
-                      minHeight: 50.0 * widget.scale,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12 * widget.scale),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12 * widget.scale),
-                      borderSide: BorderSide(
-                        color: Colors.grey.withValues(alpha: 0.3),
-                        width: 1 * widget.scale,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12 * widget.scale),
-                      borderSide: BorderSide(color: const Color(0xFF1A1D1F), width: 1 * widget.scale),
-                    ),
-                    hintStyle: TextStyle(
-                      color: const Color(0xFF9A9FA5),
-                      fontSize: 12 * widget.scale,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                  horizontal: 15 * widget.scale,
-                  ),
-                  ),
-                  menuStyle: MenuStyle(
-                    elevation: const WidgetStatePropertyAll(0),
-                    backgroundColor: WidgetStateProperty.all(const Color(0xFF1A1D1F)),
-                    surfaceTintColor: WidgetStateProperty.all(Colors.transparent),
-                    shape: WidgetStateProperty.all(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12 * widget.scale),
-                      ),
-                    ),
-                  ),
-                  dropdownMenuEntries: options.map((String value) {
-                    return DropdownMenuEntry<String>(
-                      value: value,
-                      label: value,
-                      labelWidget: Text(
-                        value,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12 * widget.scale,
-                          color: const Color(0xFFFFFDFD),
-                          fontFamily: "Montserrat",
-                        ),
-                      ),
-                    );
-                  }).toList(),
                 )
-              );
-            },
-          ),
+              ),
+              child: DropdownMenu<String>(
+                menuHeight: 300 * widget.scale,
+                width: constraints.maxWidth,
+                initialSelection: selectedValue,
+                onSelected: onChanged,
+                hintText: "Select $label",
+                requestFocusOnTap: false,
+                enableSearch: false,
+                trailingIcon: Icon(Icons.keyboard_arrow_down_rounded,
+                      color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
+                selectedTrailingIcon: Icon(Icons.keyboard_arrow_up_rounded,
+                      color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
+                textStyle: TextStyle(
+                  fontSize: 12 * widget.scale,
+                  color: const Color(0xFF1A1D1F),
+                  fontFamily: "Montserrat",
+                ),
+                inputDecorationTheme: InputDecorationTheme(
+                  isDense: true,
+                  constraints: BoxConstraints(
+                    maxHeight: 50.0 * widget.scale,
+                    minHeight: 50.0 * widget.scale,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF7F5F0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12 * widget.scale),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12 * widget.scale),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12 * widget.scale),
+                    borderSide: BorderSide.none,
+                  ),
+                  hintStyle: TextStyle(
+                    color: const Color(0xFF9A9FA5),
+                    fontSize: 12 * widget.scale,
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 15 * widget.scale,
+                  ),
+                ),
+                menuStyle: MenuStyle(
+                  elevation: const WidgetStatePropertyAll(0),
+                  backgroundColor: WidgetStateProperty.all(const Color(0xFF1A1D1F)),
+                  surfaceTintColor: WidgetStateProperty.all(Colors.transparent),
+                  shape: WidgetStateProperty.all(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12 * widget.scale),
+                    ),
+                  ),
+                ),
+                dropdownMenuEntries: options.map((String value) {
+                  return DropdownMenuEntry<String>(
+                    value: value,
+                    label: value,
+                    labelWidget: Text(
+                      value,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12 * widget.scale,
+                        color: const Color(0xFFFFFDFD),
+                        fontFamily: "Montserrat",
+                      ),
+                    ),
+                  );
+                }).toList(),
+              )
+            );
+          },
         ),
         if (!noBottomPadding) SizedBox(height: 20 * widget.scale),
       ],

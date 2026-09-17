@@ -40,9 +40,9 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
     final viewModel = context.watch<GroceryViewModel>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFAF3),
+      backgroundColor: const Color(0xFFFBF8F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFFAF3),
+        backgroundColor: const Color(0xFFFBF8F5),
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
@@ -51,7 +51,7 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
         title: Text(
           'ALL CATEGORIES',
           style: TextStyle(
-            color: const Color(0xFF325E6A),
+            color: const Color(0xFFB85A3A),
             fontSize: 18 * widget.scale,
             fontWeight: FontWeight.w700,
           ),
@@ -107,7 +107,7 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
                                 child: Icon(
                                   Icons.keyboard_arrow_right,
                                   size: 24 * widget.scale,
-                                  color: const Color(0xFF1A1D1F),
+                                  color: const Color(0xFFB85A3A),
                                 ),
                               ),
                             ],
@@ -149,7 +149,7 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
                                         style: TextStyle(
                                           fontSize: 13 * widget.scale,
                                           fontWeight: FontWeight.w700,
-                                          color: const Color(0xFF325E6A),
+                                          color: const Color(0xFFB85A3A),
                                         ),
                                       ),
                                     ),

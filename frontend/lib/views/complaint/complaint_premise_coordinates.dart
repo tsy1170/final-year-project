@@ -57,9 +57,9 @@ class _ComplaintPremiseCoordinatesViewState extends State<ComplaintPremiseCoordi
             : null;
 
         return Scaffold(
-          backgroundColor: const Color(0xFFFFFAF3),
+          backgroundColor: const Color(0xFFFBF8F5),
           appBar: AppBar(
-            backgroundColor: const Color(0xFFFFFAF3),
+            backgroundColor: const Color(0xFFFBF8F5),
             elevation: 0,
             centerTitle: true,
             surfaceTintColor: Colors.transparent,
@@ -70,9 +70,10 @@ class _ComplaintPremiseCoordinatesViewState extends State<ComplaintPremiseCoordi
             title: Text(
               'PREMISE LOCATION',
               style: TextStyle(
-                color: const Color(0xFF325E6A),
-                fontSize: 16 * widget.scale,
-                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1A1D1F),
+                fontSize: 15 * widget.scale,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0
               ),
             ),
           ),
@@ -98,7 +99,7 @@ class _ComplaintPremiseCoordinatesViewState extends State<ComplaintPremiseCoordi
                       myLocationButtonEnabled: true,
                     ),
                     Positioned(
-                      top: 10 * widget.scale,
+                      top: 20 * widget.scale,
                       left: 10 * widget.scale,
                       right: 10 * widget.scale,
                       child: Container(
@@ -187,15 +188,15 @@ class _ComplaintPremiseCoordinatesViewState extends State<ComplaintPremiseCoordi
           label,
           style: TextStyle(
             fontSize: 10 * widget.scale,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF9A9FA5),
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFFB85A3A),
           ),
         ),
         Text(
           value,
           style: TextStyle(
             fontSize: 14 * widget.scale,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
             color: const Color(0xFF1A1D1F),
           ),
         ),

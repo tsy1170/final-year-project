@@ -149,7 +149,7 @@ class _ChangeEmailViewState extends State<ChangeEmailView> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12 * widget.scale),
-                  borderSide: BorderSide(color: const Color(0xFF325E6A), width: 1 * widget.scale),
+                  borderSide: BorderSide(color: const Color(0xFF1A1D1F), width: 1 * widget.scale),
                 ),
               ),
             ),

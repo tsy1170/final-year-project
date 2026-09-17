@@ -20,10 +20,10 @@ class BottomNavigation extends StatelessWidget {
       height: 60 * scale + bottomPadding,
       padding: EdgeInsets.fromLTRB(10 * scale, 0, 10 * scale, bottomPadding),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFAF3),
+        color: const Color(0xFFFFFDFD),
         border: Border(
           top: BorderSide(
-            color: Colors.grey.withValues(alpha: 0.3),
+            color: const Color(0xFFF2EFEA),
             width: 1 * scale,
           ),
         ),

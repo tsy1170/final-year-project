@@ -44,7 +44,7 @@ class OptimizationItemRow extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
-                    item['item_name'] ?? '',
+                    item['item_name'][0].toUpperCase() + item['item_name'].substring(1).toLowerCase() ?? '',
                     style: TextStyle(
                       fontSize: 12 * scale,
                       fontWeight: FontWeight.w600,

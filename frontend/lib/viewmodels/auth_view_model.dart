@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:local_auth/local_auth.dart';
 import '../services/auth_service.dart';
 
 class AuthViewModel extends ChangeNotifier {
   final AuthService _authService;
   final _storage = const FlutterSecureStorage();
+  final LocalAuthentication _localAuth = LocalAuthentication();
 
   bool _isLoggedIn = false;
   bool get isLoggedIn => _isLoggedIn;
@@ -38,13 +40,47 @@ class AuthViewModel extends ChangeNotifier {
   bool _isUpdating = false;
   bool get isUpdating => _isUpdating;
 
+  bool _isRefreshing = false;
+
+  bool _isBiometricEnabled = false;
+  bool get isBiometricEnabled => _isBiometricEnabled;
+
+  bool _isBiometricSupported = false;
+  bool get isBiometricSupported => _isBiometricSupported;
+
+  bool _isInitialized = false;
+  bool get isInitialized => _isInitialized;
+
   AuthViewModel(this._authService) {
-    _checkLoginStatus();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await Future.wait([
+      _checkLoginStatus(),
+      _checkBiometricSupport(),
+    ]);
+    _isInitialized = true;
+    notifyListeners();
+  }
+
+  Future<void> _checkBiometricSupport() async {
+    try {
+      final bool canAuthenticateWithBiometrics = await _localAuth.canCheckBiometrics;
+      final bool isDeviceSupported = await _localAuth.isDeviceSupported();
+      _isBiometricSupported = canAuthenticateWithBiometrics && isDeviceSupported;
+      
+      final String? enabled = await _storage.read(key: 'is_biometric_enabled');
+      _isBiometricEnabled = enabled == 'true';
+    } catch (e) {
+      _isBiometricSupported = false;
+      debugPrint('Error checking biometric support: $e');
+    }
   }
 
   void handleServiceResponse(int statusCode) {
     if (statusCode == 401) {
-      logout();
+      refreshAccessToken();
     }
   }
 
@@ -55,14 +91,45 @@ class AuthViewModel extends ChangeNotifier {
       try {
         await _fetchAndSetUserInfo(token);
         _isLoggedIn = true;
-        // If we have a cached FCM token, sync it now that login is confirmed
         if (_fcmToken != null) {
           await syncFcmToken(_fcmToken);
         }
       } catch (e) {
-        debugPrint('Auto-login check failed: $e');
-        await logout();
+        debugPrint('Access token expired on startup. Attempting silent refresh...');
+        await refreshAccessToken();
       }
+    }
+  }
+
+  Future<void> refreshAccessToken() async {
+    if (_isRefreshing) return;
+    _isRefreshing = true;
+
+    try {
+      final refreshToken = await _storage.read(key: 'refresh_token');
+      if (refreshToken == null) {
+        throw Exception('No refresh token available');
+      }
+
+      final response = await _authService.refreshToken(refreshToken);
+      final newAccessToken = response['access_token'];
+      
+      _accessToken = newAccessToken;
+      await _storage.write(key: 'access_token', value: newAccessToken);
+      
+      // Populate user info after refreshing token
+      await _fetchAndSetUserInfo(newAccessToken);
+      
+      _isLoggedIn = true;
+      debugPrint('Token refreshed successfully');
+    } catch (e) {
+      debugPrint('Failed to refresh token: $e');
+      // If refresh fails, we clear the session but don't hard logout yet
+      // unless it's a specific refresh failure indicating invalid refresh token.
+      _isLoggedIn = false;
+      _accessToken = null;
+    } finally {
+      _isRefreshing = false;
       notifyListeners();
     }
   }
@@ -82,7 +149,6 @@ class AuthViewModel extends ChangeNotifier {
     await _storage.write(key: 'user_dob', value: _userDob ?? '');
   }
 
-  /// Sets the FCM token and syncs it if the user is already logged in.
   Future<void> setFcmToken(String? token) async {
     _fcmToken = token;
     if (_isLoggedIn && token != null) {
@@ -142,15 +208,15 @@ class AuthViewModel extends ChangeNotifier {
       );
 
       final token = response['access_token'];
+      final refreshToken = response['refresh_token'];
       _accessToken = token;
       await _storage.write(key: 'access_token', value: token);
+      await _storage.write(key: 'refresh_token', value: refreshToken);
 
-      // Fetch full user info right after login
       await _fetchAndSetUserInfo(token);
 
       _isLoggedIn = true;
       
-      // Sync FCM token if we have one
       if (_fcmToken != null) {
         await syncFcmToken(_fcmToken);
       }
@@ -164,8 +230,84 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> logout() async {
-    await _storage.deleteAll();
+  Future<bool> loginWithBiometrics() async {
+    if (!_isBiometricEnabled || !_isBiometricSupported) return false;
+
+    try {
+      final bool authenticated = await _localAuth.authenticate(
+        localizedReason: 'Please authenticate to login',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: true,
+        ),
+      );
+
+      if (authenticated) {
+        _isLoggingIn = true;
+        notifyListeners();
+        
+        await refreshAccessToken();
+
+        if (_isLoggedIn) {
+          if (_fcmToken != null) {
+            await syncFcmToken(_fcmToken);
+          }
+          _isLoggingIn = false;
+          notifyListeners();
+          return true;
+        }
+        
+        _isLoggingIn = false;
+        notifyListeners();
+        return false;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Biometric login failed: $e');
+      _isLoggingIn = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<void> enableBiometrics() async {
+    if (!_isBiometricSupported) return;
+    
+    try {
+      final bool authenticated = await _localAuth.authenticate(
+        localizedReason: 'Confirm to enable biometric login',
+        options: const AuthenticationOptions(stickyAuth: true),
+      );
+
+      if (authenticated) {
+        _isBiometricEnabled = true;
+        await _storage.write(key: 'is_biometric_enabled', value: 'true');
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error enabling biometrics: $e');
+    }
+  }
+
+  Future<void> disableBiometrics() async {
+    _isBiometricEnabled = false;
+    await _storage.write(key: 'is_biometric_enabled', value: 'false');
+    notifyListeners();
+  }
+
+  Future<void> logout({bool hardLogout = false}) async {
+    if (hardLogout) {
+      await _storage.deleteAll();
+      _isBiometricEnabled = false;
+    } else {
+      await _storage.delete(key: 'access_token');
+      await _storage.delete(key: 'user_name');
+      await _storage.delete(key: 'user_nric');
+      await _storage.delete(key: 'user_email');
+      await _storage.delete(key: 'user_phone');
+      await _storage.delete(key: 'user_dob');
+    }
+    
     _isLoggedIn = false;
     _userName = null;
     _userNric = null;
@@ -260,7 +402,7 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       await _authService.updateEmail(_accessToken!, newEmail, currentPassword);
-      await logout();
+      await logout(hardLogout: true);
     } catch (e) {
       rethrow;
     } finally {
@@ -277,7 +419,7 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       await _authService.updatePassword(_accessToken!, newPassword, currentPassword);
-      await logout();
+      await logout(hardLogout: true);
     } catch (e) {
       rethrow;
     } finally {

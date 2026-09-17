@@ -125,6 +125,10 @@ class _AnimatedTopNotificationState extends State<AnimatedTopNotification>
 
 void showTopNotification(BuildContext context, String message, bool status, double scale) {
   final overlay = Overlay.of(context);
+  showTopNotificationOnOverlay(overlay, message, status, scale);
+}
+
+void showTopNotificationOnOverlay(OverlayState overlay, String message, bool status, double scale) {
   late OverlayEntry overlayEntry;
 
   overlayEntry = OverlayEntry(

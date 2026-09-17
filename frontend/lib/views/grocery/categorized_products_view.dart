@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../viewmodels/grocery_view_model.dart';
 import '../../viewmodels/auth_view_model.dart';
 import '../../viewmodels/favourite_view_model.dart';
@@ -66,10 +67,10 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
     final locationViewModel = context.watch<LocationViewModel>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFAF3),
+      backgroundColor: const Color(0xFFFBF8F5),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: const Color(0xFFFFFAF3),
+        backgroundColor: const Color(0xFFFBF8F5),
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFF1A1D1F), size: 20 * widget.scale),
@@ -78,7 +79,7 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
         title: Text(
           widget.category ?? widget.group,
           style: TextStyle(
-            color: const Color(0xFF325E6A),
+            color: const Color(0xFFB85A3A),
             fontSize: 16 * widget.scale,
             fontWeight: FontWeight.w700,
           ),
@@ -100,51 +101,46 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
                         8 * widget.scale,
                         viewModel.hasMoreProducts ? 0 : 20 * widget.scale + MediaQuery.of(context).padding.bottom,
                       ),
-                      sliver: SliverGrid(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 6 * widget.scale,
-                          mainAxisSpacing: 6 * widget.scale,
-                          mainAxisExtent: 310 * widget.scale,
-                        ),
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final product = viewModel.categorizedProducts[index];
-                            final isFavourite = favouriteViewModel.favourites.contains(product.itemCode);
-                            return GroceryCard(
-                              product: product,
-                              scale: widget.scale,
-                              isFavourite: isFavourite,
-                              onFavourite: () {
-                                if (authViewModel.isLoggedIn) {
-                                  favouriteViewModel.toggleFavourite(
-                                    product.itemCode, 
-                                    authViewModel.accessToken!,
-                                    lat: locationViewModel.currentPosition?.latitude,
-                                    lng: locationViewModel.currentPosition?.longitude,
-                                  );
-                                  if (!isFavourite) {
-                                    showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
-                                  }
-                                } else {
-                                  showTopNotification(context, "Please login to add favourites", false, widget.scale);
-                                }
-                              },
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ProductDetailsView(
-                                      itemCode: product.itemCode,
-                                      scale: widget.scale,
-                                    ),
-                                  ),
+                      sliver: SliverMasonryGrid.count(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 10 * widget.scale,
+                        crossAxisSpacing: 10 * widget.scale,
+                        itemBuilder: (context, index) {
+                          final product = viewModel.categorizedProducts[index];
+                          final isFavourite = favouriteViewModel.favourites.contains(product.itemCode);
+                          return GroceryCard(
+                            product: product,
+                            scale: widget.scale,
+                            isFavourite: isFavourite,
+                            onFavourite: () {
+                              if (authViewModel.isLoggedIn) {
+                                favouriteViewModel.toggleFavourite(
+                                  product.itemCode, 
+                                  authViewModel.accessToken!,
+                                  lat: locationViewModel.currentPosition?.latitude,
+                                  lng: locationViewModel.currentPosition?.longitude,
                                 );
-                              },
-                            );
-                          },
-                          childCount: viewModel.categorizedProducts.length,
-                        ),
+                                if (!isFavourite) {
+                                  showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
+                                }
+                              } else {
+                                showTopNotification(context, "Please login to add favourites", false, widget.scale);
+                              }
+                            },
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ProductDetailsView(
+                                    itemCode: product.itemCode,
+                                    scale: widget.scale,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                        childCount: viewModel.categorizedProducts.length,
                       ),
                     ),
                     if (viewModel.hasMoreProducts)

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import '../../../viewmodels/grocery_view_model.dart';
 import '../../../viewmodels/auth_view_model.dart';
 import '../../../viewmodels/favourite_view_model.dart';
@@ -24,25 +25,7 @@ class PromotionSection extends StatefulWidget {
 }
 
 class _PromotionSectionState extends State<PromotionSection> {
-  late PageController _pageController;
-  static const int _infiniteFactor = 1000;
   int _currentPage = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController(
-      viewportFraction: 0.9,
-      initialPage: 10 * (_infiniteFactor ~/ 2),
-    );
-    _currentPage = 0;
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +35,7 @@ class _PromotionSectionState extends State<PromotionSection> {
 
     if (widget.viewModel.isWorthBuyingLoading && worthBuyingProducts.isEmpty) {
       return SizedBox(
-        height: 230 * widget.scale,
+        height: 320 * widget.scale,
         child: const Center(child: CircularProgressIndicator(color: Color(0xFF1A1D1F))),
       );
     }
@@ -64,88 +47,93 @@ class _PromotionSectionState extends State<PromotionSection> {
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(
+            30 * widget.scale,
+            0,
             20 * widget.scale,
-            10 * widget.scale,
-            20 * widget.scale,
-            15 * widget.scale,
+            8 * widget.scale,
           ),
           child: Text(
-            'WORTH BUYING',
+            'DISCOVER',
             style: TextStyle(
-              fontSize: 16 * widget.scale,
-              fontWeight: FontWeight.w700,
+              fontSize: 15 * widget.scale,
+              fontWeight: FontWeight.w800,
               color: const Color(0xFF1A1D1F),
-              letterSpacing: 0,
+              letterSpacing: 1.2,
             ),
           ),
         ),
-        SizedBox(
-          height: 180 * widget.scale,
-          child: PageView.builder(
-            controller: _pageController,
-            onPageChanged: (index) {
+        CarouselSlider.builder(
+          itemCount: worthBuyingProducts.length,
+          options: CarouselOptions(
+            height: 290 * widget.scale,
+            viewportFraction: 0.82,
+            enlargeCenterPage: true,
+            enlargeFactor: 0.2,
+            autoPlay: true,
+            autoPlayInterval: const Duration(seconds: 6),
+            onPageChanged: (index, reason) {
               setState(() {
-                _currentPage = index % worthBuyingProducts.length;
+                _currentPage = index;
               });
             },
-            itemBuilder: (context, index) {
-              final product = worthBuyingProducts[index % worthBuyingProducts.length];
-              final itemCode = product['item_code'] as int;
-              final isFavourite = widget.favouriteViewModel.favourites.contains(itemCode);
-
-              return _PromotionCard(
-                product: product,
-                scale: widget.scale,
-                isFavourite: isFavourite,
-                onFavourite: () {
-                  if (authViewModel.isLoggedIn) {
-                    final token = authViewModel.accessToken;
-                    if (token != null) {
-                      widget.favouriteViewModel.toggleFavourite(
-                        itemCode, 
-                        token,
-                        lat: locationViewModel.currentPosition?.latitude,
-                        lng: locationViewModel.currentPosition?.longitude,
-                      );
-                      if (!isFavourite) {
-                        showTopNotification(
-                          context,
-                          "Successfully Added to Favourites",
-                          true,
-                          widget.scale,
-                        );
-                      }
-                    }
-                  } else {
-                    showTopNotification(
-                      context,
-                      "Please login to add favourites",
-                      false,
-                      widget.scale,
-                    );
-                  }
-                },
-              );
-            },
           ),
+          itemBuilder: (context, index, realIndex) {
+            final product = worthBuyingProducts[index];
+            final itemCode = product['item_code'] as int;
+            final isFavourite = widget.favouriteViewModel.favourites.contains(itemCode);
+
+            return _PromotionCard(
+              product: product,
+              scale: widget.scale,
+              isFavourite: isFavourite,
+              onFavourite: () {
+                if (authViewModel.isLoggedIn) {
+                  final token = authViewModel.accessToken;
+                  if (token != null) {
+                    widget.favouriteViewModel.toggleFavourite(
+                      itemCode,
+                      token,
+                      lat: locationViewModel.currentPosition?.latitude,
+                      lng: locationViewModel.currentPosition?.longitude,
+                    );
+                    if (!isFavourite) {
+                      showTopNotification(
+                        context,
+                        "Successfully Added to Favourites",
+                        true,
+                        widget.scale,
+                      );
+                    }
+                  }
+                } else {
+                  showTopNotification(
+                    context,
+                    "Please login to add favourites",
+                    false,
+                    widget.scale,
+                  );
+                }
+              },
+            );
+          },
         ),
-        SizedBox(height: 10 * widget.scale),
+        SizedBox(height: 15 * widget.scale),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
             worthBuyingProducts.length,
             (index) => AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: EdgeInsets.symmetric(horizontal: 2 * widget.scale),
-              height: 3 * widget.scale,
+              duration: const Duration(milliseconds: 150),
+              margin: EdgeInsets.symmetric(horizontal: 3 * widget.scale),
+              height: 4 * widget.scale,
               width: _currentPage == index
-                  ? 16 * widget.scale
+                  ? 20 * widget.scale
                   : 8 * widget.scale,
               decoration: BoxDecoration(
                 color: _currentPage == index
-                    ? const Color(0xFF1A1D1F)
-                    : const Color(0xFF1A1D1F).withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(0 * widget.scale),
+                    ? const Color(0xFFB85A3A)
+                    : const Color(0xFF1A1D1F).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(2 * widget.scale),
               ),
             ),
           ),
@@ -193,160 +181,138 @@ class _PromotionCard extends StatelessWidget {
         },
         child: Container(
           clipBehavior: Clip.antiAlias,
-          margin: EdgeInsets.fromLTRB(4 * scale, 0, 4 * scale, 14 * scale),
+          margin: EdgeInsets.symmetric(vertical: 8 * scale),
           decoration: BoxDecoration(
             color: Colors.white,
-            border: Border.all(
-              color: Colors.grey.withValues(alpha: 0.3),
-              width: 1 * scale,
-            ),
-            borderRadius: BorderRadius.circular(12 * scale),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2), // Shadow color
-                  spreadRadius: -6,                     // How far the shadow extends
-                  blurRadius: 6,                      // Softness of the shadow
-                  offset: const Offset(0, 10),        // Offset of the shadow, 2),
-                )
-              ]
+            borderRadius: BorderRadius.circular(16 * scale),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 6,
+                offset: const Offset(1, 2),
+              ),
+            ],
           ),
           child: Stack(
             children: [
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 130 * scale,
-                    height: double.infinity,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFFDFD),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(12 * scale),
-                        bottomLeft: Radius.circular(12 * scale),
-                      ),
-                    ),
-                    padding: EdgeInsets.all(2 * scale),
-                    child:
-                    (imageUrl != null && imageUrl.isNotEmpty)
-                        ? Image.network(
-                        imageUrl,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Icon(
-                              Icons.image_not_supported_outlined,
-                              size: 40 * scale,
-                              color: const Color(0xFF9A9FA5),
-                            )
-                    )
-                        : Icon(
-                      Icons.image_outlined,
-                      size: 40 * scale,
-                      color: const Color(0xFF9A9FA5),
-                    ),
-                  ),
+                  // Full-width image header
                   Expanded(
                     child: Container(
-                      padding: EdgeInsets.fromLTRB(
-                        12 * scale,
-                        12 * scale,
-                        15 * scale,
-                        12 * scale,
+                      width: double.infinity,
+                      height: 140 * scale,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
                       ),
+                      padding: EdgeInsets.all(15 * scale),
+                      child: (imageUrl != null && imageUrl.isNotEmpty)
+                          ? Image.network(
+                              imageUrl,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(
+                                    Icons.image_not_supported_outlined,
+                                    size: 40 * scale,
+                                    color: const Color(0xFF9A9FA5),
+                                  )
+                          )
+                          : Icon(
+                              Icons.image_outlined,
+                              size: 40 * scale,
+                              color: const Color(0xFF9A9FA5),
+                            ),
+                    ),
+                  ),
+
+                  // Product Details
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16 * scale, 12 * scale, 16 * scale, 16 * scale),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Expanded(
                                 child: Text(
-                                  itemName,
-                                  maxLines: 2,
+                                  itemName[0].toUpperCase() + itemName.substring(1).toLowerCase(),
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    fontSize: 12 * scale,
-                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14 * scale,
+                                    fontWeight: FontWeight.w800,
                                     color: const Color(0xFF1A1D1F),
                                   ),
                                 ),
                               ),
-                              SizedBox(width: 15 * scale),
-                              Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: onFavourite,
-                                  customBorder: const CircleBorder(),
-                                  child: Icon(
-                                    isFavourite
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
-                                    size: 24 * scale,
-                                    color: isFavourite
-                                        ? const Color(0xFF325E6A)
-                                        : const Color(0xFF1A1D1F),
+                              SizedBox(width: 8 * scale),
+                              Text(
+                                unit,
+                                style: TextStyle(
+                                  fontSize: 11 * scale,
+                                  fontWeight: FontWeight.w500,
+                                  color: const Color(0xFF9A9FA5),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 8 * scale),
+                          Row(
+                            children: [
+                              Icon(Icons.storefront_rounded, size: 14 * scale, color: const Color(0xFFB85A3A)),
+                              SizedBox(width: 6 * scale),
+                              Expanded(
+                                child: Text(
+                                  premiseName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12 * scale,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF9A9FA5),
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          Text(
-                            unit,
-                            style: TextStyle(
-                              fontSize: 11 * scale,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF9A9FA5),
-                            ),
-                          ),
                           const Spacer(),
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      premiseName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 11 * scale,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF1A1D1F),
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          'RM $todayPrice',
-                                          style: TextStyle(
-                                            fontSize: 13 * scale,
-                                            fontWeight: FontWeight.w700,
-                                            color: const Color(0xFF1A1D1F),
-                                          ),
-                                        ),
-                                        if (double.tryParse(priceReduction) != null && double.parse(priceReduction) > 0) ...[
-                                          SizedBox(width: 8 * scale),
-                                          Container(
-                                            padding: EdgeInsets.symmetric(horizontal: 4 * scale, vertical: 1 * scale),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFED1A4B).withValues(alpha: 0.1),
-                                              borderRadius: BorderRadius.circular(4 * scale),
-                                            ),
-                                            child: Text(
-                                              '-RM $priceReduction',
-                                              style: TextStyle(
-                                                fontSize: 10 * scale,
-                                                fontWeight: FontWeight.w700,
-                                                color: const Color(0xFFED1A4B),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ],
+                              Text(
+                                'RM $todayPrice',
+                                style: TextStyle(
+                                  fontSize: 18 * scale,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFFB85A3A),
                                 ),
                               ),
+                              if (double.tryParse(priceReduction) != null && double.parse(priceReduction) > 0)
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 6 * scale),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFEF6F3),
+                                    borderRadius: BorderRadius.circular(10 * scale),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.trending_down_rounded, size: 14 * scale, color: const Color(0xFFB85A3A)),
+                                      SizedBox(width: 4 * scale),
+                                      Text(
+                                        '-RM $priceReduction',
+                                        style: TextStyle(
+                                          fontSize: 12 * scale,
+                                          fontWeight: FontWeight.w800,
+                                          color: const Color(0xFFB85A3A),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                             ],
                           ),
                         ],
@@ -355,27 +321,49 @@ class _PromotionCard extends StatelessWidget {
                   ),
                 ],
               ),
+
+              // Favorite Button Overlay
+              Positioned(
+                top: 12 * scale,
+                right: 12 * scale,
+                child: Material(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    onTap: onFavourite,
+                    customBorder: const CircleBorder(),
+                    child: Padding(
+                      padding: EdgeInsets.all(8 * scale),
+                      child: Icon(
+                        isFavourite ? Icons.favorite : Icons.favorite_border,
+                        size: 20 * scale,
+                        color: isFavourite ? const Color(0xFFB85A3A) : const Color(0xFF1A1D1F),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Deals Badge Overlay
               Positioned(
                 top: 0,
                 left: 0,
                 child: Container(
-                  width: 50 * scale,
+                  padding: EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 6 * scale),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF325E6A),
+                    color: const Color(0xFFB85A3A),
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(11 * scale),
-                      bottomRight: Radius.circular(11 * scale),
+                      topLeft: Radius.circular(16 * scale),
+                      bottomRight: Radius.circular(16 * scale),
                     ),
                   ),
-
-                  padding: EdgeInsets.symmetric(vertical: 1 * scale),
                   child: Text(
-                    'Deals',
-                    textAlign: TextAlign.center,
+                    'HOT DEAL',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 9 * scale,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 10 * scale,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),

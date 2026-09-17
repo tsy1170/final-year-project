@@ -30,33 +30,30 @@ class FavouriteList extends StatelessWidget {
         final product = viewModel.favouriteProducts[index];
         final worthBuyingInfo = viewModel.getWorthBuyingInfo(product.itemCode);
 
-        return Padding(
-          padding: EdgeInsets.only(bottom: 6 * scale),
-          child: FavouriteItemCard(
-            product: product,
-            scale: scale,
-            isFavourite: true,
-            worthBuyingInfo: worthBuyingInfo,
-            onFavourite: () {
-              viewModel.toggleFavourite(
-                product.itemCode, 
-                authViewModel.accessToken!,
-                lat: locationViewModel.currentPosition?.latitude,
-                lng: locationViewModel.currentPosition?.longitude,
-              );
-            },
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ProductDetailsView(
-                    itemCode: product.itemCode,
-                    scale: scale,
-                  ),
+        return FavouriteItemCard(
+          product: product,
+          scale: scale,
+          isFavourite: true,
+          worthBuyingInfo: worthBuyingInfo,
+          onFavourite: () {
+            viewModel.toggleFavourite(
+              product.itemCode,
+              authViewModel.accessToken!,
+              lat: locationViewModel.currentPosition?.latitude,
+              lng: locationViewModel.currentPosition?.longitude,
+            );
+          },
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProductDetailsView(
+                  itemCode: product.itemCode,
+                  scale: scale,
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         );
       },
     );

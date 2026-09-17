@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../viewmodels/auth_view_model.dart';
@@ -9,6 +10,7 @@ import '../widgets/complaint/complaint_delete_button.dart';
 import '../widgets/complaint/complaint_tile.dart';
 import 'add_complaint_view.dart';
 import '../widgets/common/animated_notification.dart';
+import '../widgets/common/mesh_background.dart';
 
 class ComplaintView extends StatefulWidget {
   final double scale;
@@ -44,7 +46,7 @@ class _ComplaintViewState extends State<ComplaintView> {
           backgroundColor: const Color(0xFFFFFDFD),
           surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(1 * widget.scale),
+            borderRadius: BorderRadius.circular(12 * widget.scale),
           ),
           title: Text(
             "CONFIRM DELETE",
@@ -113,17 +115,21 @@ class _ComplaintViewState extends State<ComplaintView> {
     final complaintViewModel = context.watch<ComplaintViewModel>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFAF3),
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFFAF3),
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
+        centerTitle: true,
         title: Text(
           complaintViewModel.isSelectMode ? 'SELECT ITEMS' : 'COMPLAINTS',
           style: TextStyle(
             color: const Color(0xFF1A1D1F),
             fontSize: 18 * widget.scale,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5
           ),
         ),
         actions: [
@@ -142,8 +148,8 @@ class _ComplaintViewState extends State<ComplaintView> {
                     },
               icon: Icon(
                 complaintViewModel.isSelectMode ? Icons.close_rounded : Icons.add_circle_outline_rounded,
-                size: 26 * widget.scale,
-                color: const Color(0xFF325E6A),
+                size: 25 * widget.scale,
+                color: const Color(0xFFB85A3A),
               ),
             ),
           SizedBox(width: 10 * widget.scale),
@@ -151,28 +157,35 @@ class _ComplaintViewState extends State<ComplaintView> {
       ),
       body: Stack(
         children: [
-          !authViewModel.isLoggedIn
-              ? ComplaintLoggedOutState(scale: widget.scale)
-              : complaintViewModel.isLoading && complaintViewModel.userComplaints.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF1A1D1F),
-                      ),
-                    )
-                  : complaintViewModel.userComplaints.isEmpty
-                      ? ComplaintEmptyState(scale: widget.scale)
-                      : RefreshIndicator(
-                          onRefresh: () => complaintViewModel.fetchUserComplaints(authViewModel.accessToken!),
-                          color: const Color(0xFFFFFDFD),
-                          backgroundColor: const Color(0xFF1A1D1F),
-                          child: _buildGroupedComplaintList(complaintViewModel),
-                        ),
-          if (complaintViewModel.isSelectMode && complaintViewModel.selectedComplaintIds.isNotEmpty)
-            ComplaintDeleteButton(
-              scale: widget.scale,
-              itemCount: complaintViewModel.selectedComplaintIds.length,
-              onDeletePressed: () => _showDeleteConfirmationDialog(complaintViewModel, authViewModel.accessToken!),
+          const Positioned.fill(child: MeshBackground()),
+          SafeArea(
+            child: Stack(
+              children: [
+                !authViewModel.isLoggedIn
+                    ? ComplaintLoggedOutState(scale: widget.scale)
+                    : complaintViewModel.isLoading && complaintViewModel.userComplaints.isEmpty
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF1A1D1F),
+                            ),
+                          )
+                        : complaintViewModel.userComplaints.isEmpty
+                            ? ComplaintEmptyState(scale: widget.scale)
+                            : RefreshIndicator(
+                                onRefresh: () => complaintViewModel.fetchUserComplaints(authViewModel.accessToken!),
+                                color: const Color(0xFFFFFDFD),
+                                backgroundColor: const Color(0xFF1A1D1F),
+                                child: _buildGroupedComplaintList(complaintViewModel),
+                              ),
+                if (complaintViewModel.isSelectMode && complaintViewModel.selectedComplaintIds.isNotEmpty)
+                  ComplaintDeleteButton(
+                    scale: widget.scale,
+                    itemCount: complaintViewModel.selectedComplaintIds.length,
+                    onDeletePressed: () => _showDeleteConfirmationDialog(complaintViewModel, authViewModel.accessToken!),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
     );
@@ -187,9 +200,9 @@ class _ComplaintViewState extends State<ComplaintView> {
         parent: AlwaysScrollableScrollPhysics(),
       ),
       padding: EdgeInsets.fromLTRB(
+        20 * widget.scale,
         10 * widget.scale,
-        10 * widget.scale,
-        10 * widget.scale,
+        20 * widget.scale,
         180 * widget.scale,
       ),
       itemCount: sortedDates.length,
@@ -201,34 +214,31 @@ class _ComplaintViewState extends State<ComplaintView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: EdgeInsets.only(top: index == 0 ? 0 : 5 * widget.scale, left: 10 * widget.scale),
+              padding: EdgeInsets.only(top: index == 0 ? 0 : 10 * widget.scale, left: 5 * widget.scale, bottom: 15 * widget.scale),
               child: Text(
                 DateFormat('dd MMMM yyyy').format(date).toUpperCase(),
                 style: TextStyle(
-                  fontSize: 14 * widget.scale,
+                  fontSize: 13 * widget.scale,
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF325E6A),
+                  color: const Color(0xFF9A9FA5),
                   letterSpacing: 1 * widget.scale,
                 ),
               ),
             ),
-            Padding(
-              padding: EdgeInsets.only(top: 15 * widget.scale),
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: complaints.length,
-                separatorBuilder: (context, i) => SizedBox(),
-                itemBuilder: (context, i) {
-                  return ComplaintTile(
-                    complaint: complaints[i],
-                    viewModel: viewModel,
-                    scale: widget.scale,
-                  );
-                },
-              ),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: complaints.length,
+              separatorBuilder: (context, i) => SizedBox(height: 2 * widget.scale),
+              itemBuilder: (context, i) {
+                return ComplaintTile(
+                  complaint: complaints[i],
+                  viewModel: viewModel,
+                  scale: widget.scale,
+                );
+              },
             ),
-            SizedBox(height: 17 * widget.scale),
+            SizedBox(height: 25 * widget.scale),
           ],
         );
       },

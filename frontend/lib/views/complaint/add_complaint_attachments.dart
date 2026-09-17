@@ -163,9 +163,9 @@ class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsVie
     return Consumer<ComplaintViewModel>(
       builder: (context, viewModel, child) {
         return Scaffold(
-          backgroundColor: const Color(0xFFFFFAF3),
+          backgroundColor: const Color(0xFFFBF8F5),
           appBar: AppBar(
-            backgroundColor: const Color(0xFFFFFAF3),
+            backgroundColor: const Color(0xFFFBF8F5),
             elevation: 0,
             centerTitle: true,
             surfaceTintColor: Colors.transparent,
@@ -176,9 +176,10 @@ class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsVie
             title: Text(
               'ATTACHMENTS',
               style: TextStyle(
-                color: const Color(0xFF325E6A),
-                fontSize: 16 * widget.scale,
-                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1A1D1F),
+                fontSize: 15 * widget.scale,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0
               ),
             ),
           ),
@@ -204,17 +205,17 @@ class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsVie
                     height: 150 * widget.scale,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(1 * widget.scale),
-                      border: Border.all(
-                        color: Colors.grey.withValues(alpha: 0.3),
-                        width: 1 * widget.scale,
-                      ),
+                      borderRadius: BorderRadius.circular(12 * widget.scale),
+                      // border: Border.all(
+                      //   color: Colors.grey.withValues(alpha: 0.3),
+                      //   width: 1 * widget.scale,
+                      // ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2), // Shadow color
+                            color: Colors.black.withValues(alpha: 0.08), // Shadow color
                             spreadRadius: -6,                     // How far the shadow extends
-                            blurRadius: 6,                      // Softness of the shadow
-                            offset: const Offset(4, 5),        // Offset of the shadow, 2),
+                            blurRadius: 10,                      // Softness of the shadow
+                            offset: const Offset(1, 5),        // Offset of the shadow, 2),
                           )
                         ]
                     ),
@@ -224,14 +225,14 @@ class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsVie
                         Icon(
                           Icons.camera_alt_outlined,
                           size: 35 * widget.scale,
-                          color: const Color(0xFF1A1D1F),
+                          color: const Color(0xFFB85A3A),
                         ),
                         SizedBox(height: 10 * widget.scale),
                         Text(
-                          "Take a Picture",
+                          "TAKE PICTURES",
                           style: TextStyle(
-                            fontSize: 14 * widget.scale,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 12 * widget.scale,
+                            fontWeight: FontWeight.w700,
                             color: const Color(0xFF1A1D1F),
                           ),
                         ),
@@ -268,7 +269,7 @@ class _ComplaintAddAttachmentsViewState extends State<ComplaintAddAttachmentsVie
                         children: [
                           Container(
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(1 * widget.scale),
+                              borderRadius: BorderRadius.circular(12 * widget.scale),
                               border: Border.all(
                                 color: const Color(0xFF1A1D1F).withValues(alpha: 0.1),
                               ),

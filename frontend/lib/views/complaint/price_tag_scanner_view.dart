@@ -221,7 +221,7 @@ class _PriceTagScannerViewState extends State<PriceTagScannerView> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFFAF3),
+        backgroundColor: const Color(0xFFFBF8F5),
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,

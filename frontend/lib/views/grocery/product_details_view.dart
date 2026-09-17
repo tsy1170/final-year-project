@@ -30,6 +30,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       final location = context.read<LocationViewModel>();
       context.read<GroceryViewModel>().loadProductDetails(
         itemCode: widget.itemCode,
@@ -54,12 +55,13 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12 * widget.scale)),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16 * widget.scale)),
         title: Text(
           'Set Price Notification',
           style: TextStyle(
             fontSize: 18 * widget.scale, 
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w800,
             color: const Color(0xFF1A1D1F),
           )
         ),
@@ -71,7 +73,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
               'Enter your target price:', 
               style: TextStyle(fontSize: 14 * widget.scale, color: const Color(0xFF1A1D1F))
             ),
-            SizedBox(height: 12 * widget.scale),
+            SizedBox(height: 16 * widget.scale),
             TextField(
               controller: priceController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -80,15 +82,17 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
               ],
               autofocus: true,
-              style: TextStyle(fontSize: 16 * widget.scale),
+              style: TextStyle(fontSize: 16 * widget.scale, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
+                filled: true,
+                fillColor: const Color(0xFFF7F5F0),
                 prefixText: 'RM ',
+                prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFB85A3A)),
                 hintText: '0.00',
-                contentPadding: EdgeInsets.symmetric(horizontal: 12 * widget.scale, vertical: 8 * widget.scale),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8 * widget.scale)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8 * widget.scale),
-                  borderSide: const BorderSide(color: Color(0xFF325E6A), width: 1.5),
+                contentPadding: EdgeInsets.symmetric(horizontal: 15 * widget.scale, vertical: 12 * widget.scale),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12 * widget.scale),
+                  borderSide: BorderSide.none
                 ),
               ),
             ),
@@ -97,7 +101,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey, fontSize: 14 * widget.scale)),
+            child: Text('CANCEL', style: TextStyle(color: const Color(0xFF9A9FA5), fontSize: 13 * widget.scale, fontWeight: FontWeight.w700)),
           ),
           TextButton(
             onPressed: () async {
@@ -125,7 +129,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                 }
               }
             },
-            child: Text('Set', style: TextStyle(color: const Color(0xFF1A1D1F), fontSize: 14 * widget.scale, fontWeight: FontWeight.w700)),
+            child: Text('SET ALERT', style: TextStyle(color: const Color(0xFFB85A3A), fontSize: 13 * widget.scale, fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -141,9 +145,9 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
     final details = viewModel.selectedProductDetails;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFDFD),
+      backgroundColor: const Color(0xFFFBF8F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFFDFD),
+        backgroundColor: const Color(0xFFFBF8F5),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -156,11 +160,12 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          details?['item']?.name ?? (viewModel.isDetailsLoading ? 'Loading...' : 'Error'),
+          'PRODUCT DETAILS',
           style: TextStyle(
             color: const Color(0xFF1A1D1F),
-            fontSize: 13 * widget.scale,
-            fontWeight: FontWeight.w600,
+            fontSize: 14 * widget.scale,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.0,
           ),
         ),
         actions: [
@@ -168,7 +173,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
             IconButton(
               icon: Icon(
                 Icons.map_outlined,
-                color: const Color(0xFF325E6A),
+                color: const Color(0xFFB85A3A),
                 size: 24 * widget.scale,
               ),
               onPressed: () {
@@ -229,7 +234,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(1 * widget.scale),
+                            borderRadius: BorderRadius.circular(12 * widget.scale),
                           ),
                         ),
                         child: const Text('RETRY', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -240,135 +245,226 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
               ),
             )
           : SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 300 * widget.scale,
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(15 * widget.scale, 15 * widget.scale, 15 * widget.scale, 40 * widget.scale),
+                child: Container(
+                  width: double.infinity,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
                     color: Colors.white,
-                    child: details['item'].imageUrl != null
-                        ? Image.network(
-                            details['item'].imageUrl,
-                            fit: BoxFit.contain,
-                          )
-                        : Icon(
-                            Icons.image,
-                            size: 100 * widget.scale,
-                            color: Colors.grey,
-                          ),
+                    borderRadius: BorderRadius.circular(24 * widget.scale),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
-                  Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Product Hero: Horizontal split layout
                       Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          20 * widget.scale,
-                          15 * widget.scale,
-                          20 * widget.scale,
-                          10 * widget.scale,
-                        ),
-                        child: Column(
+                        padding: EdgeInsets.all(16 * widget.scale),
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            // Left side: Product Image Area with Edit icon in top-right corner
+                            Stack(
                               children: [
-                                Expanded(
-                                  child: Text(
-                                    details['item'].name,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 20 * widget.scale,
-                                      fontWeight: FontWeight.w700,
-                                      color: const Color(0xFF1A1D1F),
-                                    ),
+                                Container(
+                                  width: 120 * widget.scale,
+                                  height: 120 * widget.scale,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16 * widget.scale),
+                                    border: Border.all(
+                                      color: const Color(0xFFF2EFEA),
+                                      width: 1 * widget.scale
+                                    )
                                   ),
+                                  padding: EdgeInsets.all(12 * widget.scale),
+                                  child: details['item'].imageUrl != null
+                                      ? Image.network(
+                                          details['item'].imageUrl,
+                                          fit: BoxFit.contain,
+                                        )
+                                      : Icon(
+                                          Icons.image,
+                                          size: 50 * widget.scale,
+                                          color: Colors.grey,
+                                        ),
                                 ),
-                                SizedBox(width: 10 * widget.scale),
-                                IconButton(
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  visualDensity: VisualDensity.compact,
-                                  alignment: Alignment.center,
-                                  icon: Icon(
-                                    Icons.edit_notifications_outlined,
-                                    color: const Color(0xFF325E6A),
-                                    size: 26 * widget.scale,
-                                  ),
-                                  onPressed: () => _showPriceAlertDialog(
-                                      context,
-                                      locationViewModel.currentPosition?.latitude ?? 5.356,
-                                      locationViewModel.currentPosition?.longitude ?? 100.301
+                                Positioned(
+                                  top: 6 * widget.scale,
+                                  right: 6 * widget.scale,
+                                  child: GestureDetector(
+                                    onTap: () => _showPriceAlertDialog(
+                                        context,
+                                        locationViewModel.currentPosition?.latitude ?? 5.356,
+                                        locationViewModel.currentPosition?.longitude ?? 100.301
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.9),
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.05),
+                                            blurRadius: 4,
+                                          ),
+                                        ],
+                                      ),
+                                      padding: EdgeInsets.all(6 * widget.scale),
+                                      child: Icon(
+                                        Icons.edit_notifications_outlined,
+                                        color: const Color(0xFFB85A3A),
+                                        size: 18 * widget.scale,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            Text(
-                              details['item'].unit,
-                              style: TextStyle(
-                                fontSize: 16 * widget.scale,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF1A1D1F),
+                            SizedBox(width: 16 * widget.scale),
+                            // Right side: title and unit info stacked
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  SizedBox(height: 4 * widget.scale),
+                                  Text(
+                                    details['item'].name,
+                                    style: TextStyle(
+                                      fontSize: 18 * widget.scale,
+                                      fontWeight: FontWeight.w800,
+                                      color: const Color(0xFF1A1D1F),
+                                      letterSpacing: -0.5,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                  SizedBox(height: 6 * widget.scale),
+                                  Text(
+                                    details['item'].unit,
+                                    style: TextStyle(
+                                      fontSize: 14 * widget.scale,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF9A9FA5),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                      SizedBox(height: 30 * widget.scale),
+
+                      // Delicate warm divider line between Product Hero and Price Overview
+                      // Divider(
+                      //   height: 1,
+                      //   thickness: 1,
+                      //   color: const Color(0xFFF2EFEA),
+                      // ),
+
+                      // Price Overview Section embedded in a tinted dashboard box (#F7F5F0)
                       Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 45 * widget.scale,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              color: const Color(0xFF1A1D1F),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: 5 * widget.scale,
+                        padding: EdgeInsets.only(left: 20 * widget.scale, right: 20 * widget.scale, bottom: 10 * widget.scale, top: 2 * widget.scale),
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(12 * widget.scale),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16 * widget.scale),
+                          ),
+                          child: Column(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEF6F3),
+                                  borderRadius: BorderRadius.circular(20 * widget.scale)
                                 ),
-                                child: Center(
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 20 * widget.scale, vertical: 5 * widget.scale),
                                   child: Text(
-                                    "Overview",
+                                    "PRICE OVERVIEW",
                                     style: TextStyle(
-                                      fontSize: 18 * widget.scale,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFFFFFDFD),
+                                      fontSize: 10 * widget.scale,
+                                      fontWeight: FontWeight.w800,
+                                      color: const Color(0xFFB85A3A),
+                                      letterSpacing: 1.2,
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                            SizedBox(height: 10 * widget.scale),
-                            _buildSummaryItem(
-                              "Lowest",
-                              details['price_summary']['lowest_price'],
-                              Colors.green,
-                            ),
-                            _buildSummaryItem(
-                              "Average",
-                              details['price_summary']['average_price'],
-                              Colors.orange,
-                            ),
-                            _buildSummaryItem(
-                              "Highest",
-                              details['price_summary']['highest_price'],
-                              Colors.red,
-                            ),
-                          ],
+                              SizedBox(height: 16 * widget.scale),
+                              Row(
+                                children: [
+                                  _buildMetricColumn(
+                                    "Lowest",
+                                    details['price_summary']['lowest_price'],
+                                    Colors.green
+                                  ),
+                                  _buildMetricDivider(),
+                                  _buildMetricColumn(
+                                    "Average",
+                                    details['price_summary']['average_price'],
+                                    Colors.orange
+                                  ),
+                                  _buildMetricDivider(),
+                                  _buildMetricColumn(
+                                    "Highest",
+                                    details['price_summary']['highest_price'],
+                                    Colors.red
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      SizedBox(height: 30 * widget.scale),
-                      _buildPriceSection("Low Prices", details['stores'], "low"),
-                      _buildPriceSection("Medium Prices", details['stores'], "medium"),
-                      _buildPriceSection("High Prices", details['stores'], "high"),
-                      SizedBox(height: 30 * widget.scale),
+
+                      SizedBox(height: 10 * widget.scale),
+
+                      // Delicate warm divider line between Product Hero and Price Overview
+                      Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: const Color(0xFFF2EFEA),
+                      ),
+
+                      // Store Listings Section
+                      () {
+                        final sections = <Widget>[];
+                        final lowSection = _buildPriceSection("Low Prices", details['stores'], "low");
+                        final medSection = _buildPriceSection("Medium Prices", details['stores'], "medium");
+                        final highSection = _buildPriceSection("High Prices", details['stores'], "high");
+                        
+                        if (details['stores'].where((s) => s.priceLevel == 'low').isNotEmpty) {
+                          sections.add(lowSection);
+                        }
+                        if (details['stores'].where((s) => s.priceLevel == 'medium').isNotEmpty) {
+                          if (sections.isNotEmpty) {
+                            sections.add(Divider(height: 1, thickness: 1, color: const Color(0xFFF2EFEA)));
+                          }
+                          sections.add(medSection);
+                        }
+                        if (details['stores'].where((s) => s.priceLevel == 'high').isNotEmpty) {
+                          if (sections.isNotEmpty) {
+                            sections.add(Divider(height: 1, thickness: 1, color: const Color(0xFFF2EFEA)));
+                          }
+                          sections.add(highSection);
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: sections,
+                        );
+                      }(),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
       bottomNavigationBar: details == null
@@ -376,11 +472,11 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
           : Container(
               height: 60 * widget.scale + MediaQuery.of(context).padding.bottom,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFDFD),
+                color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    offset: const Offset(0, -2),
+                    color: Colors.black.withValues(alpha: 0.05),
+                    offset: const Offset(0, -4),
                     blurRadius: 10,
                   ),
                 ],
@@ -418,18 +514,19 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                               : Icons.favorite_border,
                           size: 24 * widget.scale,
                           color: favouriteViewModel.favourites.contains(details['item'].itemCode)
-                              ? const Color(0xFF325E6A)
+                              ? const Color(0xFFB85A3A)
                               : const Color(0xFF1A1D1F),
                         ),
-                        SizedBox(width: 8 * widget.scale),
+                        SizedBox(width: 10 * widget.scale),
                         Text(
                           favouriteViewModel.favourites.contains(details['item'].itemCode)
-                              ? "In Favourites"
-                              : "Add to Favourites",
+                              ? "IN FAVOURITES"
+                              : "ADD TO FAVOURITES",
                           style: TextStyle(
                             color: const Color(0xFF1A1D1F),
-                            fontSize: 16 * widget.scale,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 14 * widget.scale,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ],
@@ -441,44 +538,54 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
     );
   }
 
-  Widget _buildSummaryItem(String label, dynamic price, Color color) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 10 * widget.scale),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildMetricColumn(String label, dynamic price, Color color) {
+    return Expanded(
+      child: Column(
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(7 * widget.scale, 0, 8 * widget.scale, 0),
-                child: Container(
-                  width: 4 * widget.scale,
-                  height: 15 * widget.scale,
-                  decoration: BoxDecoration(color: color),
+              Container(
+                width: 6 * widget.scale,
+                height: 6 * widget.scale,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
                 ),
               ),
+              SizedBox(width: 6 * widget.scale),
               Text(
-                label,
+                label.toUpperCase(),
                 style: TextStyle(
-                  fontSize: 14 * widget.scale,
-                  color: const Color(0xFF1A1D1F),
-                  fontWeight: FontWeight.w600,
+                  fontSize: 10 * widget.scale,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF9A9FA5),
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
           ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(0, 0, 7 * widget.scale, 0),
-            child: Text(
-              "RM ${(price as num).toStringAsFixed(2)}",
-              style: TextStyle(
-                fontSize: 16 * widget.scale,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF1A1D1F),
-              ),
+          SizedBox(height: 6 * widget.scale),
+          Text(
+            "RM ${(price as num).toStringAsFixed(2)}",
+            style: TextStyle(
+              fontSize: 15 * widget.scale,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF1A1D1F),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMetricDivider() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 5 * widget.scale),
+      child: Container(
+        width: 1,
+        height: 30 * widget.scale,
+        color: Colors.grey.withValues(alpha: 0.2),
       ),
     );
   }
@@ -488,45 +595,59 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
     if (stores.isEmpty) return const SizedBox.shrink();
 
     Color levelColor = level == 'low' ? Colors.green : (level == 'medium' ? Colors.orange : Colors.red);
+    String badgeText = "$title • ${stores.length} store${stores.length > 1 ? 's' : ''} found";
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: Colors.black.withOpacity(0.1), width: 1 * widget.scale),
-              bottom: BorderSide(color: Colors.black.withOpacity(0.1), width: 1 * widget.scale),
-            ),
-          ),
-          padding: EdgeInsets.symmetric(horizontal: 20 * widget.scale, vertical: 25 * widget.scale),
+        // Badge Header
+        Padding(
+          padding: EdgeInsets.fromLTRB(20 * widget.scale, 15 * widget.scale, 20 * widget.scale, 10 * widget.scale),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 4 * widget.scale,
-                height: 18 * widget.scale,
-                decoration: BoxDecoration(color: levelColor),
+                width: 8 * widget.scale,
+                height: 8 * widget.scale,
+                decoration: BoxDecoration(
+                  color: levelColor,
+                  shape: BoxShape.circle,
+                ),
               ),
               SizedBox(width: 8 * widget.scale),
               Text(
-                title,
+                badgeText.toUpperCase(),
                 style: TextStyle(
-                  fontSize: 16 * widget.scale,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1A1D1F),
+                  fontSize: 11 * widget.scale,
+                  fontWeight: FontWeight.w800,
+                  color: levelColor,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
           ),
         ),
-        Column(
-          children: stores.map((store) => _buildStoreTile(store, levelColor)).toList(),
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
+          itemCount: stores.length,
+          separatorBuilder: (context, index) => SizedBox(
+            height: 0,
+          ),
+          itemBuilder: (context, index) => _buildStoreTile(
+            stores[index],
+            levelColor,
+            isFirst: false,
+            isLast: false
+          ),
         ),
+        SizedBox(height: 10 * widget.scale),
       ],
     );
   }
 
-  Widget _buildStoreTile(StorePrice store, Color levelColor) {
+  Widget _buildStoreTile(StorePrice store, Color levelColor, {required bool isFirst, required bool isLast}) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -544,41 +665,60 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
             if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Could not open maps")));
           }
         },
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.fromLTRB(40 * widget.scale, 20 * widget.scale, 20 * widget.scale, 20 * widget.scale),
-          child: Row(
+        child: Padding(
+          padding: EdgeInsets.all(20 * widget.scale),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            store.premiseName,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 14 * widget.scale, fontWeight: FontWeight.w600, color: const Color(0xFF1A1D1F)),
-                          ),
-                        ),
-                        Icon(Icons.location_on, size: 23 * widget.scale, color: const Color(0xFF325E6A)),
-                      ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      store.premiseName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13 * widget.scale,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1A1D1F)
+                      ),
                     ),
-                    SizedBox(height: 2 * widget.scale),
-                    Text("${store.distance.toStringAsFixed(2)} km away", style: TextStyle(fontSize: 12 * widget.scale, fontWeight: FontWeight.w400, color: const Color(0xFF1A1D1F))),
-                    SizedBox(height: 15 * widget.scale),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("Updated on: ${store.priceDate}", style: TextStyle(fontSize: 12 * widget.scale, color: Colors.grey)),
-                        Text("RM ${store.price.toStringAsFixed(2)}", style: TextStyle(fontSize: 14 * widget.scale, fontWeight: FontWeight.w600, color: levelColor)),
-                      ],
+                  ),
+                  SizedBox(width: 10 * widget.scale),
+                  Text(
+                    "RM ${store.price.toStringAsFixed(2)}",
+                    style: TextStyle(
+                      fontSize: 16 * widget.scale, 
+                      fontWeight: FontWeight.w700,
+                      color: levelColor
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10 * widget.scale),
+              Row(
+                children: [
+                  Icon(Icons.location_on_outlined, size: 14 * widget.scale, color: const Color(0xFF9A9FA5)),
+                  SizedBox(width: 4 * widget.scale),
+                  Text(
+                    "${store.distance.toStringAsFixed(2)} km away", 
+                    style: TextStyle(
+                      fontSize: 12 * widget.scale, 
+                      fontWeight: FontWeight.w500, 
+                      color: const Color(0xFF9A9FA5)
+                    )
+                  ),
+                  const Spacer(),
+                  Text(
+                    store.priceDate, 
+                    style: TextStyle(
+                      fontSize: 11 * widget.scale, 
+                      color: const Color(0xFF9A9FA5)
+                    )
+                  ),
+                ],
               ),
             ],
           ),

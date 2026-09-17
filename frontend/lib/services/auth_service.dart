@@ -84,6 +84,24 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    final url = Uri.parse('$baseUrl/users/refresh-token');
+    
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'refresh_token': refreshToken}),
+    );
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception(_parseError(response.body, 'Failed to refresh token'));
+    }
+  }
+
   Future<Map<String, dynamic>> getCurrentUser(String token) async {
     final url = Uri.parse('$baseUrl/users/me');
     final response = await http.get(

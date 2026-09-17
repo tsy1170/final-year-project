@@ -14,10 +14,7 @@ import '../widgets/common/custom_button.dart';
 class ComplaintSummaryView extends StatelessWidget {
   final double scale;
 
-  const ComplaintSummaryView({
-    super.key,
-    required this.scale,
-  });
+  const ComplaintSummaryView({super.key, required this.scale});
 
   String _formatPrice(String price) {
     final double? value = double.tryParse(price);
@@ -131,32 +128,40 @@ class ComplaintSummaryView extends StatelessWidget {
 
   Future<void> _sendEmail(BuildContext context, Complaint complaint) async {
     final complaintVM = Provider.of<ComplaintViewModel>(context, listen: false);
-    final String subject = 'ADUAN: ${complaint.category} - ${complaint.premiseName} - ${complaint.state ?? "-"}';
+    final String subject =
+        'ADUAN: ${complaint.category} - ${complaint.premiseName} - ${complaint.state ?? "-"}';
 
     showTopNotification(context, "Preparing attachments...", true, scale);
 
     // Get local paths — works for both local files and downloaded URLs
-    final List<String> attachmentPaths = await complaintVM.getLocalAttachmentPaths();
-    
+    final List<String> attachmentPaths = await complaintVM
+        .getLocalAttachmentPaths();
+
     final StringBuffer body = StringBuffer();
     body.writeln('Notes');
-    body.writeln(complaint.description?.isEmpty ?? true ? "No description provided." : complaint.description);
+    body.writeln(
+      complaint.description?.isEmpty ?? true
+          ? "No description provided."
+          : complaint.description,
+    );
 
     body.writeln('COMPLAINT CATEGORY');
     body.writeln('Category: ${complaint.category}');
     body.writeln('Product Name: ${complaint.productName}');
     body.writeln('Product Price: RM ${_formatPrice(complaint.productPrice)}');
     body.writeln('Loss Amount: RM ${_formatPrice(complaint.lossAmount)}');
-    body.writeln('Date Issue: ${DateFormat('dd/MM/yyyy').format(complaint.dateIssue)}');
+    body.writeln(
+      'Date Issue: ${DateFormat('dd/MM/yyyy').format(complaint.dateIssue)}',
+    );
     body.writeln();
-    
+
     body.writeln('PERSONAL INFORMATION');
     body.writeln('Full Name: ${complaint.fullName ?? "-"}');
     body.writeln('NRIC: ${complaint.nric ?? "-"}');
     body.writeln('Phone No: ${complaint.phoneNo ?? "-"}');
     body.writeln('Email: ${complaint.email ?? "-"}');
     body.writeln();
-    
+
     body.writeln('PREMISE INFORMATION');
     body.writeln('Premise Type: ${complaint.premiseType}');
     body.writeln('Premise Name: ${complaint.premiseName}');
@@ -165,12 +170,14 @@ class ComplaintSummaryView extends StatelessWidget {
     body.writeln('District: ${complaint.district ?? "-"}');
     body.writeln('State: ${complaint.state ?? "-"}');
     body.writeln();
-    
+
     if (complaint.latitude != null && complaint.longitude != null) {
       body.writeln('LOCATION');
       body.writeln('Latitude: ${complaint.latitude}');
       body.writeln('Longitude: ${complaint.longitude}');
-      body.writeln('Map Link: https://www.google.com/maps/search/?api=1&query=${complaint.latitude},${complaint.longitude}');
+      body.writeln(
+        'Map Link: https://www.google.com/maps/search/?api=1&query=${complaint.latitude},${complaint.longitude}',
+      );
       body.writeln();
     }
 
@@ -186,18 +193,29 @@ class ComplaintSummaryView extends StatelessWidget {
       await FlutterEmailSender.send(email);
     } catch (e) {
       if (context.mounted) {
-        showTopNotification(context, "Error opening email app: $e", false, scale);
+        showTopNotification(
+          context,
+          "Error opening email app: $e",
+          false,
+          scale,
+        );
       }
     }
   }
 
   Future<void> _sendWhatsApp(BuildContext context, Complaint complaint) async {
     final complaintVM = Provider.of<ComplaintViewModel>(context, listen: false);
-    
+
     // Save images to gallery so user can see them in their phone's Gallery
-    if (complaint.attachments.isNotEmpty || complaint.attachmentUrls.isNotEmpty) {
+    if (complaint.attachments.isNotEmpty ||
+        complaint.attachmentUrls.isNotEmpty) {
       try {
-        showTopNotification(context, "Saving images to Gallery...", true, scale);
+        showTopNotification(
+          context,
+          "Saving images to Gallery...",
+          true,
+          scale,
+        );
         await complaintVM.saveAttachmentsToGallery();
       } catch (e) {
         debugPrint("Gallery save error: $e");
@@ -207,23 +225,29 @@ class ComplaintSummaryView extends StatelessWidget {
 
     final StringBuffer text = StringBuffer();
     text.writeln('*Notes*');
-    text.writeln(complaint.description?.isEmpty ?? true ? "No description provided." : complaint.description);
+    text.writeln(
+      complaint.description?.isEmpty ?? true
+          ? "No description provided."
+          : complaint.description,
+    );
 
     text.writeln('*COMPLAINT CATEGORY*');
     text.writeln('Category: ${complaint.category}');
     text.writeln('Product Name: ${complaint.productName}');
     text.writeln('Product Price: RM ${_formatPrice(complaint.productPrice)}');
     text.writeln('Loss Amount: RM ${_formatPrice(complaint.lossAmount)}');
-    text.writeln('Date Issue: ${DateFormat('dd/MM/yyyy').format(complaint.dateIssue)}');
+    text.writeln(
+      'Date Issue: ${DateFormat('dd/MM/yyyy').format(complaint.dateIssue)}',
+    );
     text.writeln();
-    
+
     text.writeln('*PERSONAL INFORMATION*');
     text.writeln('Full Name: ${complaint.fullName ?? "-"}');
     text.writeln('NRIC: ${complaint.nric ?? "-"}');
     text.writeln('Phone No: ${complaint.phoneNo ?? "-"}');
     text.writeln('Email: ${complaint.email ?? "-"}');
     text.writeln();
-    
+
     text.writeln('*PREMISE INFORMATION*');
     text.writeln('Premise Type: ${complaint.premiseType}');
     text.writeln('Premise Name: ${complaint.premiseName}');
@@ -232,12 +256,14 @@ class ComplaintSummaryView extends StatelessWidget {
     text.writeln('District: ${complaint.district ?? "-"}');
     text.writeln('State: ${complaint.state ?? "-"}');
     text.writeln();
-    
+
     if (complaint.latitude != null && complaint.longitude != null) {
       text.writeln('*LOCATION*');
       text.writeln('Latitude: ${complaint.latitude}');
       text.writeln('Longitude: ${complaint.longitude}');
-      text.writeln('Map Link: https://www.google.com/maps/search/?api=1&query=${complaint.latitude},${complaint.longitude}');
+      text.writeln(
+        'Map Link: https://www.google.com/maps/search/?api=1&query=${complaint.latitude},${complaint.longitude}',
+      );
       text.writeln();
     }
 
@@ -251,12 +277,22 @@ class ComplaintSummaryView extends StatelessWidget {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         if (context.mounted) {
-          showTopNotification(context, "WhatsApp is not installed.", false, scale);
+          showTopNotification(
+            context,
+            "WhatsApp is not installed.",
+            false,
+            scale,
+          );
         }
       }
     } catch (e) {
       if (context.mounted) {
-        showTopNotification(context, "Error opening WhatsApp: $e", false, scale);
+        showTopNotification(
+          context,
+          "Error opening WhatsApp: $e",
+          false,
+          scale,
+        );
       }
     }
   }
@@ -322,9 +358,9 @@ class ComplaintSummaryView extends StatelessWidget {
         final complaint = complaintVM.complaint;
 
         return Scaffold(
-          backgroundColor: const Color(0xFFFFFAF3),
+          backgroundColor: const Color(0xFFFBF8F5),
           appBar: AppBar(
-            backgroundColor: const Color(0xFFFFFAF3),
+            backgroundColor: const Color(0xFFFBF8F5),
             elevation: 0,
             centerTitle: true,
             surfaceTintColor: Colors.transparent,
@@ -343,7 +379,8 @@ class ComplaintSummaryView extends StatelessWidget {
               style: TextStyle(
                 color: const Color(0xFF1A1D1F),
                 fontSize: 16 * scale,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0
               ),
             ),
             actions: [
@@ -375,7 +412,7 @@ class ComplaintSummaryView extends StatelessWidget {
                   onPressed: () => _showConfirmationDialog(context),
                   icon: Icon(
                     Icons.save,
-                    color: const Color(0xFF1A1D1F),
+                    color: const Color(0xFFB85A3A),
                     size: 23 * scale,
                   ),
                 ),
@@ -394,20 +431,23 @@ class ComplaintSummaryView extends StatelessWidget {
                     "Product Price",
                     "RM ${_formatPrice(complaint.productPrice)}",
                   ),
-                  _buildInfoRow("Loss Amount", "RM ${_formatPrice(complaint.lossAmount)}"),
+                  _buildInfoRow(
+                    "Loss Amount",
+                    "RM ${_formatPrice(complaint.lossAmount)}",
+                  ),
                   _buildInfoRow(
                     "Date Issue",
                     DateFormat('dd/MM/yyyy').format(complaint.dateIssue),
                   ),
                 ]),
-                SizedBox(height: 45 * scale),
+                SizedBox(height: 30 * scale),
                 _buildSection("YOUR INFORMATION", [
                   _buildInfoRow("Full Name", complaint.fullName ?? "-"),
                   _buildInfoRow("NRIC", complaint.nric ?? "-"),
                   _buildInfoRow("Phone No", complaint.phoneNo ?? "-"),
                   _buildInfoRow("Email", complaint.email ?? "-"),
                 ]),
-                SizedBox(height: 45 * scale),
+                SizedBox(height: 30 * scale),
                 _buildSection("PREMISE INFORMATION", [
                   _buildInfoRow("Premise Type", complaint.premiseType),
                   _buildInfoRow("Premise Name", complaint.premiseName),
@@ -416,17 +456,17 @@ class ComplaintSummaryView extends StatelessWidget {
                   _buildInfoRow("District", complaint.district ?? "-"),
                   _buildInfoRow("State", complaint.state ?? "-"),
                 ]),
-                SizedBox(height: 45 * scale),
+                SizedBox(height: 30 * scale),
                 _buildSection("PREMISE LOCATION", [
                   if (complaint.latitude != null &&
                       complaint.longitude != null) ...[
                     Container(
-                      height: 150 * scale,
+                      height: 180 * scale,
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(1 * scale),
+                        borderRadius: BorderRadius.circular(16 * scale),
                         border: Border.all(
-                          color: const Color(0xFF1A1D1F).withValues(alpha: 0.1),
+                          color: const Color(0xFF1A1D1F).withValues(alpha: 0.05),
                         ),
                       ),
                       clipBehavior: Clip.antiAlias,
@@ -453,7 +493,7 @@ class ComplaintSummaryView extends StatelessWidget {
                         myLocationButtonEnabled: false,
                       ),
                     ),
-                    SizedBox(height: 12 * scale),
+                    SizedBox(height: 20 * scale),
                     _buildInfoRow(
                       "Latitude",
                       complaint.latitude!.toStringAsFixed(8),
@@ -471,7 +511,7 @@ class ComplaintSummaryView extends StatelessWidget {
                       ),
                     ),
                 ]),
-                SizedBox(height: 45 * scale),
+                SizedBox(height: 25 * scale),
                 _buildSection("DESCRIPTIONS", [
                   Text(
                     complaint.description == null ||
@@ -481,12 +521,14 @@ class ComplaintSummaryView extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13 * scale,
                       color: const Color(0xFF1A1D1F),
+                      height: 1.5,
                     ),
                   ),
                 ]),
-                SizedBox(height: 45 * scale),
+                SizedBox(height: 25 * scale),
                 _buildSection("ATTACHMENTS", [
-                  if (complaint.attachments.isEmpty && complaint.attachmentUrls.isEmpty)
+                  if (complaint.attachments.isEmpty &&
+                      complaint.attachmentUrls.isEmpty)
                     Text(
                       "No attachments provided.",
                       style: TextStyle(
@@ -500,12 +542,12 @@ class ComplaintSummaryView extends StatelessWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        crossAxisSpacing: 20 * scale,
-                        mainAxisSpacing: 20 * scale,
+                        crossAxisSpacing: 15 * scale,
+                        mainAxisSpacing: 15 * scale,
                         childAspectRatio: 0.85,
                       ),
-                      itemCount: complaint.attachments.isNotEmpty 
-                          ? complaint.attachments.length 
+                      itemCount: complaint.attachments.isNotEmpty
+                          ? complaint.attachments.length
                           : complaint.attachmentUrls.length,
                       itemBuilder: (context, index) {
                         return Column(
@@ -515,9 +557,11 @@ class ComplaintSummaryView extends StatelessWidget {
                               child: Container(
                                 width: double.infinity,
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(1 * scale),
+                                  borderRadius: BorderRadius.circular(
+                                    12 * scale,
+                                  ),
                                   border: Border.all(
-                                    color: Colors.grey.withValues(alpha: 0.3),
+                                    color: Colors.grey.withValues(alpha: 0.1),
                                     width: 1 * scale,
                                   ),
                                 ),
@@ -530,20 +574,22 @@ class ComplaintSummaryView extends StatelessWidget {
                                     : Image.network(
                                         complaint.attachmentUrls[index],
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                const Icon(Icons.error),
                                       ),
                               ),
                             ),
                             SizedBox(height: 8 * scale),
                             Text(
-                              (index + 1).toString(),
+                              "Attachment ${index + 1}",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 11 * scale,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF1A1D1F),
+                                color: const Color(0xFF9A9FA5),
                               ),
                             ),
                           ],
@@ -559,7 +605,9 @@ class ComplaintSummaryView extends StatelessWidget {
                   text: Colors.white,
                   scale: scale,
                 ),
-                SizedBox(height: 20 * scale + MediaQuery.of(context).padding.bottom),
+                SizedBox(
+                  height: 20 * scale + MediaQuery.of(context).padding.bottom,
+                ),
               ],
             ),
           ),
@@ -572,36 +620,37 @@ class ComplaintSummaryView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(
-            horizontal: 10 * scale,
-            vertical: 3 * scale,
-          ),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.3), width: 1 * scale),
-            ),
-          ),
+        Padding(
+          padding: EdgeInsets.only(left: 5 * scale, bottom: 12 * scale),
           child: Text(
             title,
-            textAlign: TextAlign.left,
             style: TextStyle(
-              fontSize: 16 * scale,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF325E6A),
+              fontSize: 14 * scale,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFFB85A3A),
+              letterSpacing: 1.0,
             ),
           ),
         ),
-        SizedBox(height: 20 * scale),
-        ...children,
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(20 * scale),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16 * scale),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: children,
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 8 * scale),
+      padding: EdgeInsets.only(bottom: 12 * scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -612,13 +661,14 @@ class ComplaintSummaryView extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 13 * scale,
-                color: const Color(0xFF1A1D1F),
+                color: const Color(0xFF9A9FA5),
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
           Expanded(
             child: Text(
-              value,
+              value.isNotEmpty ? value : "-",
               textAlign: TextAlign.end,
               style: TextStyle(
                 fontSize: 13 * scale,

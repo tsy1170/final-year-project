@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/complaint_view_model.dart';
 import 'complaint_premise_coordinates.dart';
@@ -20,9 +21,10 @@ class _AddComplaintDescriptionViewState extends State<AddComplaintDescriptionVie
     final viewModel = Provider.of<ComplaintViewModel>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFAF3),
+      backgroundColor: const Color(0xFFFBF8F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFFAF3),
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        backgroundColor: const Color(0xFFFBF8F5),
         elevation: 0,
         centerTitle: true,
         surfaceTintColor: Colors.transparent,
@@ -35,9 +37,10 @@ class _AddComplaintDescriptionViewState extends State<AddComplaintDescriptionVie
         title: Text(
           'ADD DESCRIPTIONS',
           style: TextStyle(
-            color: const Color(0xFF325E6A),
-            fontSize: 16 * widget.scale,
-            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1A1D1F),
+            fontSize: 14 * widget.scale,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.0
           ),
         ),
       ),
@@ -53,19 +56,26 @@ class _AddComplaintDescriptionViewState extends State<AddComplaintDescriptionVie
                 color: const Color(0xFF1A1D1F),
               ),
             ),
-            SizedBox(height: 20 * widget.scale),
-            _buildLabel("Descriptions"),
-            SizedBox(height: 8 * widget.scale),
+            SizedBox(height: 30 * widget.scale),
+            
+            Padding(
+              padding: EdgeInsets.only(left: 5 * widget.scale),
+              child: Text(
+                "DESCRIPTIONS",
+                style: TextStyle(
+                  fontSize: 12 * widget.scale,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF1A1D1F),
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ),
+            SizedBox(height: 12 * widget.scale),
+            
             Container(
               decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2), // Shadow color
-                      spreadRadius: -6,                     // How far the shadow extends
-                      blurRadius: 6,                      // Softness of the shadow
-                      offset: const Offset(4, 5),        // Offset of the shadow, 2),
-                    )
-                  ]
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16 * widget.scale),
               ),
               child: TextField(
                 controller: viewModel.descriptionController,
@@ -73,20 +83,16 @@ class _AddComplaintDescriptionViewState extends State<AddComplaintDescriptionVie
                 textCapitalization: TextCapitalization.sentences,
                 decoration: _inputDecoration("Provide more details..."),
                 style: TextStyle(
-                  fontSize: 12 * widget.scale,
+                  fontSize: 13 * widget.scale,
                   color: const Color(0xFF1A1D1F),
+                  height: 1.5,
                 ),
               ),
             ),
-            SizedBox(height: 10 * widget.scale),
-            Text(
-              "For example: On January 10, 2026, I shopping at a supermarket in Pulau Pinang and found that the prices of goods did not match the prices in advertisement",
-              textAlign: TextAlign.justify,
-              style: TextStyle(
-                fontSize: 14 * widget.scale,
-                color: const Color(0xFF1A1D1F),
-              ),
-            ),
+            
+            SizedBox(height: 20 * widget.scale),
+            _buildExamplePill(),
+            
             SizedBox(height: 40 * widget.scale),
             CustomButton(
               label: "NEXT",
@@ -111,19 +117,42 @@ class _AddComplaintDescriptionViewState extends State<AddComplaintDescriptionVie
               text: Colors.white,
               scale: widget.scale,
             ),
+            SizedBox(height: 50 * widget.scale),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLabel(String text) {
-    return Text(
-      text.toUpperCase(),
-      style: TextStyle(
-        fontSize: 12 * widget.scale,
-        fontWeight: FontWeight.w700,
-        color: const Color(0xFF1A1D1F),
+  Widget _buildExamplePill() {
+    return Container(
+      padding: EdgeInsets.all(15 * widget.scale),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF6F3),
+        borderRadius: BorderRadius.circular(12 * widget.scale),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.lightbulb_outline_rounded,
+            size: 20 * widget.scale,
+            color: const Color(0xFFB85A3A),
+          ),
+          SizedBox(width: 12 * widget.scale),
+          Expanded(
+            child: Text(
+              "On January 10, 2026, I was shopping at a supermarket in Pulau Pinang and found that the price of goods did not match the price in the advertisement.",
+              textAlign: TextAlign.justify,
+              style: TextStyle(
+                fontSize: 11 * widget.scale,
+                color: const Color(0xFFB85A3A),
+                height: 1.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -133,25 +162,23 @@ class _AddComplaintDescriptionViewState extends State<AddComplaintDescriptionVie
       hintText: hint,
       hintStyle: TextStyle(
         color: const Color(0xFF9A9FA5),
-        fontSize: 13 * widget.scale,
+        fontSize: 12 * widget.scale,
       ),
       filled: true,
       fillColor: Colors.white,
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12 * widget.scale),
-        borderSide: BorderSide(color: const Color(0xFF325E6A), width: 1 * widget.scale),
-      ),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12 * widget.scale),
+        borderRadius: BorderRadius.circular(16 * widget.scale),
+        borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12 * widget.scale),
-        borderSide: BorderSide(
-          color: Colors.grey.withValues(alpha: 0.3),
-          width: 1 * widget.scale,
-        ),
+        borderRadius: BorderRadius.circular(16 * widget.scale),
+        borderSide: BorderSide.none,
       ),
-      contentPadding: EdgeInsets.all(15 * widget.scale),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16 * widget.scale),
+        borderSide: BorderSide.none,
+      ),
+      contentPadding: EdgeInsets.all(20 * widget.scale),
     );
   }
 }

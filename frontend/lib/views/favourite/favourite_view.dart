@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/favourite_view_model.dart';
 import '../../viewmodels/auth_view_model.dart';
@@ -8,6 +9,7 @@ import '../widgets/favourite/favourite_compare_button.dart';
 import '../widgets/favourite/favourite_empty_state.dart';
 import '../widgets/favourite/favourite_logged_out_state.dart';
 import '../widgets/favourite/favourite_list.dart';
+import '../widgets/common/mesh_background.dart';
 import 'compare_prices_view.dart';
 
 class FavouriteView extends StatefulWidget {
@@ -56,9 +58,11 @@ class _FavouriteViewState extends State<FavouriteView> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFAF3),
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFFAF3),
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         title: Text(
@@ -66,7 +70,8 @@ class _FavouriteViewState extends State<FavouriteView> {
           style: TextStyle(
             color: const Color(0xFF1A1D1F),
             fontSize: 18 * widget.scale,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5
           ),
         ),
         actions: [
@@ -83,7 +88,7 @@ class _FavouriteViewState extends State<FavouriteView> {
               icon: Icon(
                 Icons.compare_arrows_outlined,
                 size: 30 * widget.scale,
-                color: const Color(0xFF325E6A),
+                color: const Color(0xFFB85A3A),
               ),
             ),
 
@@ -99,8 +104,8 @@ class _FavouriteViewState extends State<FavouriteView> {
               },
               icon: Icon(
                 Icons.add_circle_outline_rounded,
-                size: 26 * widget.scale,
-                color: const Color(0xFF325E6A),
+                size: 25 * widget.scale,
+                color: const Color(0xFFB85A3A),
               ),
             ),
           SizedBox(width: 10 * widget.scale),
@@ -108,23 +113,30 @@ class _FavouriteViewState extends State<FavouriteView> {
       ),
       body: Stack(
         children: [
-          !authViewModel.isLoggedIn
-              ? FavouriteLoggedOutState(scale: widget.scale)
-              : viewModel.isLoading
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF1A1D1F)))
-                  : viewModel.favouriteProducts.isEmpty
-                      ? FavouriteEmptyState(scale: widget.scale)
-                      : FavouriteList(
-                          viewModel: viewModel,
-                          authViewModel: authViewModel,
-                          locationViewModel: locationViewModel,
-                          scale: widget.scale,
-                        ),
-          if (authViewModel.isLoggedIn && viewModel.favouriteProducts.isNotEmpty)
-            FavouriteCompareButton(
-              scale: widget.scale,
-              itemCount: viewModel.favouriteProducts.length,
+          const Positioned.fill(child: MeshBackground()),
+          SafeArea(
+            child: Stack(
+              children: [
+                !authViewModel.isLoggedIn
+                    ? FavouriteLoggedOutState(scale: widget.scale)
+                    : viewModel.isLoading
+                        ? const Center(child: CircularProgressIndicator(color: Color(0xFF1A1D1F)))
+                        : viewModel.favouriteProducts.isEmpty
+                            ? FavouriteEmptyState(scale: widget.scale)
+                            : FavouriteList(
+                                viewModel: viewModel,
+                                authViewModel: authViewModel,
+                                locationViewModel: locationViewModel,
+                                scale: widget.scale,
+                              ),
+                if (authViewModel.isLoggedIn && viewModel.favouriteProducts.isNotEmpty)
+                  FavouriteCompareButton(
+                    scale: widget.scale,
+                    itemCount: viewModel.favouriteProducts.length,
+                  ),
+              ],
             ),
+          ),
         ],
       ),
     );

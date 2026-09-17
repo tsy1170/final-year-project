@@ -24,105 +24,119 @@ class GroceryCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(10 * scale),
-          border: Border.all(
-            color: Colors.grey.withValues(alpha: 0.3),
-            width: 1 * scale
-          ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2), // Shadow color
-                spreadRadius: -6,                     // How far the shadow extends
-                blurRadius: 6,                      // Softness of the shadow
-                offset: const Offset(3, 6),        // Offset of the shadow, 2),
-              )
-            ]
+          borderRadius: BorderRadius.circular(20 * scale),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            )
+          ]
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(10 * scale),
-              ),
-              child: Container(
-                height: 210 * scale,
-                width: double.infinity,
-                padding: EdgeInsets.all(8 * scale),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                ),
-                child: (product.imageUrl != null && product.imageUrl!.isNotEmpty)
-                  ? Image.network(
-                      product.imageUrl!, 
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => Icon(
-                        Icons.image_not_supported_outlined,
-                        size: 40 * scale,
-                        color: const Color(0xFF9A9FA5),
-                      ),
-                    )
-                  : Icon(
-                      Icons.image_outlined,
-                      size: 40 * scale,
-                      color: const Color(0xFF9A9FA5),
-                    ),
-              ),
-            ),
-            const Divider(height: 1, color: Color(0xFFF1F1F1)),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 12 * scale,
-                  vertical: 8 * scale,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            product.name,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: const Color(0xFF1A1D1F),
-                              fontSize: 12 * scale,
-                              fontWeight: FontWeight.w600,
-                            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(12 * scale),
+                  ),
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(15 * scale),
+                    color: Colors.white,
+                    child: (product.imageUrl != null && product.imageUrl!.isNotEmpty)
+                      ? Image.network(
+                          product.imageUrl!,
+                          fit: BoxFit.contain,
+                          // Let the image define its own height to create masonry effect
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.image_not_supported_outlined,
+                            size: 40 * scale,
+                            color: const Color(0xFF9A9FA5),
+                          ),
+                        )
+                      : Padding(
+                          padding: EdgeInsets.symmetric(vertical: 40 * scale),
+                          child: Icon(
+                            Icons.image_outlined,
+                            size: 40 * scale,
+                            color: const Color(0xFF9A9FA5),
                           ),
                         ),
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: onFavourite,
-                            customBorder: const CircleBorder(),
-                            child: Padding(
-                              padding: EdgeInsets.all(5 * scale),
-                              child: Icon(
-                                isFavourite ? Icons.favorite : Icons.favorite_border,
-                                size: 20 * scale,
-                                color: isFavourite
-                                    ? const Color(0xFF325E6A)
-                                    : const Color(0xFF1A1D1F),
-                              ),
-                            ),
-                          )
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 15 * scale),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.name[0].toUpperCase() + product.name.substring(1).toLowerCase(),
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: const Color(0xFF1A1D1F),
+                          fontSize: 12 * scale,
+                          fontWeight: FontWeight.w600,
                         ),
+                      ),
+                      SizedBox(height: 4 * scale),
+                      Row(
+                        children: [
+                          Text(
+                            product.unit,
+                            style: TextStyle(
+                              color: const Color(0xFF9A9FA5),
+                              fontSize: 10 * scale,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.keyboard_arrow_right,
+                            size: 20 * scale,
+                            color: const Color(0xFFB85A3A),
+                          )
+                        ],
+                      ),
+
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            Positioned(
+              top: 8 * scale,
+              right: 8 * scale,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onFavourite,
+                  borderRadius: BorderRadius.circular(12 * scale),
+                  child: Container(
+                    padding: EdgeInsets.all(6 * scale),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9ECE6),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        )
                       ],
                     ),
-                    Text(
-                      product.unit,
-                      style: TextStyle(
-                        color: const Color(0xFF9A9FA5),
-                        fontSize: 12 * scale,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    child: Icon(
+                      isFavourite ? Icons.favorite : Icons.favorite_border,
+                      size: 18 * scale,
+                      color: isFavourite
+                          ? const Color(0xFFB85A3A)
+                          : const Color(0xFF1A1D1F),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

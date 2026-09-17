@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/navigation_view_model.dart';
+import '../viewmodels/auth_view_model.dart';
 import 'grocery/grocery_view.dart';
 import 'grocery/search_page_view.dart';
 import 'favourite/favourite_view.dart';
@@ -35,6 +36,17 @@ class _RootViewState extends State<RootView> {
   @override
   Widget build(BuildContext context) {
     final navViewModel = context.watch<NavigationViewModel>();
+    final authVM = context.watch<AuthViewModel>();
+
+    // Wait for AuthViewModel to finish background session verification (silent refresh)
+    if (!authVM.isInitialized) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFFFFAF3),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF1A1D1F)),
+        ),
+      );
+    }
 
     if (_pageController.hasClients) {
       if (_pageController.page?.round() != navViewModel.selectedIndex) {

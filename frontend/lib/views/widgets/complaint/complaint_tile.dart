@@ -22,51 +22,31 @@ class ComplaintTile extends StatelessWidget {
     );
     return Container(
       width: double.infinity,
-      margin: EdgeInsets.only(bottom: 12 * scale),
+      margin: EdgeInsets.only(bottom: 8 * scale),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12 * scale),
-        border: Border(
-          bottom: BorderSide(
-            color: isSelected
-                ? const Color(0xFF325E6A)
-                : Colors.grey.withValues(alpha: 0.3),
-            width: 1 * scale,
-          ),
-          top: BorderSide(
-            color: isSelected
-                ? const Color(0xFF325E6A)
-                : Colors.grey.withValues(alpha: 0.3),
-            width: 1 * scale,
-          ),
-          right: BorderSide(
-            color: isSelected
-                ? const Color(0xFF325E6A)
-                : Colors.grey.withValues(alpha: 0.3),
-            width: 1 * scale,
-          ),
-          left: BorderSide(
-            color: isSelected
-                ? const Color(0xFF325E6A)
-                : Colors.grey.withValues(alpha: 0.3),
-            width: 4 * scale,
-          ),
+        color: isSelected
+            ? const Color(0xFFB85A3A).withValues(alpha: 0.05)
+            : const Color(0xFFFFFDFD),
+        borderRadius: BorderRadius.circular(16 * scale),
+        border: Border.all(
+          color: isSelected
+              ? const Color(0xFFB85A3A)
+              : Colors.grey.withValues(alpha: 0.1),
+          width: 1.5 * scale,
         ),
         boxShadow: isSelected
             ? null
             : [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  spreadRadius: -6,
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
-                  offset: const Offset(4, 8),
+                  offset: const Offset(0, 4),
                 ),
               ],
       ),
       child: Material(
-        color: isSelected
-            ? const Color(0xFF325E6A).withValues(alpha: 0.05)
-            : const Color(0xFFFFFDFD),
-        borderRadius: BorderRadius.circular(12 * scale),
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16 * scale),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {
@@ -88,84 +68,111 @@ class ComplaintTile extends StatelessWidget {
           child: Stack(
             children: [
               Padding(
-                padding: EdgeInsets.all(16 * scale),
+                padding: EdgeInsets.all(20 * scale),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Pill Tag for Complaint Type
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10 * scale,
+                        vertical: 4 * scale,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF6F3),
+                        borderRadius: BorderRadius.circular(20 * scale),
+                      ),
+                      child: Text(
+                        complaint.category.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 10 * scale,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFFB85A3A),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12 * scale),
+                    // Premise Name as Title
                     Text(
-                      complaint.category.toUpperCase(),
+                      complaint.premiseName,
                       style: TextStyle(
-                        fontSize: 14 * scale,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 15 * scale,
+                        fontWeight: FontWeight.w800,
                         color: const Color(0xFF1A1D1F),
                       ),
                     ),
-                    SizedBox(height: 15 * scale),
-                    _buildInfoRow("Product", complaint.productName),
-                    SizedBox(height: 5 * scale),
-                    _buildInfoRow("Premise", complaint.premiseName),
-                    SizedBox(height: 5 * scale),
-                    _buildInfoRow("Type", complaint.premiseType),
-                    SizedBox(height: 5 * scale),
-                    _buildInfoRow(
-                      "Loss Amount",
-                      complaint.lossAmount,
-                      isPrice: true,
-                    ),
-                    SizedBox(height: 10 * scale),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            "view details",
-                            style: TextStyle(
-                              fontSize: 12 * scale,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(
-                                0xFF1A1D1F,
-                              ).withValues(alpha: 0.5),
-                            ),
-                          ),
-                          SizedBox(width: 4 * scale),
-                          Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 10 * scale,
-                            color: const Color(
-                              0xFF1A1D1F,
-                            ).withValues(alpha: 0.5),
-                          ),
-                        ],
+                    SizedBox(height: 7 * scale),
+                    // Details formatted naturally
+                    Text(
+                      "${complaint.premiseType}",
+                      style: TextStyle(
+                        fontSize: 13 * scale,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF1A1D1F),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    SizedBox(height: 7 * scale),
+                    Text(
+                      "${complaint.productName} • RM ${complaint.lossAmount} loss",
+                      style: TextStyle(
+                        fontSize: 13 * scale,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF9A9FA5),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 20 * scale),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          "View Details",
+                          style: TextStyle(
+                            fontSize: 11 * scale,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1A1D1F).withValues(alpha: 0.4),
+                          ),
+                        ),
+                        SizedBox(width: 4 * scale),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 10 * scale,
+                          color: const Color(0xFF1A1D1F).withValues(alpha: 0.4),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
               if (viewModel.isSelectMode)
                 Positioned(
-                  top: 12 * scale,
-                  right: 12 * scale,
+                  top: 15 * scale,
+                  right: 15 * scale,
                   child: Container(
-                    width: 20 * scale,
-                    height: 20 * scale,
+                    width: 22 * scale,
+                    height: 22 * scale,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: isSelected
-                            ? const Color(0xFF1A1D1F)
-                            : const Color(0xFF1A1D1F).withValues(alpha: 0.3),
-                        width: 1 * scale,
+                            ? const Color(0xFFB85A3A)
+                            : const Color(0xFF1A1D1F).withValues(alpha: 0.2),
+                        width: 2 * scale,
                       ),
                       color: isSelected
-                          ? const Color(0xFF325E6A)
+                          ? const Color(0xFFB85A3A)
                           : Colors.transparent,
                     ),
                     child: isSelected
                         ? Icon(
                             Icons.check,
                             size: 14 * scale,
-                            color: const Color(0xFFFFFDFD),
+                            color: Colors.white,
                           )
                         : null,
                   ),
@@ -174,46 +181,6 @@ class ComplaintTile extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value, {bool isPrice = false}) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 110 * scale,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12 * scale,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF9A9FA5),
-            ),
-          ),
-        ),
-        Expanded(
-          child: isPrice
-              ? Text(
-                  'RM $value',
-                  style: TextStyle(
-                    fontSize: 12 * scale,
-                    color: const Color(0xFF1A1D1F),
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                )
-              : Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 12 * scale,
-                    color: const Color(0xFF1A1D1F),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-        ),
-      ],
     );
   }
 }

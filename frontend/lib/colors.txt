@@ -18,3 +18,5 @@ red: 0xFFED1A4B
 
 
 0xFFFFFAEC
+
+terracotta: 0xFFB85A3A
