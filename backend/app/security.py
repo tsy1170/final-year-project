@@ -12,42 +12,80 @@ load_dotenv()
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", 60))
+JWT_REFRESH_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_MINUTES", 10080))
 
 if not JWT_SECRET_KEY:
     raise ValueError("JWT_SECRET_KEY is missing from the environment")
 
 
+def create_token(user_id: int,
+                 email: str,
+                 token_type: str,
+                 expires_minutes: int | None = None) -> str:
+    if token_type not in ("access", "refresh"):
+        raise ValueError("Invalid token type")
+    
+    current_time = datetime.now(timezone.utc)
+
+    expiration_minutes = (
+        expires_minutes
+        if expires_minutes is not None
+        else (
+            JWT_REFRESH_TOKEN_EXPIRE_MINUTES
+            if token_type == "refresh"
+            else JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+    )
+
+    expiration_time = current_time + timedelta(minutes=expiration_minutes)
+
+    payload: dict[str, Any] = {
+        "sub": str(user_id),
+        "email": email,
+        "iat": current_time,
+        "exp": expiration_time,
+        "token_type": token_type,
+    }
+
+    return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+
 # function to create a JWT access token
-def create_access_token(user_id: int, 
+def create_access_token(user_id: int,
                         email: str,
                         expires_minutes: int | None = None) -> str:
     """
     Create a signed JWT access token.
     The subject claim stores the user ID as a string.
     """
-    current_time = datetime.now(timezone.utc)
+    return create_token(user_id, email, "access", expires_minutes)
 
-    # Determine the expiration time for the token, defaulting to JWT_ACCESS_TOKEN_EXPIRE_MINUTES if not provided (60 minutes)
-    expiration_minutess = (
-        expires_minutes if expires_minutes is not None else JWT_ACCESS_TOKEN_EXPIRE_MINUTES
-    )
 
-    # Calculate the expiration time
-    expiration_time = current_time + timedelta(minutes = expiration_minutess)
-
-    payload: dict[str, Any] = {
-        "sub": str(user_id),
-        "email": email,
-        "iat": current_time,
-        "exp": expiration_time
-    }
-
-    return jwt.encode(payload, JWT_SECRET_KEY, algorithm = JWT_ALGORITHM)
+# function to create a JWT refresh token
+def create_refresh_token(user_id: int,
+                         email: str,
+                         expires_minutes: int | None = None) -> str:
+    return create_token(user_id, email, "refresh", expires_minutes)
 
 
 # function to decode and validate the JWT access token
 def decode_access_token(
     token: str
+) -> dict[str, Any]:
+    return decode_token(token, expected_type="access")
+
+
+# function to decode and validate the JWT refresh token
+def decode_refresh_token(
+    token: str
+) -> dict[str, Any]:
+    return decode_token(token, expected_type="refresh")
+
+
+# function to decode and validate JWT tokens
+def decode_token(
+    token: str,
+    expected_type: str | None = None
 ) -> dict[str, Any]:
     """
     Validate a JWT token and return its payload.
@@ -76,7 +114,8 @@ def decode_access_token(
                 "require": [
                     "sub",
                     "exp",
-                    "iat"
+                    "iat",
+                    "token_type"
                 ]
             }
         )
@@ -84,6 +123,10 @@ def decode_access_token(
         user_id = payload.get("sub")
 
         if user_id is None:
+            raise credentials_exception
+
+        token_type = payload.get("token_type")
+        if expected_type is not None and token_type != expected_type:
             raise credentials_exception
 
         # Convert the user_id to int and add it back to payload

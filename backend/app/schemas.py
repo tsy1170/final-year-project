@@ -58,12 +58,21 @@ class UpdateFCMTokenInput(BaseModel):
 # -------------------------------------------------------------------------------------------------
 
 
-# -----------------------Pydantic model for access token response-----------------------
+# -----------------------Pydantic model for token response-----------------------
 class AccessTokenResponse(BaseModel):
     access_token: str = Field(description="JWT access token for authenticated user")
+    refresh_token: str = Field(description="JWT refresh token for authenticated user")
     token_type: str = Field(description="Type of the token, typically 'bearer'")
     expires_in: int = Field(description="Time in seconds until the token expires")
     user: dict = Field(description="User information associated with the token")
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str = Field(description="JWT refresh token for obtaining a new access token")
+
+class RefreshTokenResponse(BaseModel):
+    access_token: str = Field(description="New JWT access token for authenticated user")
+    token_type: str = Field(description="Type of the token, typically 'bearer'")
+    expires_in: int = Field(description="Time in seconds until the token expires")
 # --------------------------------------------------------------------------------------
 
 # ------------------------Pydantic model for favourite items input----------------------------

@@ -12,7 +12,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from pathlib import Path
 from typing import Annotated
-from .schemas import AccessTokenResponse, UserRegister, BasketOptimizationInput, FavouriteItem
+from .schemas import AccessTokenResponse, RefreshTokenResponse, RefreshTokenRequest, UserRegister, BasketOptimizationInput, FavouriteItem
 from .schemas import UpdateUsernameInput, UpdatePhoneNumberInput, UpdateDobInput, UpdateEmailInput, UpdateNricInput
 from .schemas import UpdatePasswordInput, CreateComplaintInput, DeleteComplaintInput, CreatePriceAlertInput, UpdateFCMTokenInput
 from .database import engine
@@ -22,7 +22,7 @@ from .osrm_services import get_road_distance, get_road_distance_matrix, filter_s
 from .price_level_helpers import calculate_percentile
 from .auth_service import verify_password, hash_password
 from .auth_dependencies import get_current_user
-from .security import JWT_ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
+from .security import JWT_ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, create_refresh_token, decode_refresh_token
 import traceback
 
 # Initialize FastAPI app and database connection
@@ -895,6 +895,68 @@ def register_user(user: UserRegister):
     }
 
 
+# Refresh token endpoint
+@app.post("/users/refresh-token", response_model=RefreshTokenResponse)
+def refresh_access_token(request_data: RefreshTokenRequest):
+    # Validate and decode the refresh token.
+    # This will reject:
+    # - expired tokens
+    # - invalid signatures
+    # - access tokens used as refresh tokens
+    payload = decode_refresh_token(request_data.refresh_token)
+
+    user_id = payload.get("user_id")
+
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate refresh token",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+    try:
+        # Check whether the user still exists.
+        # This is useful if the account was deleted after
+        # the refresh token was created.
+        with engine.begin() as conn:
+            user = conn.execute(
+                text("""
+                    SELECT user_id, email
+                    FROM users
+                    WHERE user_id = :user_id
+                    LIMIT 1
+                """), {
+                    "user_id": user_id
+                }
+            ).mappings().first()
+
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User no longer exists",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to refresh access token"
+        )
+
+    new_access_token = create_access_token(
+        user_id = user["user_id"],
+        email = user["email"]
+    )
+
+    return {
+        "access_token": new_access_token,
+        "token_type": "bearer",
+        "expires_in": JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    }
+
+    
+
+
 # User login endpoint
 @app.post("/users/login", response_model = AccessTokenResponse)
 def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
@@ -953,8 +1015,15 @@ def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         email = user["email"],
     )
 
+    # Generate JWT refresh token for the authenticated user
+    refresh_token = create_refresh_token(
+        user_id = user["user_id"],
+        email = user["email"]
+    )
+
     return {
         "access_token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer",
         "expires_in": JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         "user": {
