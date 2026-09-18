@@ -132,8 +132,6 @@ def load_premises():
 
 def load_price_records():
     print("Reading PriceCatcher price records...")
-
-    import urllib.error
     
     today = datetime.now()
     current_month_str = today.strftime("%Y-%m")
@@ -219,10 +217,25 @@ def load_price_records():
     print("Price records loaded successfully.")
 
 
+def delete_old_price_records():
+    print("Deleting price records older than 3 months...")
+
+    with engine.begin() as conn:
+        result = conn.execute(
+            text("""
+                DELETE FROM price_records
+                WHERE price_date < (CURRENT_DATE - INTERVAL '3 months')
+            """)
+        )
+
+    print(f"Old price records deleted successfully. {result.rowcount} records removed.")
+
+
 def main():
     load_items()
     load_premises()
     load_price_records()
+    delete_old_price_records()
     print("Ingestion completed.")
 
 

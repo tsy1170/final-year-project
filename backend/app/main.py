@@ -239,7 +239,7 @@ def get_worth_buying(latitude: float = Query(..., ge=-90, le=90),
                     FROM ranked_results
                     WHERE rn = 1
                     ORDER BY price_reduction DESC
-                    LIMIT :limit
+                    
                 """), {
                     "user_latitude": latitude,
                     "user_longitude": longitude,
@@ -279,7 +279,9 @@ def get_worth_buying(latitude: float = Query(..., ge=-90, le=90),
                 if premise["road_distance_km"] <= radius_km
             ]
             
-            nearby_premises.sort(key=lambda premise: premise["road_distance_km"])
+            nearby_premises.sort(key=lambda premise: premise["price_reduction"], reverse=True)
+
+            nearby_premises = nearby_premises[:limit]
 
             if not nearby_premises:
                 raise HTTPException(
@@ -313,8 +315,6 @@ def get_worth_buying(latitude: float = Query(..., ge=-90, le=90),
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to retrieve worth buying products"
         ) from e
-
-            
 
 
 # get premises within the user's road-distance radius
@@ -775,6 +775,7 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
                  item_category: str = Query(default = None, description = "Sub-category under selected item group"),
                  limit: int = Query(default = 20, ge = 1, le = 100, description = "Number of products to return"),
                  offset: int = Query(default = 0, ge = 0, description = "Offset for pagination"),
+                 is_halal: bool = Query(default = True, description = "Filter for halal products"),
                  request: Request = None):
     
     try:
@@ -794,6 +795,7 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
                     OR :item_category IS NULL 
                     OR LOWER(item_category) = LOWER(:item_category)
                 )
+                AND is_halal = :is_halal
                 ORDER BY item_name
                 LIMIT :limit 
                 OFFSET :offset
@@ -801,7 +803,8 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
                 "item_group": item_group,
                 "item_category": item_category,
                 "limit": limit,
-                "offset": offset
+                "offset": offset,
+                "is_halal": is_halal
             })
 
             products = []
@@ -1678,7 +1681,7 @@ def get_favourites_worth_buying(current_user: Annotated[dict, Depends(get_curren
                 if premise["road_distance_km"] <= radius_km
             ]
             
-            nearby_premises.sort(key=lambda premise: premise["road_distance_km"])
+            nearby_premises.sort(key=lambda premise: premise["price_reduction"], reverse=True)
 
             if not nearby_premises:
                 raise HTTPException(

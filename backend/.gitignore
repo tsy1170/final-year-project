@@ -47,3 +47,6 @@ tmp/
 # testing files
 test.py
 tmp_complaint_check.py
+
+# batch files
+*.bat

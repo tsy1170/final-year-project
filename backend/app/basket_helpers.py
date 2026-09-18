@@ -120,6 +120,8 @@ def load_basket_data(request_data: BasketOptimizationInput) -> tuple[list[int], 
                             ON np.premise_code = pr.premise_code
 
                         WHERE pr.item_code IN :item_codes
+                        AND pr.price_date IS NOT NULL
+                        AND pr.price_date >= CURRENT_DATE - INTERVAL '30 days'
 
                         ORDER BY
                             pr.premise_code,
