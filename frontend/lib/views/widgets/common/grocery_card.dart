@@ -80,7 +80,7 @@ class GroceryCard extends StatelessWidget {
                         style: TextStyle(
                           color: const Color(0xFF1A1D1F),
                           fontSize: 12 * scale,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       SizedBox(height: 4 * scale),

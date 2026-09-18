@@ -19,4 +19,13 @@ class GroceryProduct {
       imageUrl: json['image_url'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'item_code': itemCode,
+      'item_name': name,
+      'unit': unit,
+      'image_url': imageUrl,
+    };
+  }
 }

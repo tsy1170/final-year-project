@@ -50,7 +50,7 @@ class FavouriteItemCard extends StatelessWidget {
                     Container(
                       width: 75 * scale,
                       height: 75 * scale,
-                      padding: EdgeInsets.all(8 * scale),
+                      padding: EdgeInsets.all(5 * scale),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12 * scale),

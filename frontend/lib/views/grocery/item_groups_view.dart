@@ -126,7 +126,7 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
                             color: Colors.white,
                             child: Column(
                               children: [
-                                // 1. The "All" selection (Only passes item group)
+                                // 1. The "All" selection
                                 Material(
                                   color: Colors.transparent,
                                   child: InkWell(
@@ -155,7 +155,38 @@ class _ItemGroupsViewState extends State<ItemGroupsView> {
                                     ),
                                   ),
                                 ),
-                                // 2. Specific category selections (Passes group and category)
+                                // 2. "Non-Halal" selection specifically for "BARANGAN SEGAR" and "MAKANAN SIAP MASAK"
+                                if (group.name == "BARANGAN SEGAR" || group.name == "MAKANAN SIAP MASAK")
+                                  Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => CategorizedProductsView(
+                                              group: group.name,
+                                              isHalal: false,
+                                              scale: widget.scale,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: EdgeInsets.fromLTRB(40 * widget.scale, 15 * widget.scale, 20 * widget.scale, 15 * widget.scale),
+                                        child: Text(
+                                          "Non-Halal",
+                                          style: TextStyle(
+                                            fontSize: 13 * widget.scale,
+                                            fontWeight: FontWeight.w500,
+                                            color: const Color(0xFF354349),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                // 3. Specific category selections
                                 ...group.categories.map((category) {
                                   return Material(
                                     color: Colors.transparent,

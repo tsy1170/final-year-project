@@ -38,6 +38,7 @@ class _GroceryViewState extends State<GroceryView> {
           lng: locationVM.currentPosition!.longitude,
         );
       }
+      groceryVM.loadMostViewedProducts();
     });
   }
 
@@ -90,41 +91,14 @@ class _GroceryViewState extends State<GroceryView> {
         Positioned.fill(
           child: MeshGradient(
             points: [
-              // 1. Top-Left Origin (pushed tighter into the corner)
-              MeshGradientPoint(
-                position: const Offset(0.0, 0.0),
-                color: color3,
-              ),
-              // 2. Expanded Color 1 Area (occupies upper-middle)
-              MeshGradientPoint(
-                position: const Offset(0.25, 0.25),
-                color: color1,
-              ),
-              // 3. Core Center (dominated by Color 1)
-              MeshGradientPoint(
-                position: const Offset(0.5, 0.5),
-                color: color1,
-              ),
-              // 4. Upper-Right Extension (dominated by Color 1)
-              MeshGradientPoint(
-                position: const Offset(0.85, 0.2),
-                color: color1,
-              ),
-              // 5. Lower-Left Extension (dominated by Color 1)
-              MeshGradientPoint(
-                position: const Offset(0.2, 0.85),
-                color: color1,
-              ),
-              // 6. Bottom-Right Destination (pushed tighter into the corner)
-              MeshGradientPoint(
-                position: const Offset(1.0, 1.0),
-                color: color2,
-              ),
+              MeshGradientPoint(position: const Offset(0.0, 0.0), color: color3),
+              MeshGradientPoint(position: const Offset(0.25, 0.25), color: color1),
+              MeshGradientPoint(position: const Offset(0.5, 0.5), color: color1),
+              MeshGradientPoint(position: const Offset(0.85, 0.2), color: color1),
+              MeshGradientPoint(position: const Offset(0.2, 0.85), color: color1),
+              MeshGradientPoint(position: const Offset(1.0, 1.0), color: color2),
             ],
-            options: MeshGradientOptions(
-              blend: 4,
-              noiseIntensity: 0,
-            ),
+            options: MeshGradientOptions(blend: 4, noiseIntensity: 0),
           ),
         ),
         Positioned.fill(
@@ -140,6 +114,7 @@ class _GroceryViewState extends State<GroceryView> {
                   lng: locationViewModel.currentPosition!.longitude,
                 );
               }
+              await viewModel.loadMostViewedProducts();
             },
             child: CustomScrollView(
               controller: _scrollController,
@@ -148,12 +123,159 @@ class _GroceryViewState extends State<GroceryView> {
               ),
               slivers: [
                 SliverToBoxAdapter(child: SizedBox(height: 160 * widget.scale)),
+                
+                // Most Viewed Section - Now at the top
+                if (viewModel.mostViewedProducts.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(30 * widget.scale, 5 * widget.scale, 20 * widget.scale, 8 * widget.scale),
+                          child: Text(
+                            "MOST VIEWED",
+                            style: TextStyle(
+                              fontSize: 14 * widget.scale,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF1A1D1F),
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          height: 120 * widget.scale,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: EdgeInsets.symmetric(horizontal: 15 * widget.scale, vertical: 12 * widget.scale),
+                            itemCount: viewModel.mostViewedProducts.length,
+                            itemBuilder: (context, index) {
+                              final product = viewModel.mostViewedProducts[index];
+                              final isFavourite = favouriteViewModel.favourites.contains(product.itemCode);
+                              
+                              return Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 5 * widget.scale),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ProductDetailsView(
+                                          itemCode: product.itemCode,
+                                          scale: widget.scale,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    width: 260 * widget.scale,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16 * widget.scale),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.04),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        )
+                                      ],
+                                    ),
+                                    padding: EdgeInsets.all(12 * widget.scale),
+                                    child: Row(
+                                      children: [
+                                        // Left side image
+                                        Container(
+                                          width: 70 * widget.scale,
+                                          height: 70 * widget.scale,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(12 * widget.scale),
+                                            border: Border.all(
+                                              color: const Color(0xFFF2EFEA),
+                                              width: 1 * widget.scale
+                                            )
+                                          ),
+                                          padding: EdgeInsets.all(5 * widget.scale),
+                                          child: (product.imageUrl != null && product.imageUrl!.isNotEmpty)
+                                              ? Image.network(
+                                                  product.imageUrl!,
+                                                  fit: BoxFit.contain,
+                                                  errorBuilder: (context, error, stackTrace) =>
+                                                      Icon(Icons.image_not_supported_outlined, size: 24 * widget.scale, color: const Color(0xFF9A9FA5)),
+                                                )
+                                              : Icon(Icons.image_outlined, size: 24 * widget.scale, color: const Color(0xFF9A9FA5)),
+                                        ),
+                                        SizedBox(width: 12 * widget.scale),
+                                        // Right side name and fav button
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                product.name[0].toUpperCase() + product.name.substring(1).toLowerCase(),
+                                                style: TextStyle(
+                                                  fontSize: 12 * widget.scale,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: const Color(0xFF1A1D1F),
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const Spacer(),
+                                              Align(
+                                                alignment: Alignment.bottomRight,
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    if (authViewModel.isLoggedIn) {
+                                                      favouriteViewModel.toggleFavourite(
+                                                        product.itemCode,
+                                                        authViewModel.accessToken!,
+                                                        lat: locationViewModel.currentPosition?.latitude,
+                                                        lng: locationViewModel.currentPosition?.longitude,
+                                                      );
+                                                      if (!isFavourite) {
+                                                        showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
+                                                      }
+                                                    } else {
+                                                      showTopNotification(context, "Please login to add favourites", false, widget.scale);
+                                                    }
+                                                  },
+                                                  child: Container(
+                                                    padding: EdgeInsets.all(6 * widget.scale),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFFF9ECE6),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: Icon(
+                                                      isFavourite ? Icons.favorite : Icons.favorite_border,
+                                                      size: 18 * widget.scale,
+                                                      color: isFavourite ? const Color(0xFFB85A3A) : const Color(0xFF1A1D1F),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 SliverToBoxAdapter(
                   child: PromotionSection(scale: widget.scale, viewModel: viewModel, favouriteViewModel: favouriteViewModel,),
                 ),
                 SliverToBoxAdapter(
                   child: ShopByCategory(scale: widget.scale, viewModel: viewModel),
                 ),
+
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(20 * widget.scale, 60 * widget.scale, 30 * widget.scale, 15 * widget.scale),
@@ -183,11 +305,11 @@ class _GroceryViewState extends State<GroceryView> {
                   ),
                 ),
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(12 * widget.scale, 0, 12 * widget.scale, 10 * widget.scale),
+                  padding: EdgeInsets.fromLTRB(10 * widget.scale, 0, 10 * widget.scale, 10 * widget.scale),
                   sliver: SliverMasonryGrid.count(
                     crossAxisCount: 2,
-                    mainAxisSpacing: 10 * widget.scale,
-                    crossAxisSpacing: 10 * widget.scale,
+                    mainAxisSpacing: 8 * widget.scale,
+                    crossAxisSpacing: 8 * widget.scale,
                     itemBuilder: (context, index) {
                       final product = viewModel.allProducts[index];
                       final isFavourite = favouriteViewModel.favourites.contains(product.itemCode);

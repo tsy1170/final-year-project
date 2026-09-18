@@ -48,7 +48,7 @@ class _PromotionSectionState extends State<PromotionSection> {
         Padding(
           padding: EdgeInsets.fromLTRB(
             30 * widget.scale,
-            0,
+            40 * widget.scale,
             20 * widget.scale,
             8 * widget.scale,
           ),

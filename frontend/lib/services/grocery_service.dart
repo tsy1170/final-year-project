@@ -20,6 +20,7 @@ class GroceryService {
   Future<List<GroceryProduct>> fetchProducts({
     String? itemGroup,
     String? itemCategory,
+    bool? isHalal,
     int limit = 20,
     int offset = 0,
   }) async {
@@ -30,6 +31,7 @@ class GroceryService {
       };
       if (itemGroup != null) queryParams['item_group'] = itemGroup;
       if (itemCategory != null) queryParams['item_category'] = itemCategory;
+      if (isHalal != null) queryParams['is_halal'] = isHalal.toString();
 
       final url = Uri.parse('$baseUrl/products').replace(queryParameters: queryParams);
       final response = await http.get(url);

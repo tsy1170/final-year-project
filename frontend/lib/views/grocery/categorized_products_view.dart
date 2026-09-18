@@ -12,12 +12,14 @@ import '../widgets/common/animated_notification.dart';
 class CategorizedProductsView extends StatefulWidget {
   final String group;
   final String? category;
+  final bool? isHalal;
   final double scale;
 
   const CategorizedProductsView({
     super.key,
     required this.group,
     this.category,
+    this.isHalal,
     required this.scale,
   });
 
@@ -37,6 +39,7 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
     Future.microtask(() => viewModel.fetchCategorizedProducts(
       group: widget.group,
       category: widget.category,
+      isHalal: widget.isHalal,
       isRefresh: true,
     ));
 
@@ -54,6 +57,7 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
       context.read<GroceryViewModel>().fetchCategorizedProducts(
         group: widget.group,
         category: widget.category,
+        isHalal: widget.isHalal,
         isRefresh: false,
       );
     }
@@ -66,6 +70,11 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
     final authViewModel = context.watch<AuthViewModel>();
     final locationViewModel = context.watch<LocationViewModel>();
 
+    String title = widget.category ?? widget.group;
+    if (widget.isHalal == false) {
+      title = "Non-Halal";
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8F5),
       appBar: AppBar(
@@ -77,7 +86,7 @@ class _CategorizedProductsViewState extends State<CategorizedProductsView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.category ?? widget.group,
+          title,
           style: TextStyle(
             color: const Color(0xFFB85A3A),
             fontSize: 16 * widget.scale,
