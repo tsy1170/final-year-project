@@ -221,7 +221,7 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                                           premise['premise_name'] ?? '',
                                           style: TextStyle(
                                             fontSize: 14 * widget.scale,
-                                            fontWeight: FontWeight.w600,
+                                            fontWeight: FontWeight.w700,
                                             color: const Color(0xFF1A1D1F),
                                           ),
                                         ),
@@ -229,7 +229,7 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                                           premise['address'] ?? '',
                                           style: TextStyle(
                                             fontSize: 12 * widget.scale,
-                                            color: const Color(0xFF1A1D1F),
+                                            color: const Color(0xFF9A9FA5),
                                           ),
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,

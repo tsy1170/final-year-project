@@ -407,22 +407,57 @@ class _ComparePricesViewState extends State<ComparePricesView> {
             }).toList();
 
             return Container(
-              padding: EdgeInsets.all(20 * widget.scale),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: 15 * widget.scale),
-                  Center(
-                    child: Text(
-                      'Select Nearby Premise',
-                      style: TextStyle(
-                        fontSize: 16 * widget.scale,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1A1D1F),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                          bottom: BorderSide(
+                              color: Colors.grey.withValues(alpha: 0.3),
+                              width: 1 * widget.scale
+                          )
                       ),
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(15 * widget.scale)),
+                      color: const Color(0xFF1A1D1F),
+                    ),
+                    child: Column(
+                      children: [
+                        Center(
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              150 * widget.scale,
+                              11 * widget.scale,
+                              150 * widget.scale,
+                              0,
+                            ),
+                            child: Container(
+                              height: 4 * widget.scale,
+                              decoration: BoxDecoration(
+                                  color: const Color(0xFFFFFDFD),
+                                  borderRadius: BorderRadius.circular(15 * widget.scale)
+                              ),
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              vertical: 25 * widget.scale,
+                              horizontal: 20 * widget.scale
+                          ),
+                          child: Text(
+                            "NEARBY PREMISES",
+                            style: TextStyle(
+                              fontSize: 15 * widget.scale,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFFFFFDFD),
+                            ),
+                          ),
+
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 25 * widget.scale),
                   if (viewModel.isLoadingPremises)
                     const Padding(
                       padding: EdgeInsets.all(50),
@@ -436,14 +471,15 @@ class _ComparePricesViewState extends State<ComparePricesView> {
                     const Center(child: Text('No more stores available nearby'))
                   else
                     Expanded(
-                      child: ListView.separated(
+                      child: ListView.builder(
                         itemCount: availablePremises.length,
-                        separatorBuilder: (c, i) =>
-                            Divider(color: const Color(0xFFF2EFEA)),
                         itemBuilder: (context, index) {
                           final premise = availablePremises[index];
                           return ListTile(
-                            contentPadding: EdgeInsets.symmetric(horizontal: 8 * widget.scale),
+                            contentPadding: EdgeInsets.symmetric(
+                              vertical: 12 * widget.scale,
+                              horizontal: 20 * widget.scale,
+                            ),
                             title: Text(
                               premise['premise_name'],
                               style: TextStyle(
@@ -458,7 +494,7 @@ class _ComparePricesViewState extends State<ComparePricesView> {
                                 fontSize: 12 * widget.scale,
                                 color: const Color(0xFF9A9FA5),
                               ),
-                              maxLines: 1,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                             trailing: Icon(

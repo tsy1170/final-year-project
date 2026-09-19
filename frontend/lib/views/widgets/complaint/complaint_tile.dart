@@ -15,6 +15,11 @@ class ComplaintTile extends StatelessWidget {
     required this.scale,
   });
 
+  String _formatPrice(String price) {
+    final double? value = double.tryParse(price);
+    return value?.toStringAsFixed(2) ?? price;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isSelected = viewModel.selectedComplaintIds.contains(
@@ -117,7 +122,7 @@ class ComplaintTile extends StatelessWidget {
 
                     SizedBox(height: 7 * scale),
                     Text(
-                      "${complaint.productName} • RM ${complaint.lossAmount} loss",
+                      "${complaint.productName} • RM ${_formatPrice(complaint.lossAmount)} loss",
                       style: TextStyle(
                         fontSize: 13 * scale,
                         fontWeight: FontWeight.w500,
