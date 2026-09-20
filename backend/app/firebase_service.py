@@ -1,21 +1,45 @@
+import os
+import json
 from pathlib import Path
 import firebase_admin
-from firebase_admin import messaging, credentials
+from firebase_admin import messaging, credentials, storage
 from pydantic import Field
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 BASE_DIR = Path(__file__).resolve().parent
 
-FIREBASE_SERVICE_ACCOUNT_PATH = BASE_DIR / (
-    "fyp-push-notifications-firebase-adminsdk-fbsvc-edae814911.json"
-)
+def get_firebase_credentials():
+    service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
 
-# Initialize Firebase Admin SDK only once
-if not firebase_admin._apps:
-    cred = credentials.Certificate(
-        FIREBASE_SERVICE_ACCOUNT_PATH
+    if service_account_json:
+        service_account_info = json.loads(service_account_json)
+        return credentials.Certificate(service_account_info)
+
+    service_account_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
+
+    if service_account_path:
+        path = Path(service_account_path)
+
+        if not path.is_absolute():
+            path = BASE_DIR.parent / path
+
+        return credentials.Certificate(path)
+
+    raise RuntimeError(
+        "Firebase credentials are not configured. "
+        "Set FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH."
     )
 
-    firebase_admin.initialize_app(cred)
+
+if not firebase_admin._apps:
+    cred = get_firebase_credentials()
+    firebase_admin.initialize_app(cred, {
+        'storageBucket': os.getenv("FIREBASE_STORAGE_BUCKET")
+    })
+
 
 def send_price_notification(fcm_token: str = Field(description="Device token"),
                             item_name: str = Field(description="Name of the item"),

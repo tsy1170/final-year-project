@@ -1,6 +1,5 @@
 from datetime import date
 import shutil
-import uuid
 from uuid import UUID
 from fastapi import FastAPI, File, Query, Request, HTTPException, status, Depends, UploadFile, Form
 from fastapi.exceptions import RequestValidationError
@@ -12,6 +11,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from pathlib import Path
 from typing import Annotated
+from firebase_admin import storage
 from .schemas import AccessTokenResponse, RefreshTokenResponse, RefreshTokenRequest, UserRegister, BasketOptimizationInput, FavouriteItem
 from .schemas import UpdateUsernameInput, UpdatePhoneNumberInput, UpdateDobInput, UpdateEmailInput, UpdateNricInput
 from .schemas import UpdatePasswordInput, CreateComplaintInput, DeleteComplaintInput, CreatePriceAlertInput, UpdateFCMTokenInput
@@ -21,6 +21,7 @@ from .basket_helpers import load_basket_data, calculate_single_store_recommendat
 from .osrm_services import get_road_distance, get_road_distance_matrix, filter_stores_by_road_distance
 from .price_level_helpers import calculate_percentile
 from .auth_service import verify_password, hash_password
+from . import firebase_service
 from .auth_dependencies import get_current_user
 from .security import JWT_ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, create_refresh_token, decode_refresh_token
 import traceback
@@ -34,9 +35,9 @@ IMAGE_DIRECTORY = BASE_DIR / "product_images"
 app.mount("/product_images", StaticFiles(directory=IMAGE_DIRECTORY), name="product_images")
 
 # Set up static file serving for complaint attachments
-COMPLAINT_BASE_DIR = Path(__file__).resolve().parent.parent
-COMPLAINT_ATTACHMENT_DIRECTORY = COMPLAINT_BASE_DIR / "complaint_attachments"
-app.mount("/complaint_attachments", StaticFiles(directory=COMPLAINT_ATTACHMENT_DIRECTORY), name="complaint_attachments")
+# COMPLAINT_BASE_DIR = Path(__file__).resolve().parent.parent
+# COMPLAINT_ATTACHMENT_DIRECTORY = COMPLAINT_BASE_DIR / "complaint_attachments"
+# app.mount("/complaint_attachments", StaticFiles(directory=COMPLAINT_ATTACHMENT_DIRECTORY), name="complaint_attachments")
 
 
 # ----------------------------API Endpoints--------------------------------
@@ -2032,15 +2033,15 @@ async def create_complaint(
     complaint_id = complaint["complaint_id"]
 
     # Create directory inside complaint_attachments folder. For example, complaint_attachments/13
-    complaint_directory = (
-        COMPLAINT_ATTACHMENT_DIRECTORY
-        / str(complaint_id)
-    )
+    # complaint_directory = (
+    #     COMPLAINT_ATTACHMENT_DIRECTORY
+    #     / str(complaint_id)
+    # )
 
-    complaint_directory.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+    # complaint_directory.mkdir(
+    #     parents=True,
+    #     exist_ok=True
+    # )
 
     # saved attachments
     saved_attachments = []
@@ -2068,19 +2069,34 @@ async def create_complaint(
 
             file_extension = Path(attachment.filename).suffix.lower()
             file_name = f"image_{index}{file_extension}"
-            file_path = complaint_directory / file_name
 
             try:
-                with file_path.open("wb") as buffer:
-                    while True:
-                        chunk = await attachment.read(
-                            1024 * 1024
-                        )
+                # Connect to bucket and define the path
+                bucket = storage.bucket()
+                blob_path = f"complaint_attachments/{complaint_id}/{file_name}"
+                blob =bucket.blob(blob_path)
 
-                        if not chunk:
-                            break
+                # Upload file directly from the UploadFile object to Firebase Storage
+                blob.upload_from_file(attachment.file, content_type=attachment.content_type)
 
-                        buffer.write(chunk)
+                # Make it publicly accessible for flutter frontend
+                blob.make_public()
+
+                # Save the full public Firebase URL to database
+                saved_attachments.append(blob.public_url)
+
+                # ===================LOCAL=======================
+                # with file_path.open("wb") as buffer:
+                #     while True:
+                #         chunk = await attachment.read(
+                #             1024 * 1024
+                #         )
+
+                #         if not chunk:
+                #             break
+
+                #         buffer.write(chunk)
+                # ================================================
 
             except OSError as e:
                 raise HTTPException(
@@ -2089,8 +2105,8 @@ async def create_complaint(
                 ) from e
 
             # Relative path saved in database
-            relative_path = f"/complaint_attachments/{complaint_id}/{file_name}"
-            saved_attachments.append(relative_path)
+            # relative_path = f"/complaint_attachments/{complaint_id}/{file_name}"
+            # saved_attachments.append(relative_path)
 
     # Saved attachment to database
     if saved_attachments:
@@ -2266,12 +2282,29 @@ def delete_complaints(request_data: DeleteComplaintInput,
                 }
             )
 
-            # Delete the local attachments (images)
-        for complaint_id in existing_ids:
-            complaint_directory = COMPLAINT_ATTACHMENT_DIRECTORY / str(complaint_id)
+        # Firebase delete logic
+        bucket = storage.bucket()
 
-            if complaint_directory.exists():
-                shutil.rmtree(complaint_directory)
+        # Create a master list to hold every single file across all complaints
+        all_blobs_to_delete = []
+
+        # Delete the attachments (images)
+        for complaint_id in existing_ids:
+            # Find all images inside the complaint's folder
+            blobs = bucket.list_blobs(prefix=f"complaint_attachments/{complaint_id}")
+
+            all_blobs_to_delete.extend(blobs)
+
+            # complaint_directory = COMPLAINT_ATTACHMENT_DIRECTORY / str(complaint_id)
+
+            # if complaint_directory.exists():
+            #     shutil.rmtree(complaint_directory)
+        
+        if all_blobs_to_delete:
+            bucket.delete_blobs(
+                all_blobs_to_delete,
+                on_error=lambda blob: None  # Silently ignore if a file is already deleted
+            )
 
         return {
             "message": "Complaints deleted successfully",
