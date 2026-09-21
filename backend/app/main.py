@@ -2,6 +2,7 @@ from datetime import date
 import shutil
 from uuid import UUID
 from fastapi import FastAPI, File, Query, Request, HTTPException, status, Depends, UploadFile, Form
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -28,6 +29,15 @@ import traceback
 
 # Initialize FastAPI app and database connection
 app = FastAPI()
+
+# Configure CORS to allow requests from Flutter apps and web clients
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow requests from any origin (you can restrict this to specific domains later)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Allow all headers including custom ones (Authorization, Content-Type, etc.)
+)
 
 # Set up static file serving for product images
 BASE_DIR = Path(__file__).resolve().parent.parent
