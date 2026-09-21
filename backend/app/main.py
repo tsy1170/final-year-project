@@ -786,8 +786,7 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
                  item_category: str = Query(default = None, description = "Sub-category under selected item group"),
                  limit: int = Query(default = 20, ge = 1, le = 100, description = "Number of products to return"),
                  offset: int = Query(default = 0, ge = 0, description = "Offset for pagination"),
-                 is_halal: bool = Query(default = True, description = "Filter for halal products"),
-                 request: Request = None):
+                 is_halal: bool = Query(default = True, description = "Filter for halal products")):
     
     try:
         with engine.connect() as conn:
@@ -818,13 +817,13 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
                 "is_halal": is_halal
             })
 
-            products = []
+            products = [dict(row._mapping) for row in result]
 
-            for row in result:
-                product = dict(row._mapping)
-                image_path = product.pop("image_path", None)
-                product["image_url"] = build_image_url(request, image_path)
-                products.append(product)
+            # for row in result:
+            #     product = dict(row._mapping)
+            #     image_path = product.pop("image_path", None)
+            #     product["image_url"] = build_image_url(request, image_path)
+            #     products.append(product)
 
             return {
                 "item_group": item_group,
