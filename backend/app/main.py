@@ -791,7 +791,7 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
     try:
         with engine.connect() as conn:
             result = conn.execute(text("""
-                SELECT 
+                SELECT
                     item_code,
                     item_name,
                     unit,
@@ -800,23 +800,23 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
                     image_path
                 FROM items
                 WHERE (
-                    CAST(:item_group AS TEXT) IS NULL 
+                    CAST(:item_group AS TEXT) IS NULL
                     OR LOWER(item_group) = LOWER(CAST(:item_group AS TEXT))
                 )
                 AND (
-                    OR CAST(:item_category AS TEXT) IS NULL 
+                    CAST(:item_category AS TEXT) IS NULL
                     OR LOWER(item_category) = LOWER(CAST(:item_category AS TEXT))
                 )
                 AND is_halal = :is_halal
                 ORDER BY item_name
-                LIMIT :limit 
+                LIMIT :limit
                 OFFSET :offset
             """), {
                 "item_group": item_group,
                 "item_category": item_category,
+                "is_halal": is_halal,
                 "limit": limit,
-                "offset": offset,
-                "is_halal": is_halal
+                "offset": offset
             })
 
             products = [dict(row._mapping) for row in result]
