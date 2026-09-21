@@ -804,8 +804,7 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
                     OR LOWER(item_group) = LOWER(CAST(:item_group AS TEXT))
                 )
                 AND (
-                    CAST(:item_group AS TEXT) IS NULL 
-                    OR :item_category IS NULL 
+                    OR CAST(:item_category AS TEXT) IS NULL 
                     OR LOWER(item_category) = LOWER(CAST(:item_category AS TEXT))
                 )
                 AND is_halal = :is_halal
