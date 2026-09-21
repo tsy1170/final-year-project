@@ -39,10 +39,10 @@ app.add_middleware(
     allow_credentials=False,  # Important: set to False when using allow_origins=["*"]
 )
 
-# Set up static file serving for product images
-BASE_DIR = Path(__file__).resolve().parent.parent
-IMAGE_DIRECTORY = BASE_DIR / "product_images" 
-app.mount("/product_images", StaticFiles(directory=IMAGE_DIRECTORY), name="product_images")
+# # Set up static file serving for product images
+# BASE_DIR = Path(__file__).resolve().parent.parent
+# IMAGE_DIRECTORY = BASE_DIR / "product_images" 
+# app.mount("/product_images", StaticFiles(directory=IMAGE_DIRECTORY), name="product_images")
 
 # Set up static file serving for complaint attachments
 # COMPLAINT_BASE_DIR = Path(__file__).resolve().parent.parent
