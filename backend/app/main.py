@@ -836,7 +836,7 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
     except Exception as e:
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = f"Failed to retrieve products"
+            detail = f"Failed to retrieve products: {type(e).__name__}: {e}"
         ) from e
 
 
