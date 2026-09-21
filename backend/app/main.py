@@ -799,11 +799,14 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
                     item_category,
                     image_path
                 FROM items
-                WHERE (:item_group IS NULL OR LOWER(item_group) = LOWER(:item_group))
+                WHERE (
+                    CAST(:item_group AS TEXT) IS NULL 
+                    OR LOWER(item_group) = LOWER(CAST(:item_group AS TEXT))
+                )
                 AND (
-                    :item_group IS NULL 
+                    CAST(:item_group AS TEXT) IS NULL 
                     OR :item_category IS NULL 
-                    OR LOWER(item_category) = LOWER(:item_category)
+                    OR LOWER(item_category) = LOWER(CAST(:item_category AS TEXT))
                 )
                 AND is_halal = :is_halal
                 ORDER BY item_name
