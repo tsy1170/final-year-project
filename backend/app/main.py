@@ -2085,7 +2085,7 @@ async def create_complaint(
                 # Connect to bucket and define the path
                 bucket = storage.bucket()
                 blob_path = f"complaint_attachments/{complaint_id}/{file_name}"
-                blob =bucket.blob(blob_path)
+                blob = bucket.blob(blob_path)
 
                 # Upload file directly from the UploadFile object to Firebase Storage
                 blob.upload_from_file(attachment.file, content_type=attachment.content_type)
