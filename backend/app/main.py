@@ -786,9 +786,9 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
                  item_category: str = Query(default = None, description = "Sub-category under selected item group"),
                  limit: int = Query(default = 20, ge = 1, le = 100, description = "Number of products to return"),
                  offset: int = Query(default = 0, ge = 0, description = "Offset for pagination"),
-                 is_halal: bool = Query(default = True, description = "Filter for halal products"),
+                 is_halal: bool | None = Query(default = None, description = "Filter for halal products"),
                  request: Request = None):
-    
+
     try:
         with engine.connect() as conn:
             result = conn.execute(text("""
@@ -801,12 +801,7 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
                     image_path
                 FROM items
                 WHERE (:item_group IS NULL OR LOWER(item_group) = LOWER(:item_group))
-                AND (
-                    :item_group IS NULL 
-                    OR :item_category IS NULL 
-                    OR LOWER(item_category) = LOWER(:item_category)
-                )
-                AND is_halal = :is_halal
+                AND (:item_category IS NULL OR LOWER(item_category) = LOWER(:item_category))
                 ORDER BY item_name
                 LIMIT :limit 
                 OFFSET :offset
@@ -814,8 +809,7 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
                 "item_group": item_group,
                 "item_category": item_category,
                 "limit": limit,
-                "offset": offset,
-                "is_halal": is_halal
+                "offset": offset
             })
 
             products = []
@@ -823,7 +817,7 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
             for row in result:
                 product = dict(row._mapping)
                 image_path = product.pop("image_path", None)
-                product["image_url"] = build_image_url(request, image_path)
+                product["image_url"] = build_image_url(request, image_path) if image_path else None
                 products.append(product)
 
             return {
@@ -833,11 +827,21 @@ def get_products(item_group: str = Query(default = None, description = "Major pr
                 "offset": offset,
                 "products": products
             }
-        
-    except Exception as e:
+
+    except SQLAlchemyError as e:
+        print(f"[ERROR] GET /products - database error while retrieving products: {e}")
+        traceback.print_exc()
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = f"Failed to retrieve products"
+            detail = "Failed to retrieve products due to a database error"
+        ) from e
+
+    except Exception as e:
+        print(f"[ERROR] GET /products - unexpected error while retrieving products: {e}")
+        traceback.print_exc()
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Failed to retrieve products"
         ) from e
 
 
