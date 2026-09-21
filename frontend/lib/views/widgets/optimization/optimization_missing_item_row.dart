@@ -12,12 +12,13 @@ class OptimizationMissingItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final itemCode = item['item_code'];
     return Container(
       margin: EdgeInsets.only(bottom: 12 * scale),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image placeholder
+          // Image placeholder straight from assets/product_images/ folder with item code
           Container(
             width: 45 * scale,
             height: 45 * scale,
@@ -26,10 +27,22 @@ class OptimizationMissingItemRow extends StatelessWidget {
               border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
               borderRadius: BorderRadius.circular(8 * scale),
             ),
-            child: item['image_url'] != null
+            child: itemCode != null
                 ? Opacity(
                     opacity: 0.5,
-                    child: Image.network(item['image_url'], fit: BoxFit.contain),
+                    child: Image.asset(
+                      'assets/product_images/$itemCode.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Image.asset(
+                        'assets/product_images/$itemCode.jpg',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.image_not_supported_outlined,
+                          color: Colors.grey.withValues(alpha: 0.5),
+                          size: 18 * scale,
+                        ),
+                      ),
+                    ),
                   )
                 : Icon(Icons.image_not_supported_outlined,
                     color: Colors.grey.withValues(alpha: 0.5), size: 18 * scale),

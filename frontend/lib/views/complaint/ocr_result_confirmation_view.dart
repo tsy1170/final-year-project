@@ -117,6 +117,15 @@ class _OCRResultConfirmationViewState extends State<OCRResultConfirmationView> {
     }
   }
 
+  void _formatPrice(TextEditingController controller) {
+    if (controller.text.isNotEmpty) {
+      final double? val = double.tryParse(controller.text);
+      if (val != null) {
+        controller.text = val.toStringAsFixed(2);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -261,9 +270,18 @@ class _OCRResultConfirmationViewState extends State<OCRResultConfirmationView> {
                     FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
                   ]
                 : null,
+            onEditingComplete: isNumeric ? () {
+              if (isNumeric) _formatPrice(controller);
+              FocusScope.of(context).unfocus();
+            } : null,
+            onTapOutside: (event) {
+              if (isNumeric) _formatPrice(controller);
+              FocusScope.of(context).unfocus();
+            },
             style: TextStyle(
               fontSize: 12 * widget.scale,
               color: const Color(0xFF1A1D1F),
+              fontWeight: FontWeight.w500
             ),
             decoration: InputDecoration(
               filled: true,

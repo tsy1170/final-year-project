@@ -195,14 +195,19 @@ class _GroceryViewState extends State<GroceryView> {
                                             )
                                           ),
                                           padding: EdgeInsets.all(5 * widget.scale),
-                                          child: (product.imageUrl != null && product.imageUrl!.isNotEmpty)
-                                              ? Image.network(
-                                                  product.imageUrl!,
-                                                  fit: BoxFit.contain,
-                                                  errorBuilder: (context, error, stackTrace) =>
-                                                      Icon(Icons.image_not_supported_outlined, size: 24 * widget.scale, color: const Color(0xFF9A9FA5)),
-                                                )
-                                              : Icon(Icons.image_outlined, size: 24 * widget.scale, color: const Color(0xFF9A9FA5)),
+                                          child: Image.asset(
+                                            'assets/product_images/${product.itemCode}.png',
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (context, error, stackTrace) => Image.asset(
+                                              'assets/product_images/${product.itemCode}.jpg',
+                                              fit: BoxFit.contain,
+                                              errorBuilder: (context, error, stackTrace) => Icon(
+                                                Icons.image_not_supported_outlined,
+                                                size: 24 * widget.scale,
+                                                color: const Color(0xFF9A9FA5),
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                         SizedBox(width: 12 * widget.scale),
                                         // Right side name and fav button

@@ -516,7 +516,7 @@ class _AddComplaintViewState extends State<AddComplaintView> {
               if (isPrice) _formatPrice(controller);
               FocusScope.of(context).unfocus();
             },
-            style: TextStyle(fontSize: 12 * widget.scale, color: const Color(0xFF1A1D1F)),
+            style: TextStyle(fontSize: 12 * widget.scale, color: const Color(0xFF1A1D1F), fontWeight: FontWeight.w500),
             decoration: InputDecoration(
               hintText: "Enter $label",
               hintStyle: TextStyle(
@@ -609,6 +609,7 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                   fontSize: 12 * widget.scale,
                   color: const Color(0xFF1A1D1F),
                   fontFamily: "Montserrat",
+                  fontWeight: FontWeight.w500
                 ),
                 inputDecorationTheme: InputDecorationTheme(
                   isDense: true,

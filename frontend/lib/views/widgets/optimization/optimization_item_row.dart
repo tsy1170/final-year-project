@@ -12,13 +12,14 @@ class OptimizationItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final itemCode = item['item_code'];
     return Container(
       margin: EdgeInsets.only(bottom: 15 * scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start, // Align top
         children: [
-          // Image
+          // Image fetched straight from assets/product_images/ folder with item code
           Container(
             width: 55 * scale,
             height: 55 * scale,
@@ -27,12 +28,16 @@ class OptimizationItemRow extends StatelessWidget {
               border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(8 * scale),
             ),
-            child: item['image_url'] != null
-                ? Image.network(
-                    item['image_url'],
+            child: itemCode != null
+                ? Image.asset(
+                    'assets/product_images/$itemCode.png',
                     fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) =>
-                        Icon(Icons.image_not_supported_outlined, size: 20 * scale),
+                    errorBuilder: (context, error, stackTrace) => Image.asset(
+                      'assets/product_images/$itemCode.jpg',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Icon(Icons.image_not_supported_outlined, size: 20 * scale),
+                    ),
                   )
                 : Icon(Icons.image_outlined, color: Colors.grey, size: 20 * scale),
           ),
@@ -44,7 +49,9 @@ class OptimizationItemRow extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
-                    item['item_name'][0].toUpperCase() + item['item_name'].substring(1).toLowerCase() ?? '',
+                    item['item_name'] != null && item['item_name'].toString().isNotEmpty
+                        ? item['item_name'][0].toUpperCase() + item['item_name'].substring(1).toLowerCase()
+                        : '',
                     style: TextStyle(
                       fontSize: 12 * scale,
                       fontWeight: FontWeight.w600,

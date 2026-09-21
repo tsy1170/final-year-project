@@ -161,7 +161,6 @@ class _PromotionCard extends StatelessWidget {
     final itemCode = product['item_code'] as int;
     final itemName = product['item_name'] ?? 'Unknown Item';
     final unit = product['unit'] ?? '';
-    final imageUrl = product['image_url'];
     final premiseName = product['premise_name'] ?? 'Unknown Premise';
     final todayPrice = product['today_price']?.toStringAsFixed(2) ?? '0.00';
     final priceReduction = product['price_reduction']?.toStringAsFixed(2) ?? '0.00';
@@ -198,7 +197,7 @@ class _PromotionCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Full-width image header
+                  // Full-width image header fetching from local assets folder
                   Expanded(
                     child: Container(
                       width: double.infinity,
@@ -207,22 +206,19 @@ class _PromotionCard extends StatelessWidget {
                         color: Colors.white,
                       ),
                       padding: EdgeInsets.all(15 * scale),
-                      child: (imageUrl != null && imageUrl.isNotEmpty)
-                          ? Image.network(
-                              imageUrl,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Icon(
-                                    Icons.image_not_supported_outlined,
-                                    size: 40 * scale,
-                                    color: const Color(0xFF9A9FA5),
-                                  )
-                          )
-                          : Icon(
-                              Icons.image_outlined,
-                              size: 40 * scale,
-                              color: const Color(0xFF9A9FA5),
-                            ),
+                      child: Image.asset(
+                        'assets/product_images/$itemCode.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => Image.asset(
+                          'assets/product_images/$itemCode.jpg',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.image_not_supported_outlined,
+                            size: 40 * scale,
+                            color: const Color(0xFF9A9FA5),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
 

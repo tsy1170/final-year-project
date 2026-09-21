@@ -286,16 +286,19 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                                     )
                                   ),
                                   padding: EdgeInsets.all(12 * widget.scale),
-                                  child: details['item'].imageUrl != null
-                                      ? Image.network(
-                                          details['item'].imageUrl,
-                                          fit: BoxFit.contain,
-                                        )
-                                      : Icon(
-                                          Icons.image,
-                                          size: 50 * widget.scale,
-                                          color: Colors.grey,
-                                        ),
+                                  child: Image.asset(
+                                    'assets/product_images/${widget.itemCode}.png',
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) => Image.asset(
+                                      'assets/product_images/${widget.itemCode}.jpg',
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (context, error, stackTrace) => Icon(
+                                        Icons.image_not_supported_outlined,
+                                        size: 50 * widget.scale,
+                                        color: const Color(0xFF9A9FA5),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                                 Positioned(
                                   top: 6 * widget.scale,
@@ -361,13 +364,6 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                           ],
                         ),
                       ),
-
-                      // Delicate warm divider line between Product Hero and Price Overview
-                      // Divider(
-                      //   height: 1,
-                      //   thickness: 1,
-                      //   color: const Color(0xFFF2EFEA),
-                      // ),
 
                       // Price Overview Section embedded in a tinted dashboard box (#F7F5F0)
                       Padding(

@@ -23,7 +23,6 @@ class _AddComplaintDescriptionViewState extends State<AddComplaintDescriptionVie
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8F5),
       appBar: AppBar(
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
         backgroundColor: const Color(0xFFFBF8F5),
         elevation: 0,
         centerTitle: true,
@@ -86,6 +85,7 @@ class _AddComplaintDescriptionViewState extends State<AddComplaintDescriptionVie
                   fontSize: 13 * widget.scale,
                   color: const Color(0xFF1A1D1F),
                   height: 1.5,
+                  fontWeight: FontWeight.w500
                 ),
               ),
             ),

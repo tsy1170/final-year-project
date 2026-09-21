@@ -142,14 +142,19 @@ class _ComparePricesViewState extends State<ComparePricesView> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            if (product.imageUrl != null)
-                              Image.network(
-                                product.imageUrl!,
+                            Image.asset(
+                              'assets/product_images/${product.itemCode}.png',
+                              height: 50 * scale,
+                              width: 50 * scale,
+                              fit: BoxFit.contain,
+                              errorBuilder: (c, e, s) => Image.asset(
+                                'assets/product_images/${product.itemCode}.jpg',
                                 height: 50 * scale,
                                 width: 50 * scale,
                                 fit: BoxFit.contain,
                                 errorBuilder: (c, e, s) => Icon(Icons.image, size: 30 * scale, color: Colors.grey),
                               ),
+                            ),
                             SizedBox(height: 6 * scale),
                             Padding(
                               padding: EdgeInsets.symmetric(horizontal: 8 * scale),

@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import 'package:image/image.dart' as img;
 
 class OCRService {
   final _textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
@@ -11,7 +9,7 @@ class OCRService {
   static final Set<String> _stopWords = {
     'a', 'an', 'the', 'and', 'or', 'but', 'is', 'if', 'then', 'else', 'when', 'at',
     'from', 'by', 'for', 'with', 'in', 'out', 'on', 'off', 'over', 'under', 'again',
-    'further', 'then', 'once', 'dan', 'yang', 'itu', 'ini', 'untuk', 'dengan', 'dari',
+    'further', 'once', 'dan', 'yang', 'itu', 'ini', 'untuk', 'dengan', 'dari',
     'ke', 'di', 'ada', 'adalah', 'sebagai', 'pada', 'oleh', 'rm', 'price', 'harga'
   };
 
@@ -26,49 +24,15 @@ class OCRService {
   );
 
   /// Pre-processing logic for OCR enhancement
-  /// Now uses [compute] to run in a background isolate to prevent UI thread blocking
+  /// Bypassed custom Dart loops. Google ML Kit handles raw color images 
+  /// natively with highly-optimized internal hardware thresholding.
   Future<String> preprocessImage(String imagePath) async {
-    try {
-      final bytes = await File(imagePath).readAsBytes();
-
-      // Heavy computation moved to background
-      final Uint8List? processedBytes = await compute(_processImageIsolate, bytes);
-
-      if (processedBytes == null) return imagePath;
-
-      final processedPath = '${imagePath}_processed.jpg';
-      await File(processedPath).writeAsBytes(processedBytes);
-      return processedPath;
-    } catch (e) {
-      debugPrint("OCR Pre-processing error: $e");
+    // Ensure the file completely exists on disk cache before passing to native ML Kit
+    final file = File(imagePath);
+    if (await file.exists()) {
       return imagePath;
     }
-  }
-
-  /// Static helper for [compute] isolate
-  static Uint8List? _processImageIsolate(Uint8List bytes) {
-    img.Image? capturedImage = img.decodeImage(bytes);
-    if (capturedImage == null) return null;
-
-    // Fix orientation
-    capturedImage = img.bakeOrientation(capturedImage);
-
-    // Enhance: Grayscale -> Contrast -> Sharpen
-    img.Image processed = img.grayscale(capturedImage);
-    processed = img.adjustColor(processed, contrast: 1.3);
-    processed = img.convolution(
-      processed,
-      filter: [0, -1, 0, -1, 5, -1, 0, -1, 0],
-      div: 1,
-      offset: 0,
-    );
-
-    // Resize if too small
-    if (processed.width < 800) {
-      processed = img.copyResize(processed, width: 800);
-    }
-
-    return Uint8List.fromList(img.encodeJpg(processed, quality: 90));
+    return imagePath;
   }
 
   /// Existing function for price tag scanner
@@ -94,6 +58,7 @@ class OCRService {
         'price': priceMatch.value,
       };
     } catch (e) {
+      debugPrint('Error processing price tag: $e');
       return {'itemName': null, 'price': null};
     }
   }
@@ -101,10 +66,14 @@ class OCRService {
   /// Recognizes all text in an image
   Future<String> recognizeFullText(String imagePath) async {
     try {
+      final file = File(imagePath);
+      if (!await file.exists()) return "";
+      
       final inputImage = InputImage.fromFilePath(imagePath);
       final recognizedText = await _textRecognizer.processImage(inputImage);
       return recognizedText.text;
     } catch (e) {
+      debugPrint('Full text recognition error: $e');
       return "";
     }
   }

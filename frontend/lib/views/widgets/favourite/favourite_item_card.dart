@@ -55,14 +55,19 @@ class FavouriteItemCard extends StatelessWidget {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12 * scale),
                       ),
-                      child: product.imageUrl != null && product.imageUrl!.isNotEmpty
-                          ? Image.network(
-                              product.imageUrl!,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Icon(Icons.image_not_supported_outlined, size: 30 * scale, color: const Color(0xFF9A9FA5)),
-                            )
-                          : Icon(Icons.image_outlined, size: 40 * scale, color: const Color(0xFF9A9FA5)),
+                      child: Image.asset(
+                        'assets/product_images/${product.itemCode}.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => Image.asset(
+                          'assets/product_images/${product.itemCode}.jpg',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.image_not_supported_outlined,
+                            size: 30 * scale,
+                            color: const Color(0xFF9A9FA5),
+                          ),
+                        ),
+                      ),
                     ),
                     SizedBox(width: 15 * scale),
                     // Item name and unit below the name

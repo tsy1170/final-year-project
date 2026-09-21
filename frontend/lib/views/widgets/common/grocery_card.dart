@@ -19,6 +19,11 @@ class GroceryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Generate a deterministic aspect ratio based on the item code so that the 
+    // Masonry Grid keeps its beautiful staggered layout asymmetry, but the height 
+    // is pre-allocated instantly before the asset loads. This completely prevents jittering.
+    final double deterministicAspectRatio = (product.itemCode % 2 == 0) ? 1.0 : 1.15;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -45,27 +50,27 @@ class GroceryCard extends StatelessWidget {
                   ),
                   child: Container(
                     width: double.infinity,
-                    padding: EdgeInsets.all(15 * scale),
                     color: Colors.white,
-                    child: (product.imageUrl != null && product.imageUrl!.isNotEmpty)
-                      ? Image.network(
-                          product.imageUrl!,
+                    // Pre-allocates exact dimensions instantly, eliminating layout jumps entirely
+                    child: AspectRatio(
+                      aspectRatio: deterministicAspectRatio,
+                      child: Padding(
+                        padding: EdgeInsets.all(15 * scale),
+                        child: Image.asset(
+                          'assets/product_images/${product.itemCode}.png',
                           fit: BoxFit.contain,
-                          // Let the image define its own height to create masonry effect
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.image_not_supported_outlined,
-                            size: 40 * scale,
-                            color: const Color(0xFF9A9FA5),
-                          ),
-                        )
-                      : Padding(
-                          padding: EdgeInsets.symmetric(vertical: 40 * scale),
-                          child: Icon(
-                            Icons.image_outlined,
-                            size: 40 * scale,
-                            color: const Color(0xFF9A9FA5),
+                          errorBuilder: (context, error, stackTrace) => Image.asset(
+                            'assets/product_images/${product.itemCode}.jpg',
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.image_not_supported_outlined,
+                              size: 40 * scale,
+                              color: const Color(0xFF9A9FA5),
+                            ),
                           ),
                         ),
+                      ),
+                    ),
                   ),
                 ),
                 Padding(

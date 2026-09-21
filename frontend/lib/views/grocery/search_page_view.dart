@@ -286,14 +286,17 @@ class _SearchPageViewState extends State<SearchPageView> {
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(12 * widget.scale),
                                     ),
-                                    child: product.imageUrl != null
-                                        ? Image.network(
-                                            product.imageUrl!,
-                                            fit: BoxFit.fill,
-                                            errorBuilder: (context, error, stackTrace) =>
-                                                const Icon(Icons.image_not_supported_outlined),
-                                          )
-                                        : const Icon(Icons.image_outlined),
+                                    child: Image.asset(
+                                      'assets/product_images/${product.itemCode}.png',
+                                      fit: BoxFit.fill,
+                                      errorBuilder: (context, error, stackTrace) => Image.asset(
+                                        'assets/product_images/${product.itemCode}.jpg',
+                                        fit: BoxFit.fill,
+                                        errorBuilder: (context, error, stackTrace) => const Icon(
+                                          Icons.image_not_supported_outlined,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                   SizedBox(width: 12 * widget.scale),
                                   Expanded(
