@@ -33,10 +33,10 @@ app = FastAPI()
 # Configure CORS to allow requests from Flutter apps and web clients
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow requests from any origin (you can restrict this to specific domains later)
-    allow_credentials=True,
+    allow_origins=["*"],  # Allow requests from any origin
     allow_methods=["*"],  # Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
-    allow_headers=["*"],  # Allow all headers including custom ones (Authorization, Content-Type, etc.)
+    allow_headers=["*"],  # Allow all headers
+    allow_credentials=False,  # Important: set to False when using allow_origins=["*"]
 )
 
 # Set up static file serving for product images
