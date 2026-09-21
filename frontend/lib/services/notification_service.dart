@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../models/price_alert.dart';
 import '../constants/api_constants.dart';
 
@@ -56,7 +56,8 @@ class NotificationService {
     }
 
     // 2. Initialize local notifications
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    // Set to @drawable/ic_notification to use your custom white mask icon with transparent background
+    const android = AndroidInitializationSettings('@drawable/ic_notification');
     const ios = DarwinInitializationSettings(
       requestAlertPermission: false, // already requested via FCM
       requestBadgePermission: false,
@@ -68,8 +69,6 @@ class NotificationService {
       settings: settingsInit,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         debugPrint('Notification tapped: ${response.payload}');
-        // Add navigation logic here
-        // e.g. navigate to price alerts page
       },
       onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
@@ -93,7 +92,7 @@ class NotificationService {
       if (notification == null) return;
 
       _localNotifications.show(
-        id: notification.hashCode.abs(), // ← non-negative
+        id: notification.hashCode.abs(),
         title: notification.title,
         body: notification.body,
         notificationDetails: NotificationDetails(
@@ -101,7 +100,8 @@ class NotificationService {
             _androidChannel.id,
             _androidChannel.name,
             channelDescription: _androidChannel.description,
-            icon: '@mipmap/ic_launcher',
+            icon: '@drawable/ic_notification', // Use the mask icon
+            color: Colors.white, // Accent color tint for the notification circle area
             importance: Importance.max,
             priority: Priority.high,
           ),

@@ -122,7 +122,7 @@ class _GroceryViewState extends State<GroceryView> {
                 parent: AlwaysScrollableScrollPhysics(),
               ),
               slivers: [
-                SliverToBoxAdapter(child: SizedBox(height: 160 * widget.scale)),
+                SliverToBoxAdapter(child: SizedBox(height: 140 * widget.scale)),
                 
                 // Most Viewed Section - Now at the top
                 if (viewModel.mostViewedProducts.isNotEmpty)
@@ -131,7 +131,7 @@ class _GroceryViewState extends State<GroceryView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Padding(
-                          padding: EdgeInsets.fromLTRB(30 * widget.scale, 5 * widget.scale, 20 * widget.scale, 8 * widget.scale),
+                          padding: EdgeInsets.fromLTRB(30 * widget.scale, 20 * widget.scale, 20 * widget.scale, 5 * widget.scale),
                           child: Text(
                             "MOST VIEWED",
                             style: TextStyle(
@@ -142,132 +142,135 @@ class _GroceryViewState extends State<GroceryView> {
                             ),
                           ),
                         ),
-                        SizedBox(
-                          height: 120 * widget.scale,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            padding: EdgeInsets.symmetric(horizontal: 15 * widget.scale, vertical: 12 * widget.scale),
-                            itemCount: viewModel.mostViewedProducts.length,
-                            itemBuilder: (context, index) {
-                              final product = viewModel.mostViewedProducts[index];
-                              final isFavourite = favouriteViewModel.favourites.contains(product.itemCode);
-                              
-                              return Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 5 * widget.scale),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => ProductDetailsView(
-                                          itemCode: product.itemCode,
-                                          scale: widget.scale,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    width: 260 * widget.scale,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16 * widget.scale),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.04),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 4),
-                                        )
-                                      ],
-                                    ),
-                                    padding: EdgeInsets.all(12 * widget.scale),
-                                    child: Row(
-                                      children: [
-                                        // Left side image
-                                        Container(
-                                          width: 70 * widget.scale,
-                                          height: 70 * widget.scale,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(12 * widget.scale),
-                                            border: Border.all(
-                                              color: const Color(0xFFF2EFEA),
-                                              width: 1 * widget.scale
-                                            )
+                        Padding(
+                          padding: EdgeInsets.only(bottom: 30 * widget.scale),
+                          child: SizedBox(
+                            height: 120 * widget.scale,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: EdgeInsets.symmetric(horizontal: 15 * widget.scale, vertical: 12 * widget.scale),
+                              itemCount: viewModel.mostViewedProducts.length,
+                              itemBuilder: (context, index) {
+                                final product = viewModel.mostViewedProducts[index];
+                                final isFavourite = favouriteViewModel.favourites.contains(product.itemCode);
+
+                                return Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 5 * widget.scale),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ProductDetailsView(
+                                            itemCode: product.itemCode,
+                                            scale: widget.scale,
                                           ),
-                                          padding: EdgeInsets.all(5 * widget.scale),
-                                          child: Image.asset(
-                                            'assets/product_images/${product.itemCode}.png',
-                                            fit: BoxFit.contain,
-                                            errorBuilder: (context, error, stackTrace) => Image.asset(
-                                              'assets/product_images/${product.itemCode}.jpg',
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      width: 260 * widget.scale,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(16 * widget.scale),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.04),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 4),
+                                          )
+                                        ],
+                                      ),
+                                      padding: EdgeInsets.all(12 * widget.scale),
+                                      child: Row(
+                                        children: [
+                                          // Left side image
+                                          Container(
+                                            width: 70 * widget.scale,
+                                            height: 70 * widget.scale,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius: BorderRadius.circular(12 * widget.scale),
+                                              border: Border.all(
+                                                color: const Color(0xFFF2EFEA),
+                                                width: 1 * widget.scale
+                                              )
+                                            ),
+                                            padding: EdgeInsets.all(5 * widget.scale),
+                                            child: Image.asset(
+                                              'assets/product_images/${product.itemCode}.png',
                                               fit: BoxFit.contain,
-                                              errorBuilder: (context, error, stackTrace) => Icon(
-                                                Icons.image_not_supported_outlined,
-                                                size: 24 * widget.scale,
-                                                color: const Color(0xFF9A9FA5),
+                                              errorBuilder: (context, error, stackTrace) => Image.asset(
+                                                'assets/product_images/${product.itemCode}.jpg',
+                                                fit: BoxFit.contain,
+                                                errorBuilder: (context, error, stackTrace) => Icon(
+                                                  Icons.image_not_supported_outlined,
+                                                  size: 24 * widget.scale,
+                                                  color: const Color(0xFF9A9FA5),
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        SizedBox(width: 12 * widget.scale),
-                                        // Right side name and fav button
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                product.name[0].toUpperCase() + product.name.substring(1).toLowerCase(),
-                                                style: TextStyle(
-                                                  fontSize: 12 * widget.scale,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: const Color(0xFF1A1D1F),
+                                          SizedBox(width: 12 * widget.scale),
+                                          // Right side name and fav button
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  product.name[0].toUpperCase() + product.name.substring(1).toLowerCase(),
+                                                  style: TextStyle(
+                                                    fontSize: 12 * widget.scale,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: const Color(0xFF1A1D1F),
+                                                  ),
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const Spacer(),
-                                              Align(
-                                                alignment: Alignment.bottomRight,
-                                                child: GestureDetector(
-                                                  onTap: () {
-                                                    if (authViewModel.isLoggedIn) {
-                                                      favouriteViewModel.toggleFavourite(
-                                                        product.itemCode,
-                                                        authViewModel.accessToken!,
-                                                        lat: locationViewModel.currentPosition?.latitude,
-                                                        lng: locationViewModel.currentPosition?.longitude,
-                                                      );
-                                                      if (!isFavourite) {
-                                                        showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
+                                                const Spacer(),
+                                                Align(
+                                                  alignment: Alignment.bottomRight,
+                                                  child: GestureDetector(
+                                                    onTap: () {
+                                                      if (authViewModel.isLoggedIn) {
+                                                        favouriteViewModel.toggleFavourite(
+                                                          product.itemCode,
+                                                          authViewModel.accessToken!,
+                                                          lat: locationViewModel.currentPosition?.latitude,
+                                                          lng: locationViewModel.currentPosition?.longitude,
+                                                        );
+                                                        if (!isFavourite) {
+                                                          showTopNotification(context, "Successfully Added to Favourites", true, widget.scale);
+                                                        }
+                                                      } else {
+                                                        showTopNotification(context, "Please login to add favourites", false, widget.scale);
                                                       }
-                                                    } else {
-                                                      showTopNotification(context, "Please login to add favourites", false, widget.scale);
-                                                    }
-                                                  },
-                                                  child: Container(
-                                                    padding: EdgeInsets.all(6 * widget.scale),
-                                                    decoration: BoxDecoration(
-                                                      color: const Color(0xFFF9ECE6),
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    child: Icon(
-                                                      isFavourite ? Icons.favorite : Icons.favorite_border,
-                                                      size: 18 * widget.scale,
-                                                      color: isFavourite ? const Color(0xFFB85A3A) : const Color(0xFF1A1D1F),
+                                                    },
+                                                    child: Container(
+                                                      padding: EdgeInsets.all(6 * widget.scale),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFF9ECE6),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                      child: Icon(
+                                                        isFavourite ? Icons.favorite : Icons.favorite_border,
+                                                        size: 18 * widget.scale,
+                                                        color: isFavourite ? const Color(0xFFB85A3A) : const Color(0xFF1A1D1F),
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              );
-                            },
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ],
