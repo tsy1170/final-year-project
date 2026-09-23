@@ -6,6 +6,7 @@ import '../../viewmodels/grocery_view_model.dart';
 import '../../viewmodels/auth_view_model.dart';
 import '../../viewmodels/favourite_view_model.dart';
 import '../../viewmodels/location_view_model.dart';
+import '../../viewmodels/connectivity_view_model.dart';
 import '../widgets/grocery/promotion_section.dart';
 import '../widgets/grocery/shop_by_category.dart';
 import '../widgets/common/grocery_card.dart';
@@ -107,6 +108,9 @@ class _GroceryViewState extends State<GroceryView> {
             backgroundColor: const Color(0xFF1A1D1F),
             edgeOffset: 140 * widget.scale,
             onRefresh: () async {
+              // Immediately verify the connection state before calling any service endpoints
+              final isConnected = await context.read<ConnectivityViewModel>().checkConnection();
+              if (!isConnected) return; // Exit immediately!
               await viewModel.loadProducts(isRefresh: true);
               if (locationViewModel.currentPosition != null) {
                 await viewModel.loadWorthBuying(
@@ -143,7 +147,7 @@ class _GroceryViewState extends State<GroceryView> {
                           ),
                         ),
                         Padding(
-                          padding: EdgeInsets.only(bottom: 30 * widget.scale),
+                          padding: EdgeInsets.only(bottom: 20 * widget.scale),
                           child: SizedBox(
                             height: 120 * widget.scale,
                             child: ListView.builder(

@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/grocery_product.dart';
 import '../models/item_group.dart';
 import '../models/store_price.dart';
 import '../constants/api_constants.dart';
+import '../viewmodels/connectivity_view_model.dart';
 
 class GroceryService {
   final String baseUrl = ApiConstants.baseUrl;
@@ -14,6 +16,16 @@ class GroceryService {
   void _handleResponse(http.Response response) {
     if (response.statusCode == 401) {
       onResponseStatus?.call(401);
+    }
+  }
+
+  void _handleNetworkError(dynamic e) {
+    final errStr = e.toString();
+    if (e is SocketException || 
+        errStr.contains('ClientException') || 
+        errStr.contains('connection abort') || 
+        errStr.contains('Software caused')) {
+      ConnectivityViewModel.setGlobalOffline();
     }
   }
 
@@ -45,6 +57,7 @@ class GroceryService {
         throw Exception('Failed to load products');
       }
     } catch (e) {
+      _handleNetworkError(e);
       print('Error fetching products: $e');
       return [];
     }
@@ -62,6 +75,7 @@ class GroceryService {
         throw Exception('Failed to load categories');
       }
     } catch (e) {
+      _handleNetworkError(e);
       print('Error fetching categories: $e');
       return [];
     }
@@ -96,6 +110,7 @@ class GroceryService {
         throw Exception(errorData['detail'] ?? 'Failed to load product details');
       }
     } catch (e) {
+      _handleNetworkError(e);
       print('Error fetching product details: $e');
       rethrow;
     }
@@ -113,6 +128,7 @@ class GroceryService {
         throw Exception('Failed to search products');
       }
     } catch (e) {
+      _handleNetworkError(e);
       print('Error searching products: $e');
       return [];
     }
@@ -142,6 +158,7 @@ class GroceryService {
         throw Exception('Failed to load worth buying products');
       }
     } catch (e) {
+      _handleNetworkError(e);
       print('Error fetching worth buying products: $e');
       return {'results': []};
     }

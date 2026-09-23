@@ -35,7 +35,11 @@ android {
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
             
-            // Add Proguard rules file to avoid missing class compilation errors during R8 minification
+            // Explicitly disable minification and shrinking to solve the "Missing classes" errors 
+            // and prevent the black screen crash caused by R8 stripping native entry points.
+            isMinifyEnabled = false
+            isShrinkResources = false
+
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }

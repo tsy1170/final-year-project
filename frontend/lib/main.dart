@@ -11,6 +11,8 @@ import 'viewmodels/location_view_model.dart';
 import 'viewmodels/complaint_view_model.dart';
 import 'viewmodels/notification_view_model.dart';
 import 'viewmodels/compare_prices_view_model.dart';
+import 'viewmodels/connectivity_view_model.dart';
+import 'views/widgets/common/no_internet_view.dart';
 import 'services/grocery_service.dart';
 import 'services/auth_service.dart';
 import 'services/favourite_service.dart';
@@ -24,9 +26,15 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // Safeguard global initialization steps so any failure or missing native plugin/resource
+  // in release mode does not stall execution or result in a black screen.
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint("Firebase initialization failed: $e");
+  }
 
   // Lock orientation to portrait
   await SystemChrome.setPreferredOrientations([
@@ -45,7 +53,6 @@ Future<void> main() async {
       systemNavigationBarContrastEnforced: false,
       systemStatusBarContrastEnforced: false,
       statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
 
@@ -67,18 +74,30 @@ Future<void> main() async {
   optimizationService.onResponseStatus = authViewModel.handleServiceResponse;
   notificationService.onResponseStatus = authViewModel.handleServiceResponse;
 
-  // Initialize Notifications and capture the device token
-  await notificationService.initNotifications();
-  final fcmToken = await notificationService.getDeviceToken();
-  // Provide the token to AuthViewModel for backend synchronization
-  await authViewModel.setFcmToken(fcmToken);
+  // Safeguard push notification and device token initialization
+  try {
+    await notificationService.initNotifications();
+    final fcmToken = await notificationService.getDeviceToken();
+    if (fcmToken != null) {
+      await authViewModel.setFcmToken(fcmToken);
+    }
+  } catch (e) {
+    debugPrint("Notification plugin initialization failed safely: $e");
+  }
 
-  // Register background handler before runApp
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  // Register background handler safely before runApp
+  try {
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    debugPrint("Firebase background messaging registration failed: $e");
+  }
 
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider<ConnectivityViewModel>(
+          create: (_) => ConnectivityViewModel(),
+        ),
         ChangeNotifierProvider<AuthViewModel>.value(value: authViewModel),
         ChangeNotifierProvider<NavigationViewModel>(
           create: (_) => NavigationViewModel(),
@@ -152,6 +171,13 @@ class GroceryApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const RootView(),
+      builder: (context, child) {
+        final connectivityVM = context.watch<ConnectivityViewModel>();
+        if (connectivityVM.isOffline) {
+          return const NoInternetView();
+        }
+        return child!;
+      },
     );
   }
 }
