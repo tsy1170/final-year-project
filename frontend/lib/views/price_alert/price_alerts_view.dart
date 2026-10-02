@@ -216,7 +216,7 @@ class _PriceAlertsViewState extends State<PriceAlertsView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'PRICE ALERTS',
+          'PRICE NOTIFICATIONS',
           style: TextStyle(
             color: const Color(0xFF1A1D1F),
             fontSize: 16 * widget.scale,

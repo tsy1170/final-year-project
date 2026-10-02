@@ -58,22 +58,19 @@ class PriceAlertCard extends StatelessWidget {
                     )
                   ),
                   padding: EdgeInsets.all(8 * scale),
-                  child: alert.imageUrl != null && alert.imageUrl!.isNotEmpty
-                      ? Image.network(
-                          alert.imageUrl!,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Icon(
-                                Icons.image_not_supported_outlined,
-                                size: 30 * scale,
-                                color: const Color(0xFF9A9FA5),
-                              ),
-                        )
-                      : Icon(
-                          Icons.image,
-                          color: const Color(0xFF9A9FA5),
-                          size: 40 * scale,
-                        ),
+                  child: Image.asset(
+                    'assets/product_images/${alert.itemCode}.png',
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => Image.asset(
+                      'assets/product_images/${alert.itemCode}.jpg',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.image_not_supported_outlined,
+                        size: 30 * scale,
+                        color: const Color(0xFF9A9FA5),
+                      ),
+                    ),
+                  ),
                 ),
                 SizedBox(width: 16 * scale),
                 // Item details
