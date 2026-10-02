@@ -148,7 +148,7 @@ class _EditProfileViewState extends State<EditProfileView> {
         title: Text(
           'EDIT PROFILE',
           style: TextStyle(
-            color: const Color(0xFFB85A3A),
+            color: const Color(0xFF1A1D1F),
             fontSize: 16 * widget.scale,
             fontWeight: FontWeight.w700,
           ),

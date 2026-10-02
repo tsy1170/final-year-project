@@ -105,8 +105,12 @@ Future<void> main() async {
         ChangeNotifierProvider<LocationViewModel>(
           create: (_) => LocationViewModel(),
         ),
-        ChangeNotifierProvider<GroceryViewModel>(
+        ChangeNotifierProxyProvider<AuthViewModel, GroceryViewModel>(
           create: (_) => GroceryViewModel(groceryService),
+          update: (_, auth, grocery) {
+            grocery!.updateUserId(auth.userEmail);
+            return grocery;
+          },
         ),
         ChangeNotifierProxyProvider2<AuthViewModel, LocationViewModel, FavouriteViewModel>(
           create: (_) => FavouriteViewModel(favouriteService),

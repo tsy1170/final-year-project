@@ -68,6 +68,8 @@ class GroceryViewModel extends ChangeNotifier {
   List<GroceryProduct> _mostViewedProducts = [];
   List<GroceryProduct> get mostViewedProducts => _mostViewedProducts;
 
+  String? _currentUserId;
+
   GroceryViewModel(this._groceryService) {
     _searchController.addListener(_onSearchChanged);
     loadProducts();
@@ -77,6 +79,13 @@ class GroceryViewModel extends ChangeNotifier {
 
   void _onSearchChanged() {
     notifyListeners();
+  }
+
+  void updateUserId(String? userId) {
+    if (_currentUserId != userId) {
+      _currentUserId = userId;
+      loadMostViewedProducts();
+    }
   }
 
   Future<void> loadProducts({bool isRefresh = true}) async {
@@ -196,34 +205,45 @@ class GroceryViewModel extends ChangeNotifier {
 
   Future<void> incrementViewCount(GroceryProduct product) async {
     final prefs = await SharedPreferences.getInstance();
+    final String prefix = _currentUserId ?? 'guest';
     
     // Get view counts map: { itemCode: count }
-    final String? countsJson = prefs.getString('product_view_counts');
+    final String? countsJson = prefs.getString('${prefix}_product_view_counts');
     Map<String, dynamic> counts = countsJson != null ? json.decode(countsJson) : {};
     
     final String itemCodeStr = product.itemCode.toString();
     int currentCount = counts[itemCodeStr] ?? 0;
     counts[itemCodeStr] = currentCount + 1;
     
-    await prefs.setString('product_view_counts', json.encode(counts));
+    await prefs.setString('${prefix}_product_view_counts', json.encode(counts));
 
     // Store product metadata for offline display in "Most Viewed" section
-    final String? productsJson = prefs.getString('viewed_products_data');
+    final String? productsJson = prefs.getString('${prefix}_viewed_products_data');
     Map<String, dynamic> productsData = productsJson != null ? json.decode(productsJson) : {};
     productsData[itemCodeStr] = product.toJson();
-    await prefs.setString('viewed_products_data', json.encode(productsData));
+    await prefs.setString('${prefix}_viewed_products_data', json.encode(productsData));
     
     loadMostViewedProducts();
   }
 
   Future<void> loadMostViewedProducts() async {
     final prefs = await SharedPreferences.getInstance();
-    final String? countsJson = prefs.getString('product_view_counts');
-    if (countsJson == null) return;
+    final String prefix = _currentUserId ?? 'guest';
+    
+    final String? countsJson = prefs.getString('${prefix}_product_view_counts');
+    if (countsJson == null) {
+      _mostViewedProducts = [];
+      notifyListeners();
+      return;
+    }
     
     Map<String, dynamic> counts = json.decode(countsJson);
-    final String? productsJson = prefs.getString('viewed_products_data');
-    if (productsJson == null) return;
+    final String? productsJson = prefs.getString('${prefix}_viewed_products_data');
+    if (productsJson == null) {
+      _mostViewedProducts = [];
+      notifyListeners();
+      return;
+    }
     Map<String, dynamic> productsData = json.decode(productsJson);
 
     // Filter items with >= 5 views
