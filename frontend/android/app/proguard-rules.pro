@@ -14,6 +14,10 @@
 -keep class com.google.firebase.** { *; }
 -keep class com.google.mlkit.** { *; }
 
+# Biometric keep rules
+-keep class androidx.biometric.** { *; }
+-keep class io.flutter.plugins.localauth.** { *; }
+
 # Prevent warnings from missing ML Kit script modules
 -dontwarn com.google.mlkit.vision.text.chinese.**
 -dontwarn com.google.mlkit.vision.text.devanagari.**

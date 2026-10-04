@@ -5,6 +5,7 @@ import '../constants/api_constants.dart';
 class AuthService {
   final String baseUrl = ApiConstants.baseUrl;
   void Function(int)? onResponseStatus;
+  final Duration timeoutDuration = const Duration(seconds: 15);
 
   AuthService({this.onResponseStatus});
 
@@ -34,7 +35,7 @@ class AuthService {
         'phone_number': phoneNumber,
         'dob': dob,
       }),
-    );
+    ).timeout(timeoutDuration);
     _handleResponse(response);
 
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -65,7 +66,7 @@ class AuthService {
         'username': email,
         'password': password,
       },
-    );
+    ).timeout(timeoutDuration);
     _handleResponse(response);
 
     if (response.statusCode == 200) {
@@ -86,15 +87,15 @@ class AuthService {
 
   Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
     final url = Uri.parse('$baseUrl/users/refresh-token');
-    
+
     final response = await http.post(
       url,
       headers: {
         'Content-Type': 'application/json',
       },
       body: json.encode({'refresh_token': refreshToken}),
-    );
-    
+    ).timeout(timeoutDuration);
+
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
@@ -109,7 +110,7 @@ class AuthService {
       headers: {
         'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(timeoutDuration);
     _handleResponse(response);
 
     if (response.statusCode == 200) {
@@ -128,7 +129,7 @@ class AuthService {
         'Content-Type': 'application/json',
       },
       body: json.encode({'fcm_token': fcmToken}),
-    );
+    ).timeout(timeoutDuration);
     _handleResponse(response);
 
     if (response.statusCode == 200) {
@@ -147,7 +148,7 @@ class AuthService {
         'Content-Type': 'application/json',
       },
       body: json.encode({'user_name': newUsername}),
-    );
+    ).timeout(timeoutDuration);
     _handleResponse(response);
 
     if (response.statusCode == 200) {
@@ -166,7 +167,7 @@ class AuthService {
         'Content-Type': 'application/json',
       },
       body: json.encode({'nric': newNric}),
-    );
+    ).timeout(timeoutDuration);
     _handleResponse(response);
 
     if (response.statusCode == 200) {
@@ -185,7 +186,7 @@ class AuthService {
         'Content-Type': 'application/json',
       },
       body: json.encode({'phone_number': newPhoneNumber}),
-    );
+    ).timeout(timeoutDuration);
     _handleResponse(response);
 
     if (response.statusCode == 200) {
@@ -204,7 +205,7 @@ class AuthService {
         'Content-Type': 'application/json',
       },
       body: json.encode({'dob': newDob}),
-    );
+    ).timeout(timeoutDuration);
     _handleResponse(response);
 
     if (response.statusCode == 200) {
@@ -226,7 +227,7 @@ class AuthService {
         'new_email': newEmail,
         'current_password': currentPassword,
       }),
-    );
+    ).timeout(timeoutDuration);
     _handleResponse(response);
 
     if (response.statusCode == 200) {
@@ -248,7 +249,7 @@ class AuthService {
         'current_password': currentPassword,
         'new_password': newPassword,
       }),
-    );
+    ).timeout(timeoutDuration);
     _handleResponse(response);
 
     if (response.statusCode == 200) {

@@ -5,12 +5,16 @@ import '../services/auth_service.dart';
 
 class AuthViewModel extends ChangeNotifier {
   final AuthService _authService;
-  final _storage = const FlutterSecureStorage();
+  final _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+    ),
+  );
   final LocalAuthentication _localAuth = LocalAuthentication();
 
   bool _isLoggedIn = false;
   bool get isLoggedIn => _isLoggedIn;
-  
+
   String? _userName;
   String? get userName => _userName;
 
@@ -56,12 +60,17 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   Future<void> _initialize() async {
-    await Future.wait([
-      _checkLoginStatus(),
-      _checkBiometricSupport(),
-    ]);
-    _isInitialized = true;
-    notifyListeners();
+    try {
+      await Future.wait([
+        _checkLoginStatus(),
+        _checkBiometricSupport(),
+      ]);
+    } catch (e) {
+      debugPrint('Initialization error: $e');
+    } finally {
+      _isInitialized = true;
+      notifyListeners();
+    }
   }
 
   Future<void> _checkBiometricSupport() async {
@@ -69,7 +78,7 @@ class AuthViewModel extends ChangeNotifier {
       final bool canAuthenticateWithBiometrics = await _localAuth.canCheckBiometrics;
       final bool isDeviceSupported = await _localAuth.isDeviceSupported();
       _isBiometricSupported = canAuthenticateWithBiometrics && isDeviceSupported;
-      
+
       final String? enabled = await _storage.read(key: 'is_biometric_enabled');
       _isBiometricEnabled = enabled == 'true';
     } catch (e) {
@@ -85,18 +94,26 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   Future<void> _checkLoginStatus() async {
-    final token = await _storage.read(key: 'access_token');
-    if (token != null) {
-      _accessToken = token;
-      try {
-        await _fetchAndSetUserInfo(token);
-        _isLoggedIn = true;
-        if (_fcmToken != null) {
-          await syncFcmToken(_fcmToken);
+    try {
+      final token = await _storage.read(key: 'access_token');
+      if (token != null) {
+        _accessToken = token;
+        try {
+          await _fetchAndSetUserInfo(token);
+          _isLoggedIn = true;
+          if (_fcmToken != null) {
+            await syncFcmToken(_fcmToken);
+          }
+        } catch (e) {
+          debugPrint('Access token expired or fetch failed. Attempting silent refresh...');
+          await refreshAccessToken();
         }
-      } catch (e) {
-        debugPrint('Access token expired on startup. Attempting silent refresh...');
-        await refreshAccessToken();
+      }
+    } catch (e) {
+      debugPrint('Check login status error: $e');
+      if (e.toString().contains('InvalidKeyException') || e.toString().contains('Failed to unwrap key')) {
+        debugPrint('Keystore issue detected. Clearing storage.');
+        await logout(hardLogout: true);
       }
     }
   }
@@ -113,19 +130,16 @@ class AuthViewModel extends ChangeNotifier {
 
       final response = await _authService.refreshToken(refreshToken);
       final newAccessToken = response['access_token'];
-      
+
       _accessToken = newAccessToken;
       await _storage.write(key: 'access_token', value: newAccessToken);
-      
-      // Populate user info after refreshing token
+
       await _fetchAndSetUserInfo(newAccessToken);
-      
+
       _isLoggedIn = true;
       debugPrint('Token refreshed successfully');
     } catch (e) {
       debugPrint('Failed to refresh token: $e');
-      // If refresh fails, we clear the session but don't hard logout yet
-      // unless it's a specific refresh failure indicating invalid refresh token.
       _isLoggedIn = false;
       _accessToken = null;
     } finally {
@@ -216,7 +230,7 @@ class AuthViewModel extends ChangeNotifier {
       await _fetchAndSetUserInfo(token);
 
       _isLoggedIn = true;
-      
+
       if (_fcmToken != null) {
         await syncFcmToken(_fcmToken);
       }
@@ -245,7 +259,7 @@ class AuthViewModel extends ChangeNotifier {
       if (authenticated) {
         _isLoggingIn = true;
         notifyListeners();
-        
+
         await refreshAccessToken();
 
         if (_isLoggedIn) {
@@ -256,7 +270,7 @@ class AuthViewModel extends ChangeNotifier {
           notifyListeners();
           return true;
         }
-        
+
         _isLoggingIn = false;
         notifyListeners();
         return false;
@@ -272,7 +286,7 @@ class AuthViewModel extends ChangeNotifier {
 
   Future<void> enableBiometrics() async {
     if (!_isBiometricSupported) return;
-    
+
     try {
       final bool authenticated = await _localAuth.authenticate(
         localizedReason: 'Confirm to enable biometric login',
@@ -307,7 +321,7 @@ class AuthViewModel extends ChangeNotifier {
       await _storage.delete(key: 'user_phone');
       await _storage.delete(key: 'user_dob');
     }
-    
+
     _isLoggedIn = false;
     _userName = null;
     _userNric = null;

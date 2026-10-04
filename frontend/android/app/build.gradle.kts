@@ -34,11 +34,14 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
-            
-            // Explicitly disable minification and shrinking to solve the "Missing classes" errors 
+
+            // Explicitly disable minification and shrinking to solve the "Missing classes" errors
             // and prevent the black screen crash caused by R8 stripping native entry points.
+
+            // Keep minification disabled while debugging the biometric issue
             isMinifyEnabled = false
             isShrinkResources = false
+
 
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -47,6 +50,9 @@ android {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    // Explicitly add biometric library to ensure it's included in release APK
+    implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.fragment:fragment:1.6.2")
 }
 
 kotlin {

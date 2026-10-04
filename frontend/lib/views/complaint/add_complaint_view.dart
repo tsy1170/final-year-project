@@ -104,10 +104,24 @@ class _AddComplaintViewState extends State<AddComplaintView> {
         viewModel.dateIssueController.text.isEmpty ||
         viewModel.fullNameController.text.isEmpty ||
         viewModel.nricController.text.isEmpty ||
+        viewModel.emailController.text.isEmpty ||
         viewModel.selectedPremiseType == null ||
         viewModel.premiseNameController.text.isEmpty ||
         viewModel.addressController.text.isEmpty) {
       showTopNotification(context, "Please fill in all required fields", false, widget.scale);
+      return;
+    }
+
+    // NRIC validation: exactly 12 digits
+    if (viewModel.nricController.text.length != 12) {
+      showTopNotification(context, "NRIC must be exactly 12 digits", false, widget.scale);
+      return;
+    }
+
+    // Email validation following a robust regex similar to Pydantic's underlying email-validator
+    final emailRegex = RegExp(r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
+    if (!emailRegex.hasMatch(viewModel.emailController.text.trim())) {
+      showTopNotification(context, "Please enter a valid email address", false, widget.scale);
       return;
     }
 
@@ -303,9 +317,9 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                   title: "Your Information",
                   children: [
                     _buildTextField("Full Name", viewModel.fullNameController, isRequired: true),
-                    _buildTextField("NRIC", viewModel.nricController, isNumeric: true, isRequired: true),
+                    _buildTextField("NRIC", viewModel.nricController, isNumeric: true, isRequired: true, isNric: true),
                     _buildTextField("Phone No", viewModel.phoneNoController, isNumeric: true, isRequired: true),
-                    _buildTextField("Email", viewModel.emailController, isRequired: true),
+                    _buildTextField("Email", viewModel.emailController, isRequired: true, isEmail: true),
                   ],
                 ),
 
@@ -461,7 +475,7 @@ class _AddComplaintViewState extends State<AddComplaintView> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool isDate = false, bool isPrice = false, bool isRequired = false, bool isNumeric = false, bool isCoordinate = false}) {
+  Widget _buildTextField(String label, TextEditingController controller, {bool isDate = false, bool isPrice = false, bool isRequired = false, bool isNumeric = false, bool isCoordinate = false, bool isEmail = false, bool isNric = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -494,11 +508,13 @@ class _AddComplaintViewState extends State<AddComplaintView> {
           height: 50 * widget.scale,
           child: TextField(
             controller: controller,
-            textCapitalization: TextCapitalization.sentences,
+            textCapitalization: isEmail ? TextCapitalization.none : TextCapitalization.sentences,
             readOnly: isDate,
             keyboardType: (isPrice || isCoordinate)
                 ? const TextInputType.numberWithOptions(decimal: true)
-                : (isNumeric ? const TextInputType.numberWithOptions(decimal: false) : TextInputType.text),
+                : isEmail
+                    ? TextInputType.emailAddress
+                    : (isNumeric ? const TextInputType.numberWithOptions(decimal: false) : TextInputType.text),
             inputFormatters: isPrice
                 ? [
                     FilteringTextInputFormatter.deny(RegExp(r'[^\d.]')),
@@ -506,7 +522,12 @@ class _AddComplaintViewState extends State<AddComplaintView> {
                   ]
                 : isCoordinate 
                   ? [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,10}'))]
-                  : (isNumeric ? [FilteringTextInputFormatter.digitsOnly] : null),
+                  : (isNumeric 
+                      ? [
+                          FilteringTextInputFormatter.digitsOnly,
+                          if (isNric) LengthLimitingTextInputFormatter(12),
+                        ] 
+                      : null),
             onTap: isDate ? () => _selectDate(context) : null,
             onEditingComplete: isPrice ? () {
               _formatPrice(controller);

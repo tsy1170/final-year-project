@@ -10,7 +10,7 @@ class GroceryViewModel extends ChangeNotifier {
 
   List<GroceryProduct> _allProducts = [];
   List<GroceryProduct> get allProducts => _allProducts;
-  
+
   List<GroceryProduct> get visibleProducts {
     final query = _searchController.text.trim().toLowerCase();
     return _allProducts.where((product) {
@@ -51,7 +51,7 @@ class GroceryViewModel extends ChangeNotifier {
   // Product Details State
   Map<String, dynamic>? _selectedProductDetails;
   Map<String, dynamic>? get selectedProductDetails => _selectedProductDetails;
-  
+
   bool _isDetailsLoading = false;
   bool get isDetailsLoading => _isDetailsLoading;
 
@@ -69,12 +69,13 @@ class GroceryViewModel extends ChangeNotifier {
   List<GroceryProduct> get mostViewedProducts => _mostViewedProducts;
 
   String? _currentUserId;
+  bool _isMostViewedLoading = false;
 
   GroceryViewModel(this._groceryService) {
     _searchController.addListener(_onSearchChanged);
+    // Initial data load
     loadProducts();
     loadCategories();
-    loadMostViewedProducts();
   }
 
   void _onSearchChanged() {
@@ -84,7 +85,8 @@ class GroceryViewModel extends ChangeNotifier {
   void updateUserId(String? userId) {
     if (_currentUserId != userId) {
       _currentUserId = userId;
-      loadMostViewedProducts();
+      // We use a microtask to ensure we don't call notifyListeners during a build phase
+      Future.microtask(() => loadMostViewedProducts());
     }
   }
 
@@ -123,9 +125,14 @@ class GroceryViewModel extends ChangeNotifier {
   Future<void> loadCategories() async {
     _isCategoriesLoading = true;
     notifyListeners();
-    _itemGroups = await _groceryService.fetchCategories();
-    _isCategoriesLoading = false;
-    notifyListeners();
+    try {
+      _itemGroups = await _groceryService.fetchCategories();
+    } catch (e) {
+      debugPrint('Error fetching categories: $e');
+    } finally {
+      _isCategoriesLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> fetchCategorizedProducts({
@@ -173,7 +180,7 @@ class GroceryViewModel extends ChangeNotifier {
     _selectedProductDetails = null;
     _detailsError = null;
     notifyListeners();
-    
+
     try {
       _selectedProductDetails = await _groceryService.fetchProductDetails(itemCode: itemCode, lat: lat, lng: lng);
       if (_selectedProductDetails != null && _selectedProductDetails!['item'] != null) {
@@ -204,64 +211,69 @@ class GroceryViewModel extends ChangeNotifier {
   }
 
   Future<void> incrementViewCount(GroceryProduct product) async {
-    final prefs = await SharedPreferences.getInstance();
-    final String prefix = _currentUserId ?? 'guest';
-    
-    // Get view counts map: { itemCode: count }
-    final String? countsJson = prefs.getString('${prefix}_product_view_counts');
-    Map<String, dynamic> counts = countsJson != null ? json.decode(countsJson) : {};
-    
-    final String itemCodeStr = product.itemCode.toString();
-    int currentCount = counts[itemCodeStr] ?? 0;
-    counts[itemCodeStr] = currentCount + 1;
-    
-    await prefs.setString('${prefix}_product_view_counts', json.encode(counts));
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String prefix = _currentUserId ?? 'guest';
 
-    // Store product metadata for offline display in "Most Viewed" section
-    final String? productsJson = prefs.getString('${prefix}_viewed_products_data');
-    Map<String, dynamic> productsData = productsJson != null ? json.decode(productsJson) : {};
-    productsData[itemCodeStr] = product.toJson();
-    await prefs.setString('${prefix}_viewed_products_data', json.encode(productsData));
-    
-    loadMostViewedProducts();
+      final String? countsJson = prefs.getString('${prefix}_product_view_counts');
+      Map<String, dynamic> counts = countsJson != null ? json.decode(countsJson) : {};
+
+      final String itemCodeStr = product.itemCode.toString();
+      int currentCount = counts[itemCodeStr] ?? 0;
+      counts[itemCodeStr] = currentCount + 1;
+
+      await prefs.setString('${prefix}_product_view_counts', json.encode(counts));
+
+      final String? productsJson = prefs.getString('${prefix}_viewed_products_data');
+      Map<String, dynamic> productsData = productsJson != null ? json.decode(productsJson) : {};
+      productsData[itemCodeStr] = product.toJson();
+      await prefs.setString('${prefix}_viewed_products_data', json.encode(productsData));
+
+      loadMostViewedProducts();
+    } catch (e) {
+      debugPrint('Error incrementing view count: $e');
+    }
   }
 
   Future<void> loadMostViewedProducts() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String prefix = _currentUserId ?? 'guest';
-    
-    final String? countsJson = prefs.getString('${prefix}_product_view_counts');
-    if (countsJson == null) {
+    if (_isMostViewedLoading) return;
+    _isMostViewedLoading = true;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String prefix = _currentUserId ?? 'guest';
+
+      final String? countsJson = prefs.getString('${prefix}_product_view_counts');
+      if (countsJson == null) {
+        _mostViewedProducts = [];
+        return;
+      }
+
+      Map<String, dynamic> counts = json.decode(countsJson);
+      final String? productsJson = prefs.getString('${prefix}_viewed_products_data');
+      if (productsJson == null) {
+        _mostViewedProducts = [];
+        return;
+      }
+      Map<String, dynamic> productsData = json.decode(productsJson);
+
+      List<MapEntry<String, dynamic>> filteredEntries = counts.entries
+          .where((entry) => (entry.value as int) >= 5)
+          .toList();
+
+      filteredEntries.sort((a, b) => (b.value as int).compareTo(a.value as int));
+      final top5Entries = filteredEntries.take(5).toList();
+
+      _mostViewedProducts = top5Entries.map((entry) {
+        return GroceryProduct.fromJson(productsData[entry.key]);
+      }).toList();
+    } catch (e) {
+      debugPrint('Error loading most viewed products: $e');
       _mostViewedProducts = [];
+    } finally {
+      _isMostViewedLoading = false;
       notifyListeners();
-      return;
     }
-    
-    Map<String, dynamic> counts = json.decode(countsJson);
-    final String? productsJson = prefs.getString('${prefix}_viewed_products_data');
-    if (productsJson == null) {
-      _mostViewedProducts = [];
-      notifyListeners();
-      return;
-    }
-    Map<String, dynamic> productsData = json.decode(productsJson);
-
-    // Filter items with >= 5 views
-    List<MapEntry<String, dynamic>> filteredEntries = counts.entries
-        .where((entry) => (entry.value as int) >= 5)
-        .toList();
-
-    // Sort by count descending
-    filteredEntries.sort((a, b) => (b.value as int).compareTo(a.value as int));
-
-    // Take top 5
-    final top5Entries = filteredEntries.take(5).toList();
-
-    _mostViewedProducts = top5Entries.map((entry) {
-      return GroceryProduct.fromJson(productsData[entry.key]);
-    }).toList();
-
-    notifyListeners();
   }
 
   @override

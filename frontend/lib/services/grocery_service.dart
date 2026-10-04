@@ -10,6 +10,7 @@ import '../viewmodels/connectivity_view_model.dart';
 class GroceryService {
   final String baseUrl = ApiConstants.baseUrl;
   void Function(int)? onResponseStatus;
+  final Duration timeoutDuration = const Duration(seconds: 15);
 
   GroceryService({this.onResponseStatus});
 
@@ -21,9 +22,9 @@ class GroceryService {
 
   void _handleNetworkError(dynamic e) {
     final errStr = e.toString();
-    if (e is SocketException || 
-        errStr.contains('ClientException') || 
-        errStr.contains('connection abort') || 
+    if (e is SocketException ||
+        errStr.contains('ClientException') ||
+        errStr.contains('connection abort') ||
         errStr.contains('Software caused')) {
       ConnectivityViewModel.setGlobalOffline();
     }
@@ -46,7 +47,7 @@ class GroceryService {
       if (isHalal != null) queryParams['is_halal'] = isHalal.toString();
 
       final url = Uri.parse('$baseUrl/products').replace(queryParameters: queryParams);
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(timeoutDuration);
       _handleResponse(response);
 
       if (response.statusCode == 200) {
@@ -65,7 +66,7 @@ class GroceryService {
 
   Future<List<ItemGroup>> fetchCategories() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/products/categories'));
+      final response = await http.get(Uri.parse('$baseUrl/products/categories')).timeout(timeoutDuration);
       _handleResponse(response);
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -94,7 +95,7 @@ class GroceryService {
         'radius_km': radius.toString(),
       });
 
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(timeoutDuration);
       _handleResponse(response);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -119,7 +120,7 @@ class GroceryService {
   Future<List<GroceryProduct>> searchProducts(String query) async {
     try {
       final url = Uri.parse('$baseUrl/products/search').replace(queryParameters: {'q': query});
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(timeoutDuration);
       _handleResponse(response);
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -149,7 +150,7 @@ class GroceryService {
       };
 
       final url = Uri.parse('$baseUrl/products/worth-buying').replace(queryParameters: queryParams);
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(timeoutDuration);
       _handleResponse(response);
 
       if (response.statusCode == 200) {

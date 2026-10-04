@@ -204,7 +204,9 @@ class _RegisterViewState extends State<RegisterView> {
                             keyboardType: TextInputType.emailAddress,
                             validator: (value) {
                               if (value == null || value.isEmpty) return "Please enter email";
-                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) return "Enter a valid email";
+                              // Robust email regex following Pydantic's pattern
+                              final emailRegex = RegExp(r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
+                              if (!emailRegex.hasMatch(value.trim())) return "Enter a valid email address";
                               return null;
                             },
                           ),
