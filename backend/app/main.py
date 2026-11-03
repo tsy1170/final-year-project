@@ -2305,11 +2305,6 @@ def delete_complaints(request_data: DeleteComplaintInput,
             blobs = bucket.list_blobs(prefix=f"complaint_attachments/{complaint_id}")
 
             all_blobs_to_delete.extend(blobs)
-
-            # complaint_directory = COMPLAINT_ATTACHMENT_DIRECTORY / str(complaint_id)
-
-            # if complaint_directory.exists():
-            #     shutil.rmtree(complaint_directory)
         
         if all_blobs_to_delete:
             bucket.delete_blobs(
