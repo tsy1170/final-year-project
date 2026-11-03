@@ -240,7 +240,7 @@ class _PriceAlertsViewState extends State<PriceAlertsView> {
                   Icon(Icons.notifications_off_outlined, size: 60 * widget.scale, color: Colors.grey),
                   SizedBox(height: 16 * widget.scale),
                   Text(
-                    'No price alerts found',
+                    'No price notification found',
                     style: TextStyle(fontSize: 16 * widget.scale, color: Colors.grey),
                   ),
                 ],

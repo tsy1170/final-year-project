@@ -33,7 +33,7 @@ class _GroceryViewState extends State<GroceryView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final locationVM = context.read<LocationViewModel>();
       final groceryVM = context.read<GroceryViewModel>();
-      if (locationVM.currentPosition != null) {
+      if (locationVM.currentPosition != null && !groceryVM.hasFetchedWorthBuying) {
         groceryVM.loadWorthBuying(
           lat: locationVM.currentPosition!.latitude,
           lng: locationVM.currentPosition!.longitude,
@@ -64,9 +64,9 @@ class _GroceryViewState extends State<GroceryView> {
     final locationViewModel = context.watch<LocationViewModel>();
     final double navBarHeight = MediaQuery.of(context).padding.bottom;
 
-    // Listen for location changes to trigger worth buying fetch if not yet loaded
+    // Fixed: Use hasFetchedWorthBuying to prevent infinite rebuild loops when results are empty
     if (locationViewModel.currentPosition != null &&
-        viewModel.worthBuyingProducts.isEmpty &&
+        !viewModel.hasFetchedWorthBuying &&
         !viewModel.isWorthBuyingLoading) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         viewModel.loadWorthBuying(
@@ -108,17 +108,20 @@ class _GroceryViewState extends State<GroceryView> {
             backgroundColor: const Color(0xFF1A1D1F),
             edgeOffset: 140 * widget.scale,
             onRefresh: () async {
-              // Immediately verify the connection state before calling any service endpoints
               final isConnected = await context.read<ConnectivityViewModel>().checkConnection();
-              if (!isConnected) return; // Exit immediately!
-              await viewModel.loadProducts(isRefresh: true);
-              if (locationViewModel.currentPosition != null) {
-                await viewModel.loadWorthBuying(
-                  lat: locationViewModel.currentPosition!.latitude,
-                  lng: locationViewModel.currentPosition!.longitude,
-                );
-              }
-              await viewModel.loadMostViewedProducts();
+              if (!isConnected) return;
+              
+              // Parallelize refresh calls for better performance
+              await Future.wait([
+                viewModel.loadProducts(isRefresh: true),
+                if (locationViewModel.currentPosition != null)
+                  viewModel.loadWorthBuying(
+                    lat: locationViewModel.currentPosition!.latitude,
+                    lng: locationViewModel.currentPosition!.longitude,
+                    isRefresh: true,
+                  ),
+                viewModel.loadMostViewedProducts(),
+              ]);
             },
             child: CustomScrollView(
               controller: _scrollController,
@@ -128,7 +131,6 @@ class _GroceryViewState extends State<GroceryView> {
               slivers: [
                 SliverToBoxAdapter(child: SizedBox(height: 140 * widget.scale)),
                 
-                // Most Viewed Section - Now at the top
                 if (viewModel.mostViewedProducts.isNotEmpty)
                   SliverToBoxAdapter(
                     child: Column(
@@ -188,7 +190,6 @@ class _GroceryViewState extends State<GroceryView> {
                                       padding: EdgeInsets.all(12 * widget.scale),
                                       child: Row(
                                         children: [
-                                          // Left side image
                                           Container(
                                             width: 70 * widget.scale,
                                             height: 70 * widget.scale,
@@ -216,7 +217,6 @@ class _GroceryViewState extends State<GroceryView> {
                                             ),
                                           ),
                                           SizedBox(width: 12 * widget.scale),
-                                          // Right side name and fav button
                                           Expanded(
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,

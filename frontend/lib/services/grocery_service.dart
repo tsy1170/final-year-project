@@ -11,6 +11,7 @@ class GroceryService {
   final String baseUrl = ApiConstants.baseUrl;
   void Function(int)? onResponseStatus;
   final Duration timeoutDuration = const Duration(seconds: 15);
+  final Duration extendedTimeoutDuration = const Duration(seconds: 60);
 
   GroceryService({this.onResponseStatus});
 
@@ -150,7 +151,8 @@ class GroceryService {
       };
 
       final url = Uri.parse('$baseUrl/products/worth-buying').replace(queryParameters: queryParams);
-      final response = await http.get(url).timeout(timeoutDuration);
+      // Increased timeout to 60s as this endpoint involves heavy calculations and can be slow
+      final response = await http.get(url).timeout(extendedTimeoutDuration);
       _handleResponse(response);
 
       if (response.statusCode == 200) {
@@ -161,7 +163,8 @@ class GroceryService {
     } catch (e) {
       _handleNetworkError(e);
       print('Error fetching worth buying products: $e');
-      return {'results': []};
+      // Rethrow to allow the ViewModel to handle the error appropriately (e.g., mark as fetched even if failed)
+      rethrow;
     }
   }
 }

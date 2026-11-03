@@ -188,7 +188,10 @@ class _EditProfileViewState extends State<EditProfileView> {
                     hint: 'Enter username',
                     icon: Icons.person_outline_rounded,
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) return "Username is required";
+                      if (value == null || value.trim().isEmpty) {
+                        return "Username is required";
+                      }
+                      else if (value.length < 2) return "Username must be at least 2 characters";
                       return null;
                     },
                   ),
@@ -214,6 +217,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                     hint: 'Enter phone number',
                     icon: Icons.phone_outlined,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) return "Phone number is required";
                       return null;

@@ -63,6 +63,8 @@ class GroceryViewModel extends ChangeNotifier {
   List<Map<String, dynamic>> get worthBuyingProducts => _worthBuyingProducts;
   bool _isWorthBuyingLoading = false;
   bool get isWorthBuyingLoading => _isWorthBuyingLoading;
+  bool _hasFetchedWorthBuying = false;
+  bool get hasFetchedWorthBuying => _hasFetchedWorthBuying;
 
   // Most Viewed Products State
   List<GroceryProduct> _mostViewedProducts = [];
@@ -195,15 +197,23 @@ class GroceryViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> loadWorthBuying({required double lat, required double lng}) async {
+  Future<void> loadWorthBuying({required double lat, required double lng, bool isRefresh = false}) async {
+    if (!isRefresh && _isWorthBuyingLoading) return;
+    
     _isWorthBuyingLoading = true;
+    if (isRefresh) {
+      _hasFetchedWorthBuying = false;
+    }
     notifyListeners();
+    
     try {
       final response = await _groceryService.fetchWorthBuying(latitude: lat, longitude: lng);
       _worthBuyingProducts = List<Map<String, dynamic>>.from(response['results'] ?? []);
+      _hasFetchedWorthBuying = true;
     } catch (e) {
       debugPrint('Error loading worth buying products: $e');
       _worthBuyingProducts = [];
+      _hasFetchedWorthBuying = true;
     } finally {
       _isWorthBuyingLoading = false;
       notifyListeners();
