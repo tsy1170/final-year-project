@@ -1,10 +1,10 @@
-**Comprice – Intelligent Daily Necessities Price Optimisation System**
+#**Comprice – Intelligent Daily Necessities Price Optimisation System**
 
 This is a mobile application developed to help Malaysian consumers make more informed purchasing decisions when buying daily necessities. It provides product price comparison, location-based store recommendations, shopping basket optimisation, and OCR-assisted price discrepancy complaint preparation within a single application.
 
 The system uses historical price data from the KPDN PriceCatcher dataset to help users compare product prices across retail premises and identify potentially cost-effective shopping options.
 
-**Features**
+##**Features**
 
 1. Product Browsing and Price Comparison
 - Browse daily necessity products by category and item group.
